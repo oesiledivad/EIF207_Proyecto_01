@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/eif207-proyecto-01.iml" filepath="$PROJECT_DIR$/.idea/eif207-proyecto-01.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/cripta.iml" filepath="$PROJECT_DIR$/.idea/cripta.iml" />
     </modules>
   </component>
 </project>
