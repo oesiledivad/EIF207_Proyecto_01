@@ -1,0 +1,1 @@
+"""Utilidades transversales: versiones, azar reproducible, identificador de cliente."""

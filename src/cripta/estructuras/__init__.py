@@ -1,0 +1,1 @@
+"""Estructuras de datos genéricas implementadas desde cero (heap, listas, buffers, etc.)."""

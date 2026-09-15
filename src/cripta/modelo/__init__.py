@@ -1,0 +1,1 @@
+"""Reglas del juego, entidades y estructuras del dominio. No conoce HTTP ni disco."""

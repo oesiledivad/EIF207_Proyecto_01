@@ -1,0 +1,1 @@
+"""Presentación en consola (rich) y captura de comandos del usuario."""
