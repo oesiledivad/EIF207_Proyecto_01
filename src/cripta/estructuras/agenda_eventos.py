@@ -15,7 +15,7 @@ class Evento:
     def clave(self):
         return self.tiempo_siguiente, self.secuencias
 
-class AgendaEventos:
+class HeapAgendaEventos:
     def __init__(self):
         self._heap: list[Evento] = []
         self._secuencia_actual = 0
