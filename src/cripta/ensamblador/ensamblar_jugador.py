@@ -1,7 +1,7 @@
 from src.cripta.dto import Crypta_Details
 from src.cripta.modelo.jugador import Jugador
 
-
+@staticmethod
 def ensamblarJugador(datos: Crypta_Details) -> Jugador:
     return Jugador(
         identificador="jugador",
