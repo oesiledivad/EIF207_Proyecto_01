@@ -12,8 +12,8 @@ from dto.ArmaduraDto import FichaArmadura
 from dto.PocionDto import FichaPocion
 from dto.AntidotoDto import FichaAntidoto
 from dto.LlaveDto import FichaLlave
-from dto.AntorchatDto import FichaAntorcha
-from dto.Pergamino_retorcesoDto import FichaPergaminoRetorceso
+from dto.AntorchaDto import FichaAntorcha
+from dto.Pergamino_RetrocesoDto import FichaPergaminoRetroceso
 
 
 def ensamblar_item(ficha):
@@ -29,6 +29,6 @@ def ensamblar_item(ficha):
         return ItemLlave(ficha.id, ficha.nombre, ficha.peso, ficha.valor, ficha.abre)
     if isinstance(ficha, FichaAntorcha):
         return ItemAntorcha(ficha.id, ficha.nombre, ficha.peso, ficha.valor, ficha.duracion)
-    if isinstance(ficha, FichaPergaminoRetorceso):
+    if isinstance(ficha, FichaPergaminoRetroceso):
         return ItemPergamino(ficha.id, ficha.nombre, ficha.peso, ficha.valor)
     raise ValueError("No se puede ensamblar item de tipo " + type(ficha).__name__)

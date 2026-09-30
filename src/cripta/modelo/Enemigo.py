@@ -1,9 +1,9 @@
 """
-    src/cripta/modelo/enemigo.py
+    src/cripta/modelo/Enemigo.py
     Representa un enemigo de la partida.
 """
 
-from cripta.modelo.actor import Actor
+from cripta.modelo.Actor import Actor
 
 
 class Enemigo(Actor):

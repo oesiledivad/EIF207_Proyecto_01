@@ -1,5 +1,5 @@
 """
-    src/cripta/estructuras/agenda_eventos.py
+    src/cripta/estructuras/Agenda_Eventos.py
     Este modulo es para la estructura de datos que usaremos para manejar
     nuestra agenda de eventos implementada con un heap.
 """

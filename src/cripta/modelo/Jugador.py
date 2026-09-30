@@ -1,10 +1,10 @@
 """
-    src/cripta/modelo/jugador.py
+    src/cripta/modelo/Jugador.py
     Representa al jugador de la partida.
     Hereda de Actor.
 """
 
-from cripta.modelo.actor import Actor
+from cripta.modelo.Actor import Actor
 
 class Jugador(Actor):
     def __init__(self,

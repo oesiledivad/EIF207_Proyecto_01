@@ -213,7 +213,7 @@ Todas las entidades comparten un discriminador `clase`. El valor de `clase` dete
 
 | `clase`               | Esquema        |
 |-----------------------|----------------|
-| `enemigo`             | `Enemy`        |
+| `Enemigo.py`             | `Enemy`        |
 | `arma`                | `Weapon`       |
 | `armadura`            | `Armor`        |
 | `pocion`              | `Potion`       |

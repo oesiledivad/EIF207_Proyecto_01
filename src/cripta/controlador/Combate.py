@@ -1,5 +1,5 @@
 """
-    src/cripta/controlador/combate.py
+    src/cripta/controlador/Combate.py
     Contiene la lógica de combate entre actores.
 """
 

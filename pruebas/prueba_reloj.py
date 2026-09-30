@@ -1,4 +1,4 @@
-from cripta.util.reloj import Reloj
+from cripta.util.Reloj import Reloj
 
 
 reloj = Reloj()

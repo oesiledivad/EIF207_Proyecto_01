@@ -1,5 +1,5 @@
 """
-    src/cripta/modelo/actor.py
+    src/cripta/modelo/Actor.py
     Clase base para representar a los actores de la partida.
 """
 
