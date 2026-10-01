@@ -4,7 +4,7 @@ Hereda de la clase Enemy y tiene atributos y métodos específicos para
 su comportamiento en el juego.
 
 """
-from .enemigo import Enemigo
+from modelo.Enemigo import Enemigo
 class Guardian(Enemigo):
     def __init__( identificador,
             vida,

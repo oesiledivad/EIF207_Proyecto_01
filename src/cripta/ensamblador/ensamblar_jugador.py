@@ -1,5 +1,5 @@
 from src.cripta.dto import Crypta_Details
-from src.cripta.modelo.jugador import Jugador
+from src.cripta.modelo.Jugador import Jugador
 
 @staticmethod
 def ensamblarJugador(datos: Crypta_Details) -> Jugador:

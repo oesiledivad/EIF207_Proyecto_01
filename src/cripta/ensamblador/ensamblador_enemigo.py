@@ -1,8 +1,8 @@
-﻿from src.cripta.modelo.enemigo import Enemigo
-from src.cripta.modelo.Tracker import Rastreador
-from src.cripta.modelo.Guardian import Guardian
-from src.cripta.modelo.Wandering import Errante
-from src.cripta.dto.EnemigoDto import FichaEnemigo
+﻿from modelo.Enemigo import Enemigo
+from modelo.enemigos.Tracker import Rastreador
+from modelo.enemigos.Guardian import Guardian
+from modelo.enemigos.Wandering import Errante
+from dto.EnemigoDto import FichaEnemigo
 
 
 def ensamblar_enemigo(dto_instancia, ficha, sala_id):

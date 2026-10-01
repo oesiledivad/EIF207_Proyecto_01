@@ -2,7 +2,7 @@
 
 from src.cripta.modelo.Room import SalaJuego
 from src.cripta.ensamblador.ensamblador_enemigo import ensamblar_enemigo
-from src.cripta.ensamblador.ensamblar_item import ensamblar_item
+from src.cripta.ensamblador.Ensamblar_Item import ensamblar_item
 
 
 def ensamblar_sala(esqueleto, contenido, fichas: dict) -> SalaJuego:
