@@ -1,4 +1,4 @@
-﻿from modelo.Item import Item
+from modelo.Item import Item
 from modelo.Item_Arma import ItemArma
 from modelo.Item_Armadura import ItemArmadura
 from modelo.Item_Pocion import ItemPocion

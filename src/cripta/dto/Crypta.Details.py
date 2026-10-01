@@ -1,8 +1,9 @@
 
-
+from .jugadorDto import JugadorStats
 
 class Crypta_Details:
-    def __init__(self, id: str, version: str, salas: list,pages: int, room_start: int, room_exit: int, key: str, solicitudes: int, inventario: list) -> None:
+    def __init__(self, id, version, salas, pages, room_start, room_exit,
+                 key, solicitudes, inventario, jugador: JugadorStats) -> None:
         self.id = id
         self.version = version
         self.salas = salas
@@ -12,17 +13,19 @@ class Crypta_Details:
         self.key = key
         self.solicitudes = solicitudes
         self.inventario = inventario
+        self.jugador = jugador
 
+    @staticmethod
     def since_dict(d: dict) -> "Crypta_Details":
         return Crypta_Details(
             id=d["id"],
             version=d["version"],
-            salas=d["sala_total"],
+            salas=d["salas_total"],
             pages=d["paginas"],
             room_start=d["sala_inicial"],
             room_exit=d["sala_salida"],
             key=d["llave_salida"],
             solicitudes=d["presupuesto_solicitudes"],
-            inventario=d["inventario_max"]
+            inventario=d["inventario_max"],
+            jugador=JugadorStats.desde_dict(d["jugador"]),
         )
-    
