@@ -6,6 +6,9 @@
 import random
 
 def calcular_danio(atacante, defensor):
+    """
+    Calcula el daño que realiza un atacante a un defensor.
+    """
     dano = max(
         1,
         atacante.ataque + random.randint(0, 4) - defensor.defensa
@@ -13,6 +16,9 @@ def calcular_danio(atacante, defensor):
     return dano
 
 def aplicar_danio(defensor, dano):
+    """
+    Aplica el daño a un defensor.
+    """
     defensor.vida = max(0, defensor.vida - dano)
 
 def esta_vivo(actor) -> bool:

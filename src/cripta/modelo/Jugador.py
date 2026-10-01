@@ -30,4 +30,4 @@ class Jugador(Actor):
         )
         # Estos le pertenecen al jugador y no a los enemigos, por eso se definen aquí.
         self.inventario_max = inventario_max
-        self.inventario = [] # el enunciado permite list como estructura de bajo nivel pero aun no se si es la definitiva
+

@@ -4,6 +4,10 @@
 """
 
 class Actor:
+    """
+    Clase base para representar a los actores de la partida.
+    Puede ser jugador o enemigo.
+    """
     def __init__(self, identificador, vida, vida_max, ataque, defensa, velocidad, sala,tiempo_siguiente):
         self.identificador = identificador
         self.vida = vida

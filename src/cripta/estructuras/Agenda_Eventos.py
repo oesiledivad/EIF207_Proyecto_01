@@ -1,10 +1,16 @@
 """
-    src/cripta/estructuras/Agenda_Eventos.py
-    Este modulo es para la estructura de datos que usaremos para manejar
-    nuestra agenda de eventos implementada con un heap.
+    src/cripta/estructuras/agenda_eventos.py
+
+    Este módulo contiene las estructuras necesarias para manejar
+    la agenda de eventos de la simulación mediante un heap mínimo.
 """
 
 class Evento:
+    """
+        Clase que representa un evento en la agenda de eventos.
+        El evento tiene un tiempo de ejecución, una secuencia de inserción,
+        un actor al que corresponde y un tipo de evento.
+    """
     def __init__(self, tiempo_siguiente: int, secuencias: int, actor, tipo: str ):
         self.tiempo_siguiente = tiempo_siguiente
         self.secuencias = secuencias
@@ -13,26 +19,43 @@ class Evento:
         self.valido = True
 
     def clave(self):
+        """
+              Devuelve la clave utilizada para ordenar los eventos.
+
+              Los eventos se ordenan primero por tiempo y luego por
+              número de secuencia.
+        """
         return self.tiempo_siguiente, self.secuencias
 
 class HeapAgendaEventos:
+    """
+       Administra los eventos de la simulación mediante un heap mínimo.
+
+       Permite insertar, extraer, cancelar y reprogramar eventos.
+       La cancelación se realiza de forma perezosa, marcando el evento
+       como inválido sin eliminarlo inmediatamente del heap.
+    """
     def __init__(self):
         self._heap: list[Evento] = []
         self._secuencia_actual = 0
 
+    # O(1) solo incrementa un contador
     def _siguiente_secuencia(self) -> int:
         self._secuencia_actual += 1
         return self._secuencia_actual
 
+    # O(log n) agrega al final y hace ascender()
     def insertar(self, tiempo_siguiente: int, actor, tipo: str) -> Evento:
         evento = Evento(tiempo_siguiente, self._siguiente_secuencia(), actor, tipo)
         self._heap.append(evento)
         self._ascender(len(self._heap) - 1)
         return evento
 
+    # O(1) no se toca el arreglo
     def cancelar(self, evento: Evento) -> None:
-        evento.valido = False # O(1) no se toca el arreglo
+        evento.valido = False
 
+    # O(log n)
     def extraer_siguiente(self) -> Evento | None:
         while self._heap:
             candidato = self._extraer_raiz()
@@ -41,6 +64,7 @@ class HeapAgendaEventos:
             # si era basura, seguimos extrayendo hasta encontrar uno válido
         return None
 
+    # O(log n) extrae la raiz y hace descender()
     def _extraer_raiz(self) -> Evento:
         raiz = self._heap[0]
         ultimo = self._heap.pop()
@@ -49,6 +73,7 @@ class HeapAgendaEventos:
             self._descender(0)
         return raiz
 
+    # O(log n) asciende el elemento en la posicion i hasta que cumpla la propiedad de heap
     def _ascender(self, i: int) -> None:
          # Esta funcion asciende el elemento en la posicion i hasta que cumpla la propiedad de heap
          while i > 0:
@@ -60,6 +85,7 @@ class HeapAgendaEventos:
              else:
                  break
 
+    # O(log n) baja el elemento en la posicion i hasta que cumpla la propiedad de heap
     def _descender(self, i: int) -> None:
         # bajar hacia el menor mientras rompa la propiedad de heap
         while True:
@@ -75,6 +101,7 @@ class HeapAgendaEventos:
             self._heap[i], self._heap[menor] = self._heap[menor], self._heap[i]
             i = menor
 
+    # O(log n) cancela en O(1) e inserta en O(log n)
     def reprogramar(self, actor, nuevo_tiempo: int, tipo: str) -> Evento:
         # cancela el evento viejo sin tocarlo e inserta uno nuevo con el tiempo actualizado
         self.cancelar(actor._proximo_evento)
