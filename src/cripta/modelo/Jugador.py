@@ -1,10 +1,10 @@
 """
-    src/cripta/modelo/jugador.py
+    src/cripta/modelo/Jugador.py
     Representa al jugador de la partida.
     Hereda de Actor.
 """
 
-from cripta.modelo.actor import Actor
+from cripta.modelo.Actor import Actor
 
 class Jugador(Actor):
     def __init__(self,
@@ -30,4 +30,4 @@ class Jugador(Actor):
         )
         # Estos le pertenecen al jugador y no a los enemigos, por eso se definen aquí.
         self.inventario_max = inventario_max
-        self.inventario = [] # el enunciado permite list como estructura de bajo nivel pero aun no se si es la definitiva
+

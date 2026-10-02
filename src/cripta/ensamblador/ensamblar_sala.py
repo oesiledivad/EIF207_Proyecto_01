@@ -1,15 +1,15 @@
 # ensamblador/ensamblar_sala.py
 
-from src.cripta.modelo.Room import SalaJuego
+from src.cripta.modelo.Sala import SalaJuego
 from src.cripta.ensamblador.ensamblador_enemigo import ensamblar_enemigo
-from src.cripta.ensamblador.ensamblar_item import ensamblar_item
+from src.cripta.ensamblador.Ensamblar_Item import Ensamblar_item
 
 
 def ensamblar_sala(esqueleto, contenido, fichas: dict) -> SalaJuego:
     """
     esqueleto: objeto Sala (DTO, de EsqueletoSala.salas)
     contenido: objeto ContenidoSala (DTO, de room_content)
-    fichas: dict {id_tipo: FichaCatalogo} ya resuelto
+    fichas: dict {id_tipo: FichaCatalogo}
     """
     enemigos = []
     for dto_enemigo in contenido.enemigos:
@@ -20,7 +20,7 @@ def ensamblar_sala(esqueleto, contenido, fichas: dict) -> SalaJuego:
     objetos = []
     for id_objeto in contenido.objetos:
         ficha = fichas[id_objeto]
-        item = ensamblar_item(ficha)
+        item = Ensamblar_item(ficha)
         objetos.append(item)
 
     return SalaJuego(

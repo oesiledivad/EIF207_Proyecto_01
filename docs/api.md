@@ -213,7 +213,7 @@ Todas las entidades comparten un discriminador `clase`. El valor de `clase` dete
 
 | `clase`               | Esquema        |
 |-----------------------|----------------|
-| `enemigo`             | `Enemy`        |
+| `Enemigo.py`             | `Enemy`        |
 | `arma`                | `Weapon`       |
 | `armadura`            | `Armor`        |
 | `pocion`              | `Potion`       |
@@ -337,7 +337,7 @@ Estadísticas iniciales del jugador, incluidas en `DungeonGeneral`.
 | `defensa` | `integer` | |
 | `velocidad` | `integer` | > 0 |
 
-### `Room`
+### `Sala.py`
 Habitación dentro del esqueleto (`SkeletonPage`).
 | Campo | Tipo |
 |---|---|

@@ -1,5 +1,5 @@
 from cripta.modelo.jugador import Jugador
-from cripta.modelo.enemigo import Enemigo
+from cripta.modelo.enemigos.enemigo import Enemigo
 from cripta.controlador.combate import calcular_danio, aplicar_danio
 
 

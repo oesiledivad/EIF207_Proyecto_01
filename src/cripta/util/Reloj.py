@@ -1,5 +1,5 @@
 """
-    src/cripta/util/reloj.py
+    src/cripta/util/Reloj.py
     Maneja el tiempo virtual de la simulación.
 """
 
