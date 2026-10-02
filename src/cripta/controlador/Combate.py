@@ -3,15 +3,16 @@
     Contiene la lógica de combate entre actores.
 """
 
-import random
+def calcular_danio(atacante, defensor, azar):
+    """
+        Calcula el daño usando el ataque, la defensa y el azar.
 
-def calcular_danio(atacante, defensor):
-    """
-    Calcula el daño que realiza un atacante a un defensor.
-    """
+        ``azar`` se recibe como una instancia de random.Random para
+        mantener el azar controlado desde la simulación.
+        """
     dano = max(
         1,
-        atacante.ataque + random.randint(0, 4) - defensor.defensa
+        atacante.ataque + azar.randint(0, 4) - defensor.defensa
     )
     return dano
 
