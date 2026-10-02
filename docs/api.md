@@ -337,7 +337,7 @@ Estadísticas iniciales del jugador, incluidas en `DungeonGeneral`.
 | `defensa` | `integer` | |
 | `velocidad` | `integer` | > 0 |
 
-### `Room`
+### `Sala.py`
 Habitación dentro del esqueleto (`SkeletonPage`).
 | Campo | Tipo |
 |---|---|

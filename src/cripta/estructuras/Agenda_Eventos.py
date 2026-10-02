@@ -103,9 +103,8 @@ class HeapAgendaEventos:
 
     # O(log n) cancela en O(1) e inserta en O(log n)
     def reprogramar(self, actor, nuevo_tiempo: int, tipo: str) -> Evento:
-        # cancela el evento viejo sin tocarlo e inserta uno nuevo con el tiempo actualizado
-        self.cancelar(actor._proximo_evento)
+        if actor._proximo_evento is not None:
+            self.cancelar(actor._proximo_evento)
         nuevo_evento = self.insertar(nuevo_tiempo, actor, tipo)
         actor._proximo_evento = nuevo_evento
-
         return nuevo_evento
