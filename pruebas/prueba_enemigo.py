@@ -1,6 +1,6 @@
 # pruebas basico de unicamente el modelo
 
-from cripta.modelo.enemigo import Enemigo
+from cripta.modelo.Enemigo import Enemigo
 
 
 enemigo = Enemigo(

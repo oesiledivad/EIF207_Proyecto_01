@@ -5,8 +5,8 @@ from .ArmaduraDto import FichaArmadura
 from .LlaveDto import FichaLlave
 from .PocionDto import FichaPocion
 from .AntidotoDto import FichaAntidoto
-from .AntorchatDto import FichaAntorcha
-from .Pergamino_retorcesoDto import FichaPergaminoRetroceso  
+from .AntorchaDto import FichaAntorcha
+from .Pergamino_RetrocesoDto import FichaPergaminoRetroceso
 from .TrampaDto import FichaTrampa
 
 def ficha_desde_dict(d: dict) -> FichaCatalogo:

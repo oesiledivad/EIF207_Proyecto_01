@@ -1,4 +1,22 @@
-from rich.console import Console
+from textual.app import App, ComposeResult
+from textual.widgets import Header, Footer, Static
+
+
+class Consola(App):
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield Static("¡Hola! Textual está funcionando.")
+        yield Footer()
+
+
+if __name__ == "__main__":
+    Consola().run()
+
+
+
+
+'''from rich.console import Console
 
 console = Console()
 
@@ -15,3 +33,4 @@ def mostrar_estado_sala(sala) -> None:
 def mostrar_mensajes(mensajes) -> None:
     # TODO: depende del buffer circular de bitácora
     raise NotImplementedError("TODO: renderizar últimos 20 mensajes")
+'''
