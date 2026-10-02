@@ -1,7 +1,7 @@
 ﻿from modelo.Enemigo import Enemigo
-from modelo.enemigos.Tracker import Rastreador
+from modelo.enemigos.Rastreador import Rastreador
 from modelo.enemigos.Guardian import Guardian
-from modelo.enemigos.Wandering import Errante
+from modelo.enemigos.Errante import Errante
 from dto.EnemigoDto import FichaEnemigo
 
 

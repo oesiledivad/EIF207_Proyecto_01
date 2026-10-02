@@ -1,4 +1,4 @@
-# modelo/Room.py
+# modelo/Sala.py
 
 class SalaJuego:
     """Entidad de dominio: una sala jugable, con enemigos y objetos ya resueltos."""
@@ -11,3 +11,4 @@ class SalaJuego:
         self.enemigos = enemigos    # list[Enemigo] (Modelo, ya ensamblados)
         self.objetos = objetos      # list[Item] (Modelo, ya ensamblados)
         self.trampas = trampas      # list[TrampaDto] (por ahora, DTO crudo)
+        self.ultimo_tiempo_visita: int | None = None

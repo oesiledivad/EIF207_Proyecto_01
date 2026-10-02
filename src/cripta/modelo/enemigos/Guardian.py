@@ -4,19 +4,14 @@ Hereda de la clase Enemy y tiene atributos y métodos específicos para
 su comportamiento en el juego.
 
 """
-from modelo.Enemigo import Enemigo
+# src/cripta/modelo/enemigos/Guardian.py
+from cripta.modelo.Enemigo import Enemigo
+
 class Guardian(Enemigo):
-    def __init__( identificador,
-            vida,
-            vida_max,
-            ataque,
-            defensa,
-            velocidad,
-            sala,
-            tiempo_siguiente,
-            comportamiento) -> None:
-        super().__init__(identificador, vida, vida_max, ataque, defensa, velocidad, sala, tiempo_siguiente)
-        
-    """
-    metodos especificos de guardian
-    """
+    def __init__(self, identificador, vida, vida_max, ataque, defensa,
+                 velocidad, sala, tiempo_siguiente, comportamiento="guardian"):
+        super().__init__(identificador, vida, vida_max, ataque, defensa,
+                          velocidad, sala, tiempo_siguiente, comportamiento)
+
+    def _decidir_movimiento(self, salas, tiempo_actual, azar):
+        return "esperar", None
