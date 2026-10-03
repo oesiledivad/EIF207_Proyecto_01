@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# IDEs and Editors
+# VS Code
+.vscode/
+
+# JetBrains (.idea)
+.idea/
