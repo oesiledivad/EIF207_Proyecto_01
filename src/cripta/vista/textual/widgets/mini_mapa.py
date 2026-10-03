@@ -5,7 +5,7 @@ from textual.app import ComposeResult
 from textual.containers import Grid
 from textual.widgets import Static
 
-from cripta.controlador.Aplicacion import EstadoPartida, SalidaVecina
+from cripta.dto.Partida_dto import EstadoPartida, SalidaVecina
 
 
 class CeldaMapa(Static):

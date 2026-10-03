@@ -128,7 +128,7 @@ class JuegoScreen(Screen):
 
         # Suelo
         if p.objetos_suelo:
-            lineas = [f"* {o.get('nombre', '?')}" for o in p.objetos_suelo]
+            lineas = [f"* {getattr(o, 'nombre', '?')}" for o in p.objetos_suelo]
             self.query_one("#suelo", Static).update("\n".join(lineas))
         else:
             self.query_one("#suelo", Static).update("(nada)")

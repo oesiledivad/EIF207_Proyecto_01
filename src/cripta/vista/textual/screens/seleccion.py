@@ -7,7 +7,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, DataTable, Footer, Input, Label, Static
 
-from cripta.controlador.Aplicacion import Aplicacion
+from cripta.controlador.Aplicacion import Aplicacion, CriptaResumen
 
 
 def _estrellas(nivel: int) -> str:
@@ -21,7 +21,7 @@ class SeleccionCriptaScreen(Screen):
     def __init__(self, controlador: Aplicacion) -> None:
         super().__init__()
         self._controlador = controlador
-        self._criptas: list[dict] = []
+        self._criptas: list[CriptaResumen] = []
 
     def compose(self) -> ComposeResult:
         with Vertical(id="seleccion-root"):
@@ -75,13 +75,14 @@ class SeleccionCriptaScreen(Screen):
             self.query_one("#error", Static).update(str(e))
             self._criptas = []
 
+        # Acceso mediante atributos de CriptaResumen (sin diccionarios)
         for c in self._criptas:
             tabla.add_row(
-                c["id"],
-                c["nombre"],
-                str(c["salas"]),
-                _estrellas(c["dificultad"]),
-                key=c["id"],
+                c.id,
+                c.nombre,
+                str(c.salas),
+                _estrellas(c.dificultad),
+                key=c.id,
             )
 
         if self._criptas:
@@ -111,7 +112,8 @@ class SeleccionCriptaScreen(Screen):
         tabla = self.query_one("#tabla-criptas", DataTable)
         if tabla.cursor_row < 0 or not self._criptas:
             return
-        cripta_id = self._criptas[tabla.cursor_row]["id"]
+
+        cripta_id = self._criptas[tabla.cursor_row].id
         try:
             d = self._controlador.previsualizar_cripta(cripta_id)
         except Exception as e:
@@ -120,22 +122,21 @@ class SeleccionCriptaScreen(Screen):
             )
             return
 
-        jugador = d.get("jugador", {})
         texto = (
-            f"ID:        {d.get('id', '?')}\n"
-            f"Versión:   {d.get('version', '?')}\n"
-            f"Salas:     {d.get('salas_total', '?')}\n"
-            f"Inicial:   {d.get('sala_inicial', '?')}\n"
-            f"Salida:    {d.get('sala_salida', '?')}\n"
-            f"Llave:     {d.get('llave_salida', '—')}\n"
-            f"Inventario:{d.get('inventario_max', '?')}\n"
-            f"Presupuesto:{d.get('presupuesto_solicitudes', '?')}\n"
+            f"ID:        {d.id}\n"
+            f"Versión:   {d.version}\n"
+            f"Salas:     {d.salas_total}\n"
+            f"Inicial:   {d.sala_inicial}\n"
+            f"Salida:    {d.sala_salida}\n"
+            f"Llave:     {d.llave_salida}\n"
+            f"Inventario:{d.inventario_max}\n"
+            f"Presupuesto:{d.presupuesto_solicitudes}\n"
             f"\n"
             f"JUGADOR\n"
-            f"  HP:  {jugador.get('vida_max', '?')}\n"
-            f"  ATQ: {jugador.get('ataque', '?')}\n"
-            f"  DEF: {jugador.get('defensa', '?')}\n"
-            f"  VEL: {jugador.get('velocidad', '?')}"
+            f"  HP:  {d.jugador_vida_max}\n"
+            f"  ATQ: {d.jugador_ataque}\n"
+            f"  DEF: {d.jugador_defensa}\n"
+            f"  VEL: {d.jugador_velocidad}"
         )
         self.query_one("#previsualizacion", Static).update(texto)
 
@@ -151,7 +152,8 @@ class SeleccionCriptaScreen(Screen):
             error.update("Selecciona una cripta.")
             return
 
-        cripta_id = self._criptas[tabla.cursor_row]["id"]
+        # Acceso por atributo .id
+        cripta_id = self._criptas[tabla.cursor_row].id
 
         from cripta.vista.textual.screens.cargando import CargandoScreen
 
@@ -163,7 +165,6 @@ class SeleccionCriptaScreen(Screen):
                     nombre, semilla, cripta_id
                 )
             except Exception as e:
-                # Capturamos cualquier fallo de red o excepción imprevista
                 self.app.call_from_thread(self._al_terminar, None, str(e))
             else:
                 self.app.call_from_thread(self._al_terminar, resultado, None)
@@ -173,7 +174,6 @@ class SeleccionCriptaScreen(Screen):
     def _al_terminar(self, resultado, error_msg: str | None = None) -> None:
         from cripta.vista.textual.screens.juego import JuegoScreen
 
-        # Cerramos siempre el modal de carga
         self.app.pop_screen()
 
         if error_msg is not None:

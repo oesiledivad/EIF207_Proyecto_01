@@ -1,0 +1,119 @@
+from __future__ import annotations
+from dataclasses import dataclass, field
+
+@dataclass
+class ResultadoInicio:
+    ok: bool
+    motivo: str = ""
+    semilla_efectiva: int = 0
+
+@dataclass
+class SalidaVecina:
+    direccion: str
+    sala_id: int
+    nombre: str
+    cerrada: bool
+    llave: str
+    transitable: bool
+    es_salida_final: bool
+    tiene_enemigos: bool
+    tiene_objetos: bool
+
+@dataclass
+class EnemigoPartida:
+    id: str
+    nombre: str
+    vida: int
+    ataque: int
+    defensa: int
+
+@dataclass
+class ObjetoSuelo:
+    id: str
+    nombre: str
+
+@dataclass
+class TrampaPartida:
+    id: str
+    tipo: str
+    activa: bool
+
+@dataclass
+class ObjetoInventario:
+    id: str
+    nombre: str
+    cantidad: int = 1
+
+@dataclass
+class SalaModelo:
+    id: int
+    nombre: str
+    descripcion: str
+    salidas: list[SalidaVecina] = field(default_factory=list)
+
+@dataclass
+class EstadoPartida:
+    activa: bool = False
+    terminada: bool = False
+    victoria: bool = False
+    derrota: bool = False
+
+    nombre_jugador: str = ""
+    cripta_id: str = ""
+    version_cripta: str = ""
+    semilla: int = 0
+    modo: str = "red"
+    presupuesto_solicitudes: int = 0
+    inventario_max: int = 10
+
+    reloj_virtual: int = 0
+    sala_actual_id: int = 0
+    sala_actual_nombre: str = ""
+    sala_salida_id: int = 0
+    llave_salida: str = ""
+
+    jugador_vida: int = 0
+    jugador_vida_max: int = 0
+    jugador_ataque: int = 0
+    jugador_defensa: int = 0
+    jugador_velocidad: int = 0
+
+    vecindad: list[SalidaVecina] = field(default_factory=list)
+    enemigos: list[EnemigoPartida] = field(default_factory=list)
+    objetos_suelo: list[ObjetoSuelo] = field(default_factory=list)
+    trampas: list[TrampaPartida] = field(default_factory=list)
+    inventario: list[ObjetoInventario] = field(default_factory=list)
+    efectos: list[str] = field(default_factory=list)
+
+    salas_conocidas: list[SalaModelo] = field(default_factory=list)
+    contenido_cargado: list[int] = field(default_factory=list)
+    contenido_pendiente: list[int] = field(default_factory=list)
+
+@dataclass
+class CriptaResumen:
+    id: str
+    nombre: str
+    salas: int
+    dificultad: int
+
+@dataclass
+class DetallesCripta:
+    id: str
+    version: str
+    salas_total: int
+    sala_inicial: int
+    sala_salida: int
+    llave_salida: str
+    inventario_max: int
+    presupuesto_solicitudes: int
+    jugador_vida_max: int
+    jugador_ataque: int
+    jugador_defensa: int
+    jugador_velocidad: int
+
+
+@dataclass
+class ContenidoSala:
+    enemigos: list[EnemigoPartida] = field(default_factory=list)
+    objetos: list[ObjetoSuelo] = field(default_factory=list)
+    trampas: list[TrampaPartida] = field(default_factory=list)
