@@ -1,11 +1,10 @@
 # Prueba de AgendaEventos utilizando un Jugador como actor.
 # Por ahora esta asi con lo basico despues se puede hacer mejor
 
-from cripta.modelo.jugador import Jugador
-from cripta.estructuras.agenda_eventos import AgendaEventos
+from cripta.modelo.Jugador import Jugador
+from estructuras.Agenda_Eventos import HeapAgendaEventos
 
-
-agenda = AgendaEventos()
+agenda = HeapAgendaEventos()
 
 jugador = Jugador(
     "jugador",

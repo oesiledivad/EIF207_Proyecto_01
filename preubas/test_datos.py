@@ -2,8 +2,8 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src", "cripta"))
 
-from adaptadores.Network_Adapter import NetworkAdapter
-from dto.FactoryDto_Ficha import ficha_desde_dict
+from src.cripta.adaptadores.Network_Adapter import NetworkAdapter
+from src.cripta.dto.FactoryDto_Ficha import ficha_desde_dict
 
 
 def main():

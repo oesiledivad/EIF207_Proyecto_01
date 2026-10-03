@@ -1,0 +1,8 @@
+{
+    "python.analysis.extraPaths": [
+        "./src/cripta"
+    ],
+    "python.autoComplete.extraPaths": [
+        "./src/cripta"
+    ]
+}

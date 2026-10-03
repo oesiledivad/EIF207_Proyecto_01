@@ -1,16 +1,16 @@
-from src.cripta.dto import Crypta_Details
-from src.cripta.modelo.jugador import Jugador
+from dto.Crypta_Details import Crypta_Details
+from modelo.Jugador import Jugador
 
-@staticmethod
-def ensamblarJugador(datos: Crypta_Details) -> Jugador:
+
+def ensamblar_jugador(detalles: Crypta_Details) -> Jugador:
     return Jugador(
         identificador="jugador",
-        vida=datos.jugador.vida_max,
-        vida_max=datos.jugador.vida_max,
-        ataque=datos.jugador.ataque,
-        defensa=datos.jugador.defensa,
-        velocidad=datos.jugador.velocidad,
-        sala=datos.room_start,
+        vida=detalles.jugador.vida_max,
+        vida_max=detalles.jugador.vida_max,
+        ataque=detalles.jugador.ataque,
+        defensa=detalles.jugador.defensa,
+        velocidad=detalles.jugador.velocidad,
+        sala=detalles.sala_inicial,              # antes: room_start
         tiempo_siguiente=None,
-        inventario_max=datos.inventario,
+        inventario_max=detalles.inventario_max,  # antes: inventario
     )
