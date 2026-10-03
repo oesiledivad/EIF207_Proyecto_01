@@ -1,8 +1,10 @@
-"""Punto de entrada del proyecto"""
-from cripta.vista.consola import mostrar_bienvenida
+"""Punto de entrada del paquete.
 
-def main() -> None:
-    mostrar_bienvenida()
+Solo delega en el bootstrap. Nada de lógica aquí.
+"""
+
+from cripta.bootstrap import main
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

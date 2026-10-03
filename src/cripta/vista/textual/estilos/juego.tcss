@@ -1,0 +1,57 @@
+/*
+   juego.tcss — Pantalla de juego (layout base)
+    */
+
+JuegoScreen {
+    background: #0d0b0a;
+}
+
+#juego-root {
+    height: 100%;
+    padding: 0 1;
+}
+
+#barra-superior {
+    height: 1;
+    background: #15110f;
+    color: #e8a33d;
+    text-style: bold;
+    padding: 0 1;
+    margin-bottom: 1;
+}
+
+#juego-columnas {
+    height: 1fr;
+}
+
+.panel-col {
+    height: 100%;
+    background: #15110f;
+    border: round #2a221d;
+    padding: 1;
+    margin: 0 1;
+}
+
+.section-title {
+    color: #e8a33d;
+    text-style: bold;
+    margin-bottom: 1;
+}
+
+#col-izq { width: 25%; }
+#col-centro { width: 45%; }
+#col-der { width: 30%; }
+
+#mini-mapa {
+    height: auto;
+    margin-bottom: 1;
+}
+
+#acciones-juego {
+    height: 3;
+    margin-top: 1;
+}
+
+#acciones-juego Button {
+    margin: 0 1;
+}
