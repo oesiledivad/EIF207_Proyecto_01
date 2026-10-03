@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 from .jugadorDto import Jugador
 
+
 @dataclass
 class Crypta_Details:
     id: str
     version: str
     salas_total: int
     paginas: int
+    salas_por_pagina: int          
     sala_inicial: int
     sala_salida: int
     llave_salida: str
