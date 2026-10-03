@@ -1,17 +1,9 @@
-class Salida:
-    """Una salida dentro de una sala."""
-    def __init__(self, sala_destino: int, cerrada: bool = False,
-                 llave: str = None, cierre_automatico: int = None) -> None:
-        self.sala_destino = sala_destino
-        self.cerrada = cerrada
-        self.llave = llave
-        self.cierre_automatico = cierre_automatico
+from dataclasses import dataclass
 
-    @staticmethod
-    def desde_dict(d: dict) -> "Salida":
-        return Salida(
-            sala_destino=d["sala"],
-            cerrada=d.get("cerrada", False),
-            llave=d.get("llave"),
-            cierre_automatico=d.get("cierre_automatico"),
-        )
+@dataclass
+class Salida:
+    """Una salida dirigida de una sala (estado inicial, no vivo)."""
+    sala: int
+    cerrada: bool | None = None
+    llave: str | None = None
+    cierre_automatico: int | None = None

@@ -1,4 +1,3 @@
-from modelo.items.Item import Item
 from modelo.items.Item_Arma import ItemArma
 from modelo.items.Item_Armadura import ItemArmadura
 from modelo.items.Item_Pocion import ItemPocion
@@ -22,7 +21,8 @@ def ensamblar_item(ficha):
     if isinstance(ficha, FichaArmadura):
         return ItemArmadura(ficha.id, ficha.nombre, ficha.peso, ficha.valor, ficha.defensa_bonus)
     if isinstance(ficha, FichaPocion):
-        return ItemPocion(ficha.id, ficha.nombre, ficha.peso, ficha.valor, ficha.cura, ficha.modificador_velocidad, ficha.duracion)
+        return ItemPocion(ficha.id, ficha.nombre, ficha.peso, ficha.valor,
+                          ficha.cura, ficha.modificador_velocidad, ficha.duracion)
     if isinstance(ficha, FichaAntidoto):
         return ItemAntidoto(ficha.id, ficha.nombre, ficha.peso, ficha.valor)
     if isinstance(ficha, FichaLlave):
