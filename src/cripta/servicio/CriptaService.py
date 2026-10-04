@@ -178,4 +178,4 @@ class CriptaService:
         return self._data_source.requests_made
 
     def es_offline(self) -> bool:
-        return self._data_source.__class__.__name__ == "OfflineAdapter"
+        return self._data_source.__class__.__name__ == "AdaptadorOffline"
