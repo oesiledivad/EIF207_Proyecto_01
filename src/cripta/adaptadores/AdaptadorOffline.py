@@ -5,7 +5,7 @@ from .Crypt_Data_Source import CryptDataSource
 from pathlib import Path
 import json
 MAX_POR_LOTE=10
-class Adaptador_Offline(CryptDataSource):
+class AdaptadorOffline(CryptDataSource):
     """Adaptador que no hace llamadas de red, sino que guarda las respuestas en archivos locales."""
     def __init__(self, carpeta):
         self.carpeta = Path(carpeta)

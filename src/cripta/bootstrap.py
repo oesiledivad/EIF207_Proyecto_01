@@ -14,7 +14,7 @@ import sys
 
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource
 from cripta.adaptadores.Network_Adapter import NetworkAdapter
-from cripta.adaptadores.Offline_Adapter import OfflineAdapter
+from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
 from cripta.controlador.Aplicacion import Aplicacion
 
 
@@ -49,7 +49,7 @@ def _construir_data_source(args: argparse.Namespace) -> CryptDataSource:
         Instancia de CryptDataSource (OfflineAdapter o NetworkAdapter).
     """
     if args.offline:
-        return OfflineAdapter()
+        return AdaptadorOffline("datos_prueba")
     return NetworkAdapter()
 
 

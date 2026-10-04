@@ -4,9 +4,9 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src" / "cripta"))
 
-from adaptadores.Offline_Adapter import Adaptador_Offline
+from adaptadores.AdaptadorOffline import AdaptadorOffline
 
-fuente = Adaptador_Offline(RAIZ / "datos_prueba")
+fuente = AdaptadorOffline(RAIZ / "datos_prueba")
 
 datos = fuente.crypta_list()
 cid = datos["criptas"][0]["id"]
