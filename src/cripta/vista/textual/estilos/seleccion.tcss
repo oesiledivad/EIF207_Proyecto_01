@@ -1,0 +1,98 @@
+/*
+   seleccion.tcss — Pantalla de selección de cripta
+   */
+
+SeleccionCriptaScreen {
+    background: #0d0b0a;
+    align: center middle;
+}
+
+#seleccion-root {
+    width: 110;
+    height: auto;
+    padding: 1 2;
+}
+
+#titulo {
+    color: #e8a33d;
+    text-style: bold;
+    content-align: center middle;
+    height: 3;
+}
+
+#subtitulo {
+    color: #8a7f72;
+    content-align: center middle;
+    height: 1;
+    margin-bottom: 2;
+}
+
+#seleccion-cuerpo {
+    height: 20;
+    margin-bottom: 1;
+}
+
+#seleccion-izq {
+    width: 55%;
+    margin-right: 1;
+}
+
+#seleccion-der {
+    width: 45%;
+    background: #15110f;
+    border: round #2a221d;
+    padding: 1 2;
+}
+
+#tabla-criptas {
+    height: 100%;
+    border: round #2a221d;
+}
+
+#tabla-criptas:focus {
+    border: round #e8a33d;
+}
+
+#previsualizacion {
+    color: #d6cfc4;
+}
+
+#formulario {
+    background: #15110f;
+    border: round #2a221d;
+    padding: 1 2;
+    height: auto;
+    margin-bottom: 1;
+}
+
+.form-row {
+    height: 3;
+}
+
+.form-label {
+    width: 22;
+    content-align: left middle;
+    color: #c9b8a0;
+    text-style: bold;
+}
+
+.form-input {
+    width: 1fr;
+}
+
+#error {
+    height: 1;
+    color: #a83a3a;
+    text-style: bold;
+    content-align: center middle;
+    margin-bottom: 1;
+}
+
+#acciones {
+    height: 3;
+    align: center middle;
+}
+
+#acciones Button {
+    margin: 0 2;
+}
