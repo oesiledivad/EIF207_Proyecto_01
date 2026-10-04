@@ -73,8 +73,6 @@ crudo_contenido = {
                      "objetos": ["itm_pocion"]},
     ]
 }
-
-
 from dto.List_rooms import List_rooms
 from dto.contenidoDto import ContenidoRespuesta
 from ensamblador.ensamblar_sala import ensamblar_sala, poblar_sala
@@ -108,15 +106,3 @@ print("9. ensamblar_cripta OK:", cripta.resumen())
 
 #TAREA, HACERLO CON EL ADAPTADOR DE RED
 
-"""
-return Cripta(
-        id=detalles.id,
-        version=detalles.version,
-        sala_inicial=detalles.sala_inicial,
-        sala_salida=detalles.sala_salida,
-        llave_salida=detalles.llave_salida,
-        presupuesto_solicitudes=detalles.presupuesto_solicitudes,
-        inventario_max=detalles.inventario_max,
-        salas=salas,
-    )
-"""
