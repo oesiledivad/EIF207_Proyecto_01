@@ -10,9 +10,7 @@ fuente = Adaptador_Offline(RAIZ / "datos_prueba")
 
 datos = fuente.crypta_list()
 cid = datos["criptas"][0]["id"]
-
 fuente.crypta_details(cid)
-
 datos = fuente.list_rooms(cid, 1)
 salas = [s["id"] for s in datos["salas"]][:10]
 
