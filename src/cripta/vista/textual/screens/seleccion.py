@@ -8,6 +8,7 @@ from textual.screen import Screen
 from textual.widgets import Button, DataTable, Footer, Input, Label, Static
 
 from cripta.controlador.Aplicacion import Aplicacion, CriptaResumen
+from cripta.vista.textual.modales.confirmar import ConfirmarModal
 
 
 def _estrellas(nivel: int) -> str:
@@ -18,10 +19,17 @@ def _estrellas(nivel: int) -> str:
 class SeleccionCriptaScreen(Screen):
     BINDINGS = [("escape", "salir", "Salir")]
 
-    def __init__(self, controlador: Aplicacion) -> None:
+    def __init__(
+        self,
+        controlador: Aplicacion,
+        criptas: list[CriptaResumen] | None = None,
+        error: str = "",
+    ) -> None:
         super().__init__()
         self._controlador = controlador
-        self._criptas: list[CriptaResumen] = []
+        self._criptas: list[CriptaResumen] = criptas if criptas is not None else []
+        self._error_inicial = error
+        self._cargado = criptas is not None
 
     def compose(self) -> ComposeResult:
         with Vertical(id="seleccion-root"):
@@ -69,13 +77,17 @@ class SeleccionCriptaScreen(Screen):
         tabla.cursor_type = "row"
         tabla.zebra_stripes = True
 
-        try:
-            self._criptas = self._controlador.listar_criptas()
-        except RuntimeError as e:
-            self.query_one("#error", Static).update(str(e))
-            self._criptas = []
+        # Si las criptas no vinieron precargadas, se piden aquí.
+        if not self._cargado:
+            try:
+                self._criptas = self._controlador.listar_criptas()
+            except RuntimeError as e:
+                self._error_inicial = str(e)
+                self._criptas = []
 
-        # Acceso mediante atributos de CriptaResumen (sin diccionarios)
+        if self._error_inicial:
+            self.query_one("#error", Static).update(self._error_inicial)
+
         for c in self._criptas:
             tabla.add_row(
                 c.id,
@@ -100,13 +112,23 @@ class SeleccionCriptaScreen(Screen):
         if event.button.id == "btn-iniciar":
             self._intentar_iniciar()
         elif event.button.id == "btn-salir":
+            self.app.push_screen(
+                ConfirmarModal("¿Desea salir del juego?"),
+                self._al_confirmar_salir,
+            )
+
+    def _al_confirmar_salir(self, confirmado: bool) -> None:
+        if confirmado:
             self.app.exit()
 
     def on_data_table_row_selected(self, event: DataTable.RowSelected) -> None:
         self._intentar_iniciar()
 
     def action_salir(self) -> None:
-        self.app.exit()
+        self.app.push_screen(
+            ConfirmarModal("¿Desea salir del juego?"),
+            self._al_confirmar_salir,
+        )
 
     def _actualizar_previsualizacion(self) -> None:
         tabla = self.query_one("#tabla-criptas", DataTable)
@@ -123,13 +145,13 @@ class SeleccionCriptaScreen(Screen):
             return
 
         texto = (
-            f"ID:        {d.id}\n"
-            f"Versión:   {d.version}\n"
-            f"Salas:     {d.salas_total}\n"
-            f"Inicial:   {d.sala_inicial}\n"
-            f"Salida:    {d.sala_salida}\n"
-            f"Llave:     {d.llave_salida}\n"
-            f"Inventario:{d.inventario_max}\n"
+            f"ID:         {d.id}\n"
+            f"Versión:    {d.version}\n"
+            f"Salas:      {d.salas_total}\n"
+            f"Inicial:    {d.sala_inicial}\n"
+            f"Salida:     {d.sala_salida}\n"
+            f"Llave:      {d.llave_salida}\n"
+            f"Inventario: {d.inventario_max}\n"
             f"Presupuesto:{d.presupuesto_solicitudes}\n"
             f"\n"
             f"JUGADOR\n"
@@ -152,12 +174,13 @@ class SeleccionCriptaScreen(Screen):
             error.update("Selecciona una cripta.")
             return
 
-        # Acceso por atributo .id
         cripta_id = self._criptas[tabla.cursor_row].id
 
         from cripta.vista.textual.screens.cargando import CargandoScreen
 
-        self.app.push_screen(CargandoScreen(mensaje="Cargando cripta"))
+        self.app.push_screen(
+            CargandoScreen(mensaje="Cargando cripta", modo="modal")
+        )
 
         def _trabajo() -> None:
             try:
@@ -177,7 +200,9 @@ class SeleccionCriptaScreen(Screen):
         self.app.pop_screen()
 
         if error_msg is not None:
-            self.query_one("#error", Static).update(f"Error de conexión: {error_msg}")
+            self.query_one("#error", Static).update(
+                f"Error de conexión: {error_msg}"
+            )
             return
 
         if not resultado.ok:

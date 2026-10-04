@@ -15,6 +15,7 @@ from cripta.dto.Partida_dto import (
     ResultadoInicio,
     ContenidoSala,
 )
+from cripta.dto.ResultadoAccion import ResultadoAccion
 from cripta.estructuras.Bitacora import Bitacora, Mensaje
 from cripta.servicio.CriptaService import CriptaService
 
@@ -106,7 +107,6 @@ class Aplicacion:
         )
         self._gestor.refrescar_sala_actual()
 
-        # Corrección: Uso del DTO ContenidoSala en lugar de desempaquetado de tuplas
         contenido: ContenidoSala = self._cripta_service.cargar_contenido_sala(
             cripta_id, detalles.sala_inicial
         )
@@ -130,45 +130,49 @@ class Aplicacion:
 
     #  Inventario (delegado a InventarioController)
 
-    def recoger(self, instancia_id: str) -> dict:
+    def recoger(self, instancia_id: str) -> ResultadoAccion:
         return self._inventario.recoger(instancia_id)
 
-    def soltar(self, instancia_id: str) -> dict:
+    def soltar(self, instancia_id: str) -> ResultadoAccion:
         return self._inventario.soltar(instancia_id)
 
-    def equipar(self, instancia_id: str) -> dict:
+    def equipar(self, instancia_id: str) -> ResultadoAccion:
         return self._inventario.equipar(instancia_id)
 
-    def usar(self, instancia_id: str) -> dict:
+    def usar(self, instancia_id: str) -> ResultadoAccion:
         return self._inventario.usar(instancia_id)
 
-    def usar_pergamino(self) -> dict:
+    def usar_pergamino(self) -> ResultadoAccion:
         return self._inventario.usar_pergamino()
 
-    def siguiente_item(self) -> dict:
+    def siguiente_item(self) -> ResultadoAccion:
         return self._inventario.siguiente()
 
-    def anterior_item(self) -> dict:
+    def anterior_item(self) -> ResultadoAccion:
         return self._inventario.anterior()
 
     def vista_inventario(self, criterio: str) -> list:
         return self._inventario.vista_ordenada(criterio)
 
+    def inventario(self):
+        """Devuelve el inventario activo o None."""
+        return self._gestor.inventario
+
     #  Acciones de partida
 
-    def mover(self, direccion: str) -> dict:
+    def mover(self, direccion: str) -> ResultadoAccion:
         self._bitacora.append(
             Mensaje("sistema", f"Mover {direccion} aún no implementado.")
         )
-        return {"ok": False, "motivo": "Movimiento aún no implementado."}
+        return ResultadoAccion.fallo("Movimiento aún no implementado.")
 
-    def atacar(self, instancia_id: str) -> dict:
+    def atacar(self, instancia_id: str) -> ResultadoAccion:
         self._bitacora.append(Mensaje("sistema", "Ataque aún no implementado."))
-        return {"ok": False, "motivo": "Ataque aún no implementado."}
+        return ResultadoAccion.fallo("Ataque aún no implementado.")
 
-    def esperar(self) -> dict:
+    def esperar(self) -> ResultadoAccion:
         self._bitacora.append(Mensaje("sistema", "Espera aún no implementada."))
-        return {"ok": False, "motivo": "Espera aún no implementada."}
+        return ResultadoAccion.fallo("Espera aún no implementada.")
 
     def terminar(self) -> None:
         self._gestor.estado.activa = False

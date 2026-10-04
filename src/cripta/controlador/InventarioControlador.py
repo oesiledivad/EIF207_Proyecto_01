@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from cripta.controlador.GestorPartida import GestorPartida
 from cripta.dto.Partida_dto import ObjetoSuelo
+from cripta.dto.ResultadoAccion import ResultadoAccion
 from cripta.estructuras.Bitacora import Bitacora, Mensaje
 from cripta.estructuras.Inventario import Inventario, ItemInventario
 
@@ -27,17 +28,17 @@ class InventarioControlador:
 
     #  Acciones
 
-    def recoger(self, instancia_id: str) -> dict:
+    def recoger(self, instancia_id: str) -> ResultadoAccion:
         inv = self._gestor.inventario
         if inv is None:
-            return {"ok": False, "motivo": "Inventario no inicializado."}
+            return ResultadoAccion.fallo("Inventario no inicializado.")
         if inv.esta_lleno():
             self._bitacora.append(Mensaje("sistema", "Inventario lleno."))
-            return {"ok": False, "motivo": "Inventario lleno."}
+            return ResultadoAccion.fallo("Inventario lleno.")
 
         obj = self._buscar_en_suelo(instancia_id)
         if obj is None:
-            return {"ok": False, "motivo": "Ese objeto no está en el suelo."}
+            return ResultadoAccion.fallo("Ese objeto no está en el suelo.")
 
         item = ItemInventario(
             instancia_id=obj.id,
@@ -55,20 +56,20 @@ class InventarioControlador:
         inv.agregar(item)
         self._gestor.estado.objetos_suelo.remove(obj)
         self._bitacora.append(Mensaje("jugador", f"Recogiste {obj.nombre}."))
-        return {"ok": True}
+        return ResultadoAccion.exito()
 
-    def soltar(self, instancia_id: str) -> dict:
+    def soltar(self, instancia_id: str) -> ResultadoAccion:
         inv = self._gestor.inventario
         if inv is None:
-            return {"ok": False, "motivo": "Inventario no inicializado."}
+            return ResultadoAccion.fallo("Inventario no inicializado.")
 
         posicion = inv.posicion_de(instancia_id)
         if posicion is None:
-            return {"ok": False, "motivo": "No tienes ese objeto."}
+            return ResultadoAccion.fallo("No tienes ese objeto.")
 
         item = inv.buscar_por_id(instancia_id)
         if item is None:
-            return {"ok": False, "motivo": "No tienes ese objeto."}
+            return ResultadoAccion.fallo("No tienes ese objeto.")
 
         self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
         self._gestor.registrar_cambio("item_suelo_agregado", item.instancia_id)
@@ -78,18 +79,18 @@ class InventarioControlador:
             ObjetoSuelo(id=item.instancia_id, nombre=item.nombre)
         )
         self._bitacora.append(Mensaje("jugador", f"Soltaste {item.nombre}."))
-        return {"ok": True}
+        return ResultadoAccion.exito()
 
-    def equipar(self, instancia_id: str) -> dict:
+    def equipar(self, instancia_id: str) -> ResultadoAccion:
         inv = self._gestor.inventario
         if inv is None:
-            return {"ok": False, "motivo": "Inventario no inicializado."}
+            return ResultadoAccion.fallo("Inventario no inicializado.")
 
         item = inv.buscar_por_id(instancia_id)
         if item is None:
-            return {"ok": False, "motivo": "No tienes ese objeto."}
+            return ResultadoAccion.fallo("No tienes ese objeto.")
         if item.clase not in ("arma", "armadura"):
-            return {"ok": False, "motivo": "Ese objeto no es equipable."}
+            return ResultadoAccion.fallo("Ese objeto no es equipable.")
 
         previos: list = []
         for i in inv.items():
@@ -100,25 +101,25 @@ class InventarioControlador:
         inv.desequipar_clase(item.clase)
         inv.equipar_por_id(instancia_id)
         self._bitacora.append(Mensaje("jugador", f"Equipaste {item.nombre}."))
-        return {"ok": True}
+        return ResultadoAccion.exito()
 
-    def usar(self, instancia_id: str) -> dict:
+    def usar(self, instancia_id: str) -> ResultadoAccion:
         inv = self._gestor.inventario
         if inv is None:
-            return {"ok": False, "motivo": "Inventario no inicializado."}
+            return ResultadoAccion.fallo("Inventario no inicializado.")
 
         item = inv.buscar_por_id(instancia_id)
         if item is None:
-            return {"ok": False, "motivo": "No tienes ese objeto."}
+            return ResultadoAccion.fallo("No tienes ese objeto.")
 
         if item.clase == "llave":
-            return {"ok": False, "motivo": "Las llaves no se consumen."}
+            return ResultadoAccion.fallo("Las llaves no se consumen.")
 
         # El efecto concreto lo conecta P2 (poción, antídoto, antorcha).
         self._bitacora.append(Mensaje("jugador", f"Usaste {item.nombre}."))
-        return {"ok": True}
+        return ResultadoAccion.exito()
 
-    def usar_pergamino(self) -> dict:
+    def usar_pergamino(self) -> ResultadoAccion:
         """Usa un pergamino de retroceso.
 
         No consume tiempo virtual ni se registra como acción del jugador
@@ -126,40 +127,40 @@ class InventarioControlador:
         """
         inv = self._gestor.inventario
         if inv is None:
-            return {"ok": False, "motivo": "Inventario no inicializado."}
+            return ResultadoAccion.fallo("Inventario no inicializado.")
 
         pergamino = self._buscar_clase(inv, "pergamino")
         if pergamino is None:
-            return {"ok": False, "motivo": "No tienes pergaminos."}
+            return ResultadoAccion.fallo("No tienes pergaminos.")
 
         exito = self._gestor.deshacer()
         if not exito:
-            return {"ok": False, "motivo": "No hay nada que deshacer."}
+            return ResultadoAccion.fallo("No hay nada que deshacer.")
 
         # El consumo del pergamino queda fuera del alcance de la reversión.
         inv.soltar_por_id(pergamino.instancia_id)
         self._bitacora.append(
             Mensaje("efecto", "Usaste un pergamino de retroceso.")
         )
-        return {"ok": True}
+        return ResultadoAccion.exito()
 
     #  Recorrido
 
-    def siguiente(self) -> dict:
+    def siguiente(self) -> ResultadoAccion:
         if self._gestor.inventario is None:
-            return {"ok": False, "motivo": "Inventario no inicializado."}
+            return ResultadoAccion.fallo("Inventario no inicializado.")
         item = self._gestor.inventario.siguiente()
         if item is None:
-            return {"ok": False, "motivo": "Inventario vacío."}
-        return {"ok": True, "item": item}
+            return ResultadoAccion.fallo("Inventario vacío.")
+        return ResultadoAccion.exito(datos=item)
 
-    def anterior(self) -> dict:
+    def anterior(self) -> ResultadoAccion:
         if self._gestor.inventario is None:
-            return {"ok": False, "motivo": "Inventario no inicializado."}
+            return ResultadoAccion.fallo("Inventario no inicializado.")
         item = self._gestor.inventario.anterior()
         if item is None:
-            return {"ok": False, "motivo": "Inventario vacío."}
-        return {"ok": True, "item": item}
+            return ResultadoAccion.fallo("Inventario vacío.")
+        return ResultadoAccion.exito(datos=item)
 
     #  Vistas
 

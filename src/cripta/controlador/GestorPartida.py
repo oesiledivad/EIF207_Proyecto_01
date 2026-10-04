@@ -103,8 +103,7 @@ class GestorPartida:
             self._revertir_suelo_agregado(datos)
         elif etiqueta == "item_suelo_quitado":
             self._revertir_suelo_quitado(datos)
-        # Otras etiquetas (vida, reloj, rastro, puertas, efectos, eventos)
-        # las añaden P1 y P2 en sus controladores.
+        # TODO: Otras etiquetas (vida, reloj, rastro, puertas, efectos, eventos)
 
     #  Reversiones de inventario
 
