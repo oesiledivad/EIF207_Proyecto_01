@@ -1,4 +1,4 @@
-from modelo.Cripta import Cripta
+from cripta.modelo.Cripta import Cripta
 from ensamblador.ensamblar_sala import ensamblar_sala
 
 

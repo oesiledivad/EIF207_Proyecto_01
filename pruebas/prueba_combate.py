@@ -1,6 +1,6 @@
 from cripta.modelo.Jugador import Jugador
 from cripta.modelo.Enemigo import Enemigo
-from cripta.controlador.Combate import calcular_danio, aplicar_danio
+from cripta.modelo.Combate import calcular_danio, aplicar_danio
 
 jugador = Jugador(
     "jugador",

@@ -26,6 +26,10 @@ class EnemigoPartida:
     vida: int
     ataque: int
     defensa: int
+    vida_max: int = 0
+    velocidad: int = 100
+    comportamiento: str = "errante" # este valor es de respaldo, nunca se usa a menos que creemos un
+    # EnemigoPartida sin pasar comportamiento, errante es el mas neutral
 
 @dataclass
 class ObjetoSuelo:

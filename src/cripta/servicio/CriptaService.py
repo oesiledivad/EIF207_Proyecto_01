@@ -11,10 +11,33 @@ from cripta.dto.Partida_dto import (
     TrampaPartida,
     ContenidoSala
 )
+from cripta.estructuras.Cache_Fichas import Cache_Fichas
+from cripta.dto.FactoryDto_Ficha import parsear_ficha
 
 class CriptaService:
-    def __init__(self, data_source: CryptDataSource) -> None:
+    def __init__(self, data_source: CryptDataSource, cache_fichas: Cache_Fichas | None = None) -> None:
         self._data_source = data_source
+        self._cache_fichas = cache_fichas if cache_fichas is not None else Cache_Fichas()
+
+    def resolver_fichas(self, ids: list[str]) -> dict[str, object]:
+        """Resuelve fichas de catálogo usando caché; solo pide a la red lo que falta (§4.3/§4.4)."""
+        resultado: dict[str, object] = {}
+        faltantes: list[str] = []
+        for id_ in ids:
+            ficha = self._cache_fichas.obtener(id_)
+            if ficha is not None:
+                resultado[id_] = ficha
+            else:
+                faltantes.append(id_)
+
+        for i in range(0, len(faltantes), 10):  # lotes de hasta 10, §3.4
+            lote = faltantes[i:i + 10]
+            resp = self._data_source.catalog(lote)
+            for bruto in resp.get("entidades", []):
+                ficha = parsear_ficha(bruto)
+                self._cache_fichas.insertar(ficha.id, ficha)
+                resultado[ficha.id] = ficha
+        return resultado
 
     def listar_criptas(self) -> list[CriptaResumen]:
         try:
@@ -122,22 +145,32 @@ class CriptaService:
         except NotImplementedError:
             return ContenidoSala()
 
-        contenido_bruto = resp.get("contenido", [])
-        for entrada in contenido_bruto:
-            if int(entrada.get("sala", 0)) == sala_id:
-                enemigos = [
-                    EnemigoPartida(
-                        id=str(e.get("id", "")), nombre=str(e.get("nombre", "")),
-                        vida=int(e.get("vida", 0)), ataque=int(e.get("ataque", 0)), defensa=int(e.get("defensa", 0))
-                    ) for e in entrada.get("enemigos", [])
-                ]
-                objetos = [ObjetoSuelo(id=str(o), nombre=str(o)) for o in entrada.get("objetos", [])]
-                trampas = [
-                    TrampaPartida(id=str(t.get("id", "")), tipo=str(t.get("tipo", "")),
-                                  activa=bool(t.get("activa", True)))
-                    for t in entrada.get("trampas", [])
-                ]
-                return ContenidoSala(enemigos=enemigos, objetos=objetos, trampas=trampas)
+        for entrada in resp.get("contenido", []):
+            if int(entrada.get("sala", 0)) != sala_id:
+                continue
+
+            brutos = entrada.get("enemigos", [])
+            fichas = self.resolver_fichas([e.get("tipo") for e in brutos])
+
+            enemigos = []
+            for e in brutos:
+                ficha = fichas.get(e.get("tipo"))
+                enemigos.append(EnemigoPartida(
+                    id=str(e.get("instancia", "")),
+                    nombre=ficha.nombre if ficha else str(e.get("tipo", "")),
+                    vida=int(e.get("vida", ficha.vida_max if ficha else 0)),
+                    ataque=ficha.ataque if ficha else 0,
+                    defensa=ficha.defensa if ficha else 0,
+                    vida_max=ficha.vida_max if ficha else 0,
+                    velocidad=ficha.velocidad if ficha else 100,
+                    comportamiento=ficha.comportamiento if ficha else "errante",
+                ))
+            objetos = [ObjetoSuelo(id=str(o), nombre=str(o)) for o in entrada.get("objetos", [])]
+            trampas = [
+                TrampaPartida(id=str(t.get("instancia", "")), tipo=str(t.get("tipo", "")), activa=True)
+                for t in entrada.get("trampas", [])
+            ]
+            return ContenidoSala(enemigos=enemigos, objetos=objetos, trampas=trampas)
         return ContenidoSala()
 
     @property
