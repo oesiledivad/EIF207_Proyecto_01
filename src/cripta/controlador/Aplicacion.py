@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import random
 
-from types import SimpleNamespace
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource
 from cripta.controlador.GestorPartida import GestorPartida
 from cripta.controlador.InventarioControlador import InventarioControlador
@@ -29,9 +28,11 @@ from cripta.modelo.enemigos.Errante import Errante
 from cripta.modelo.enemigos.Rastreador import Rastreador
 from cripta.util.Costo_Acciones import COSTOS, calcular_intervalo
 
-
-_CLASES_ENEMIGO = {"guardián": Guardian, "errante": Errante, "rastreador": Rastreador}
-_DIRECCIONES_VALIDAS = {"N", "S", "E", "O"}
+# esto me arregla el problema de no poder utilizar dict ni sorted
+from cripta.estructuras.Indice_Salas import IndiceSalas
+from cripta.estructuras.Salidas import Salidas
+from cripta.estructuras.Ordenamientos import ordenar
+from cripta.modelo.Trampa import TrampaJuego
 
 def _generar_semilla() -> int:
     return random.SystemRandom().randint(1, 2**31 - 1)
@@ -50,7 +51,7 @@ class Aplicacion:
         self._inventario = InventarioControlador(self._gestor, self._bitacora)
         self._simulacion: Simulacion | None = None
         self._jugador: Jugador | None = None
-        self._salas: dict[int, SalaJuego] = {}
+        self._salas: IndiceSalas = IndiceSalas()  # antes: dict[int, SalaJuego]
 
     #  Selección
 
@@ -142,17 +143,16 @@ class Aplicacion:
         evento_inicial = self._simulacion.agenda.insertar(0, self._jugador, "accion_actor")
         self._jugador._proximo_evento = evento_inicial
 
-        self._salas = {}
         self._construir_sala(detalles.sala_inicial)
         self._activar_sala(detalles.sala_inicial)
-        self._salas[detalles.sala_inicial].ultimo_tiempo_visita = 0
+        self._salas.obtener(detalles.sala_inicial).ultimo_tiempo_visita = 0
 
         return ResultadoInicio(ok=True, semilla_efectiva=semilla_efectiva)
 
     def _construir_sala(self, sala_id: int) -> SalaJuego:
-        """Ensambla esqueleto+contenido de una sala, sin activar enemigos (§2.4)."""
-        if sala_id in self._salas:
-            return self._salas[sala_id]
+        assert self._simulacion is not None
+        if self._salas.contiene(sala_id):
+            return self._salas.obtener(sala_id)
 
         sala_modelo = self._gestor.buscar_sala_conocida(sala_id)
         if sala_modelo is None:
@@ -160,28 +160,45 @@ class Aplicacion:
 
         contenido = self._cripta_service.cargar_contenido_sala(self._gestor.estado.cripta_id, sala_id)
         enemigos = [self._crear_enemigo(dto, sala_id) for dto in contenido.enemigos]
-        salidas = {
-            v.direccion: SimpleNamespace(sala_destino=v.sala_id, cerrada=v.cerrada)
-            for v in sala_modelo.salidas
-        }
+
+        self._cripta_service.asegurar_fichas([t.tipo for t in contenido.trampas])
+        trampas = []
+        for t in contenido.trampas:
+            ficha = self._cripta_service.obtener_ficha(t.tipo)
+            trampas.append(TrampaJuego(
+                instancia=t.id, armada=t.activa,
+                dano=ficha.daño if ficha else 0,
+                rearme=ficha.rearme if ficha else 300,
+            ))
+
+        salidas = Salidas()
+        for v in sala_modelo.salidas:
+            salidas.agregar(v.direccion, v.sala_id, v.cerrada)
+
         sala_juego = SalaJuego(
             id=sala_id, nombre=sala_modelo.nombre, salidas=salidas,
-            enemigos=enemigos, objetos=contenido.objetos, trampas=contenido.trampas,
+            enemigos=enemigos, objetos=contenido.objetos, trampas=trampas,
         )
-        self._salas[sala_id] = sala_juego
+        self._salas.insertar(sala_id, sala_juego)
         return sala_juego
 
     def _activar_sala(self, sala_id: int) -> None:
-        """§2.4 — activa (programa 1ra acción) los enemigos de una sala ya construida."""
-        sala = self._salas[sala_id]
-        for enemigo in sorted(sala.enemigos, key=lambda e: e.identificador):
+        sala = self._salas.obtener(sala_id)
+        enemigos_ordenados = ordenar(sala.enemigos, key=lambda e: e.identificador)
+        for enemigo in enemigos_ordenados:
             if enemigo._proximo_evento is None:
                 self._activar_enemigo(enemigo)
 
     def _crear_enemigo(self, dto: EnemigoPartida, sala_id: int):
-        clase = _CLASES_ENEMIGO.get(dto.comportamiento)
-        if clase is None:
-            raise ValueError(f"Comportamiento desconocido: {dto.comportamiento}")
+        match dto.comportamiento:
+            case "guardián":
+                clase = Guardian
+            case "errante":
+                clase = Errante
+            case "rastreador":
+                clase = Rastreador
+            case otro:
+                raise ValueError(f"Comportamiento desconocido: {otro}")
         return clase(
             identificador=dto.id, vida=dto.vida, vida_max=dto.vida_max or dto.vida,
             ataque=dto.ataque, defensa=dto.defensa, velocidad=dto.velocidad,
@@ -198,7 +215,7 @@ class Aplicacion:
         estado = self._gestor.estado
         estado.reloj_virtual = self._simulacion.reloj.tiempo_actual
         estado.jugador_vida = self._jugador.vida
-        sala_actual = self._salas.get(self._jugador.sala)
+        sala_actual = self._salas.obtener(self._jugador.sala)
         if sala_actual is not None:
             estado.enemigos = [
                 EnemigoPartida(
@@ -279,28 +296,43 @@ class Aplicacion:
             return ResultadoAccion.fallo("La partida no está activa.")
 
         direccion = direccion.strip().upper()
-        if direccion not in _DIRECCIONES_VALIDAS:
-            return ResultadoAccion.fallo(f"Dirección inválida: {direccion}")
-
-        sala_actual = self._salas.get(self._jugador.sala)
+        sala_actual = self._salas.obtener(self._jugador.sala)
         if sala_actual is None:
             return ResultadoAccion.fallo("Sala actual no cargada.")
 
-        salida = sala_actual.salidas.get(direccion)
+        salida = sala_actual.salidas.obtener(direccion)
         if salida is None:
             return ResultadoAccion.fallo("No hay salida en esa dirección.")
         if salida.cerrada:
             return ResultadoAccion.fallo("La puerta está cerrada.")
-
         destino_id = salida.sala_destino
         self._construir_sala(destino_id)  # §4.2: contenido debe estar listo antes de confirmar
         self._activar_sala(destino_id)  # §2.4: recién ahora se activan sus enemigos
 
         tiempo_actual = self._simulacion.reloj.tiempo_actual
         self._jugador.sala = destino_id
-        self._salas[destino_id].ultimo_tiempo_visita = tiempo_actual  # §2.9: rastro
+        destino_id = salida.sala_destino
+        self._construir_sala(destino_id)
+        self._activar_sala(destino_id)
+
+        tiempo_actual = self._simulacion.reloj.tiempo_actual
+        self._jugador.sala = destino_id
+        sala_destino = self._salas.obtener(destino_id)
+        sala_destino.ultimo_tiempo_visita = tiempo_actual
+
+        trampa_armada = next((t for t in sala_destino.trampas if t.armada), None)
+        if trampa_armada is not None:
+            from cripta.modelo.Efectos import disparar_trampa
+            texto = disparar_trampa(trampa_armada, self._jugador, tiempo_actual, self._simulacion.agenda)
+            self._bitacora.append(Mensaje("combate", texto))
+            if not esta_vivo(self._jugador):
+                self._gestor.estado.derrota = True
+                self._gestor.estado.activa = False
+                self._sincronizar_estado()
+                return ResultadoAccion.exito()
 
         intervalo = calcular_intervalo(COSTOS["mover"], self._jugador.velocidad)
+        # ... el resto de mover() sigue igual desde acá
         self._simulacion.agenda.reprogramar(self._jugador, tiempo_actual + intervalo, "accion_actor")
         self._bitacora.append(Mensaje("jugador", f"Te mueves al {direccion}."))
 
@@ -322,7 +354,7 @@ class Aplicacion:
         if self._simulacion is None or self._jugador is None:
             return ResultadoAccion.fallo("La partida no está activa.")
 
-        sala_actual = self._salas.get(self._jugador.sala)
+        sala_actual = self._salas.obtener(self._jugador.sala)
         if sala_actual is None:
             return ResultadoAccion.fallo("Sala actual no cargada.")
 

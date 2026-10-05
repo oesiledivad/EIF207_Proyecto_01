@@ -1,9 +1,11 @@
 # modelo/Sala.py
 
+from cripta.estructuras.Salidas import Salidas
+
 class SalaJuego:
     """Entidad de dominio: una sala jugable, con enemigos y objetos ya resueltos."""
 
-    def __init__(self, id: int, nombre: str, salidas: dict,
+    def __init__(self, id: int, nombre: str, salidas: Salidas,
                  enemigos: list, objetos: list, trampas: list) -> None:
         self.id = id
         self.nombre = nombre

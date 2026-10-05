@@ -1,5 +1,5 @@
 from cripta.modelo.Cripta import Cripta
-from ensamblador.ensamblar_sala import ensamblar_sala
+from cripta.ensamblador.ensamblar_sala import ensamblar_sala
 
 
 def ensamblar_cripta(detalles, paginas):

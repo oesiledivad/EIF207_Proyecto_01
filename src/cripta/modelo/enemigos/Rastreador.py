@@ -5,6 +5,7 @@ Hereda de la clase Enemigo y tiene atributos y métodos específicos para su com
 
 """
 from cripta.modelo.Enemigo import Enemigo
+from cripta.estructuras.Ordenamientos import ordenar
 
 class Rastreador(Enemigo):
     def __init__(self, identificador, vida, vida_max, ataque, defensa,
@@ -13,12 +14,12 @@ class Rastreador(Enemigo):
                           velocidad, sala, tiempo_siguiente, comportamiento)
 
     def _decidir_movimiento(self, salas, tiempo_actual, azar):
-        sala_actual = salas[self.sala]
+        sala_actual = salas.obtener(self.sala)
         candidatos = []
-        for salida in sala_actual.salidas.values():
-            if salida.cerrada:
+        for s in sala_actual.salidas:  # ya no .values()
+            if s.cerrada:
                 continue
-            vecina = salas[salida.sala_destino]
+            vecina = salas.obtener(s.sala_destino)
             if vecina.ultimo_tiempo_visita is None:
                 continue
             antiguedad = tiempo_actual - vecina.ultimo_tiempo_visita
@@ -28,6 +29,6 @@ class Rastreador(Enemigo):
         if not candidatos:
             return "esperar", None
 
-        candidatos.sort(key=lambda par: (-par[0], par[1]))  # más fresco, empate = menor id
+        candidatos = ordenar(candidatos, key=lambda par: (-par[0], par[1]))
         _, destino = candidatos[0]
         return "mover", destino

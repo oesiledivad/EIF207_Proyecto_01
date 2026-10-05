@@ -19,25 +19,20 @@ class CriptaService:
         self._data_source = data_source
         self._cache_fichas = cache_fichas if cache_fichas is not None else Cache_Fichas()
 
-    def resolver_fichas(self, ids: list[str]) -> dict[str, object]:
-        """Resuelve fichas de catálogo usando caché; solo pide a la red lo que falta (§4.3/§4.4)."""
-        resultado: dict[str, object] = {}
-        faltantes: list[str] = []
+    def asegurar_fichas(self, ids: list[str]) -> None:
+        """Garantiza que las fichas de `ids` estén en caché; pide a la red solo lo que falte."""
+        vistos: list[str] = []
         for id_ in ids:
-            ficha = self._cache_fichas.obtener(id_)
-            if ficha is not None:
-                resultado[id_] = ficha
-            else:
-                faltantes.append(id_)
+            if id_ not in vistos:
+                vistos.append(id_)
+        faltantes = [id_ for id_ in vistos if not self._cache_fichas.contiene(id_)]
 
-        for i in range(0, len(faltantes), 10):  # lotes de hasta 10, §3.4
+        for i in range(0, len(faltantes), 10):
             lote = faltantes[i:i + 10]
             resp = self._data_source.catalog(lote)
             for bruto in resp.get("entidades", []):
                 ficha = parsear_ficha(bruto)
                 self._cache_fichas.insertar(ficha.id, ficha)
-                resultado[ficha.id] = ficha
-        return resultado
 
     def listar_criptas(self) -> list[CriptaResumen]:
         try:
@@ -150,11 +145,11 @@ class CriptaService:
                 continue
 
             brutos = entrada.get("enemigos", [])
-            fichas = self.resolver_fichas([e.get("tipo") for e in brutos])
+            self.asegurar_fichas([e.get("tipo") for e in brutos])
 
             enemigos = []
             for e in brutos:
-                ficha = fichas.get(e.get("tipo"))
+                ficha = self._cache_fichas.obtener(e.get("tipo"))
                 enemigos.append(EnemigoPartida(
                     id=str(e.get("instancia", "")),
                     nombre=ficha.nombre if ficha else str(e.get("tipo", "")),
@@ -179,3 +174,6 @@ class CriptaService:
 
     def es_offline(self) -> bool:
         return self._data_source.__class__.__name__ == "AdaptadorOffline"
+
+    def obtener_ficha(self, id_: str):
+        return self._cache_fichas.obtener(id_)
