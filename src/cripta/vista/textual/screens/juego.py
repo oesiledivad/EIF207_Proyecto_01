@@ -17,7 +17,8 @@ from cripta.vista.textual.widgets.mini_mapa import MiniMapa
 from cripta.vista.textual.widgets.panel_bitacora import PanelBitacora
 from cripta.vista.textual.widgets.panel_inventario import PanelInventario
 from cripta.vista.textual.widgets.panel_jugador import PanelJugador
-
+from cripta.vista.textual.modales.elegir_enemigo import ElegirEnemigoModal
+from cripta.vista.textual.modales.elegir_direccion import ElegirDireccionModal
 
 class JuegoScreen(Screen):
     BINDINGS = [
@@ -158,6 +159,8 @@ class JuegoScreen(Screen):
             )
         elif btn == "btn-esperar":
             self._ejecutar(self._controlador.esperar())
+        elif btn == "btn-atacar":
+            self._modal_elegir_enemigo()
         elif btn == "btn-recoger":
             # Recoger se hace sobre el suelo, no sobre el inventario.
             # Hasta que exista el modal de objetos del suelo (P1),
@@ -181,9 +184,38 @@ class JuegoScreen(Screen):
             self.app.push_screen(
                 ConfirmarModal("¿Cargar partida?"), self._al_confirmar
             )
+        elif btn == "btn-atacar":
+            self._modal_elegir_enemigo()
+        elif btn == "btn-mover":
+            self._modal_elegir_direccion()
         else:
             # Botones de P1 y P2 aún sin implementar.
             self.notify("Acción aún no implementada.", title="Cripta")
+
+    def _modal_elegir_enemigo(self) -> None:
+        enemigos = [e for e in self._controlador.estado_partida().enemigos if e.vida > 0]
+        if not enemigos:
+            self.notify("No hay enemigos para atacar.", title="Cripta")
+            return
+        self.app.push_screen(ElegirEnemigoModal(enemigos), self._al_elegir_enemigo)
+
+    def _al_elegir_enemigo(self, enemigo) -> None:
+        if enemigo is None:
+            return
+        self._ejecutar(self._controlador.atacar(enemigo.id))
+
+    def _modal_elegir_direccion(self) -> None:
+        p = self._controlador.estado_partida()
+        salidas = [v for v in (p.vecindad or []) if not v.cerrada]
+        if not salidas:
+            self.notify("No hay salidas abiertas.", title="Cripta")
+            return
+        self.app.push_screen(ElegirDireccionModal(salidas), self._al_elegir_direccion)
+
+    def _al_elegir_direccion(self, direccion: str | None) -> None:
+        if direccion is None:
+            return
+        self._ejecutar(self._controlador.mover(direccion))
 
     def _modal_elegir(self, accion: str, filtro: str | None = None) -> None:
         inv = self._controlador.inventario()
