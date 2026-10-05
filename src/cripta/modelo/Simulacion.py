@@ -26,22 +26,6 @@ class Simulacion:
         self.reloj = Reloj()
         self.azar = random.Random(semilla)
 
-    def ejecutar_siguiente_evento(self):
-        """
-        Obtiene y ejecuta el siguiente evento de la agenda.
-        El reloj avanza hasta el tiempo del evento.
-        """
-        evento = self.agenda.extraer_siguiente()
-
-        if evento is None:
-            return None
-
-        self.reloj.avanzar_hasta(evento.tiempo_siguiente)
-
-        self.ejecutar_evento(evento)
-
-        return evento
-
     def _ejecutar_turno_enemigo(self, enemigo, jugador, salas: IndiceSalas) -> list[str]:
         if not esta_vivo(enemigo):
             return []

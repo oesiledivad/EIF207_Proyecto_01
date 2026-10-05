@@ -30,8 +30,9 @@ def esta_vivo(actor) -> bool:
 
 def procesar_muerte(actor, agenda) -> None:
     """Cancela todos los eventos pendientes de un actor que acaba de morir (§2.6)."""
-    for atributo in ("proximo_evento", "evento_veneno", "evento_regeneracion", "evento_fin_velocidad"):
+    for atributo in ("_proximo_evento", "evento_veneno", "evento_regeneracion", "evento_fin_velocidad"):
         evento = getattr(actor, atributo, None)
         if evento is not None:
             agenda.cancelar(evento)
             setattr(actor, atributo, None)
+

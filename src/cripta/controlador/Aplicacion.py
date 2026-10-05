@@ -305,20 +305,15 @@ class Aplicacion:
             return ResultadoAccion.fallo("No hay salida en esa dirección.")
         if salida.cerrada:
             return ResultadoAccion.fallo("La puerta está cerrada.")
-        destino_id = salida.sala_destino
-        self._construir_sala(destino_id)  # §4.2: contenido debe estar listo antes de confirmar
-        self._activar_sala(destino_id)  # §2.4: recién ahora se activan sus enemigos
 
-        tiempo_actual = self._simulacion.reloj.tiempo_actual
-        self._jugador.sala = destino_id
         destino_id = salida.sala_destino
-        self._construir_sala(destino_id)
-        self._activar_sala(destino_id)
+        self._construir_sala(destino_id)  # §4.2
+        self._activar_sala(destino_id)  # §2.4
 
         tiempo_actual = self._simulacion.reloj.tiempo_actual
         self._jugador.sala = destino_id
         sala_destino = self._salas.obtener(destino_id)
-        sala_destino.ultimo_tiempo_visita = tiempo_actual
+        sala_destino.ultimo_tiempo_visita = tiempo_actual  # §2.9
 
         trampa_armada = next((t for t in sala_destino.trampas if t.armada), None)
         if trampa_armada is not None:
@@ -332,7 +327,6 @@ class Aplicacion:
                 return ResultadoAccion.exito()
 
         intervalo = calcular_intervalo(COSTOS["mover"], self._jugador.velocidad)
-        # ... el resto de mover() sigue igual desde acá
         self._simulacion.agenda.reprogramar(self._jugador, tiempo_actual + intervalo, "accion_actor")
         self._bitacora.append(Mensaje("jugador", f"Te mueves al {direccion}."))
 
