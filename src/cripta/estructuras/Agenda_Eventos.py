@@ -39,6 +39,12 @@ class HeapAgendaEventos:
         self._heap: list[Evento] = []
         self._secuencia_actual = 0
 
+    def peek(self) -> Evento | None:
+        """Devuelve el evento con menor clave sin extraerlo. O(1) amortizado."""
+        while self._heap and not self._heap[0].valido:
+            self._extraer_raiz()  # descarta basura que quedó en la raíz
+        return self._heap[0] if self._heap else None
+
     # O(1) solo incrementa un contador
     def _siguiente_secuencia(self) -> int:
         self._secuencia_actual += 1

@@ -1,6 +1,7 @@
-from modelo.Cripta import Cripta
+from cripta.modelo.Cripta import Cripta
+from cripta.ensamblador.ensamblar_sala import ensamblar_sala
 
-from ensamblador.ensamblar_sala import ensamblar_sala
+
 def ensamblar_cripta(detalles, paginas):
     """
     detalles: Crypta_Details (DTO)
