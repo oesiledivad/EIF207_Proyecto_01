@@ -87,7 +87,7 @@ class InventarioPruebas(unittest.TestCase):
 
     def test_ciclo_completo_costos_instancias_cache_y_consumible(self):
         app = Aplicacion(FuentePrueba())
-        self.assertTrue(app.iniciar_partida("P3", "42", "cripta-01").ok)
+        self.assertTrue(app.iniciar_partida("Jugador", "42", "cripta-01").ok)
         objetos = list(app.estado_partida().objetos_suelo)
         self.assertNotEqual(objetos[0].id, objetos[1].id)
         for objeto in objetos:

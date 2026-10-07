@@ -46,6 +46,27 @@ class CriptaService:
         self._catalogo_en_disco = False
         self._cripta_en_disco = False
         self._lecturas_disco = 0
+        self._version_catalogo = None
+
+    def reiniciar_partida(self) -> None:
+        self._data_source.reiniciar_partida()
+        self._detalles = None
+        self._version_catalogo = None
+        self._lecturas_disco = 0
+        self._cache_fichas = Cache_Fichas(capacidad=self._cache_fichas.capacidad)
+
+    def obtener_version_catalogo(self, actualizar: bool = False) -> str:
+        if actualizar:
+            self._version_catalogo = None
+        if self._version_catalogo is None:
+            respuesta = self._data_source.get_catalog_version()
+            if not isinstance(respuesta, dict):
+                raise ValueError("Respuesta de version de catalogo invalida.")
+            version = respuesta.get("version")
+            if not isinstance(version, str) or not version.strip():
+                raise ValueError("El servicio no informo una version de catalogo valida.")
+            self._version_catalogo = version
+        return self._version_catalogo
 
     #  Persistencia (§4.4)
 
@@ -68,11 +89,9 @@ class CriptaService:
         cripta_vigente = self._almacen.validar_cripta(detalles.id, detalles.version)
         self._cripta_en_disco = True
         try:
-            version_cat = str(self._data_source.get_catalog_version().get("version", ""))
-        except (PresupuestoAgotado, RuntimeError, OSError) as e:
+            version_cat = self.obtener_version_catalogo()
+        except (PresupuestoAgotado, RuntimeError, OSError, ValueError) as e:
             return f"No se pudo validar el catálogo en disco ({e}); se usará solo la red."
-        if not version_cat:
-            return "El servicio no informó versión de catálogo; se usará solo la red."
         cat_vigente = self._almacen.validar_catalogo(version_cat)
         self._catalogo_en_disco = True
         return (f"Caché en disco: cripta {'vigente' if cripta_vigente else 'nueva/actualizada'}, "

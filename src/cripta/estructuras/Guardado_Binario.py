@@ -72,7 +72,7 @@ class Guardado_Binario:
         n = len(salas)
 
         # Reservamos espacio del header + índice y calculamos offsets.
-        offset_cuerpo_inicial = _HEADER_SIZE + n * _ENTRADA_SIZE
+        offset_cuerpo_inicial = _HEADER_SIZE + len(version_bytes) + n * _ENTRADA_SIZE
         entradas: list[EntradaIndice] = []
         offset = offset_cuerpo_inicial
         for s in salas:

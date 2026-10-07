@@ -1,0 +1,19 @@
+{
+  "id": "cripta-stormlight",
+  "nombre": "Urithiru: ecos de la tormenta",
+  "salas_total": 20,
+  "paginas": 2,
+  "salas_por_pagina": 10,
+  "sala_inicial": 1,
+  "sala_salida": 20,
+  "llave_salida": "sl_llave_radiante",
+  "presupuesto_solicitudes": 30,
+  "inventario_max": 8,
+  "jugador": {
+    "vida_max": 90,
+    "ataque": 9,
+    "defensa": 3,
+    "velocidad": 100
+  },
+  "version": "db4f6cae1721b89a"
+}

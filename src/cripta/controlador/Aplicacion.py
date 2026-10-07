@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import random
+from uuid import uuid4
 
+from cripta.adaptadores.Puntajes import Puntaje, TablaPuntajes
+from cripta.replay.reproductor import Cabecera, RegistroPartida, ErrorRegistro
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.controlador.GestorPartida import GestorPartida
@@ -59,7 +62,7 @@ class Aplicacion:
     """
 
     def __init__(self, data_source: CryptDataSource, capacidad_cache: int = 25,
-                 almacen: AlmacenDisco | None = None) -> None:
+                 almacen: AlmacenDisco | None = None, carpeta_logs=None, ruta_puntajes=None) -> None:
         self._cripta_service = CriptaService(
             data_source, Cache_Fichas(capacidad=capacidad_cache), almacen
         )
@@ -70,6 +73,13 @@ class Aplicacion:
         self._jugador: Jugador | None = None
         self._salas: IndiceSalas = IndiceSalas()  # antes: dict[int, SalaJuego]
         self._max_id_sala = 0
+        self._registro = RegistroPartida(carpeta_logs) if carpeta_logs is not None else None
+        if ruta_puntajes is None and self._registro is not None:
+            ruta_puntajes = self._registro.carpeta / "puntajes.json"
+        self._puntajes = TablaPuntajes(ruta_puntajes) if ruta_puntajes is not None else None
+        self._partida_id = None
+        self._puntaje_guardado = False
+        self.error_puntaje = ""
 
     #  Selección
 
@@ -108,13 +118,23 @@ class Aplicacion:
         else:
             semilla_efectiva = _generar_semilla()
 
+        if self._jugador is not None:
+            self._cripta_service.reiniciar_partida()
         try:
             # Si ya se pidió al previsualizar, el servicio lo devuelve sin gastar red.
             detalles = self._cripta_service.obtener_detalles(cripta_id)
         except (PresupuestoAgotado, RuntimeError) as e:
             return ResultadoInicio(ok=False, motivo=f"No se pudieron leer los datos de la cripta: {e}")
         self._cripta_service.fijar_presupuesto(detalles.presupuesto_solicitudes)
+        if self._registro is not None:
+            try:
+                self._cripta_service.obtener_version_catalogo(actualizar=True)
+            except (OSError, RuntimeError, ValueError, NotImplementedError) as error:
+                return ResultadoInicio(ok=False, motivo=f"No se pudo preparar el registro: {error}")
 
+        self._partida_id = uuid4().hex
+        self._puntaje_guardado = False
+        self.error_puntaje = ""
         self._gestor.estado = EstadoPartida(
             activa=True,
             nombre_jugador=nombre,
@@ -173,6 +193,16 @@ class Aplicacion:
         self._gestor.refrescar_sala_actual()
         self._sincronizar_estado()
 
+        if self._registro is not None:
+            try:
+                self._registro.iniciar(Cabecera(
+                    detalles.id, detalles.version, self._cripta_service.obtener_version_catalogo(),
+                    semilla_efectiva, nombre, self._cripta_service._cache_fichas.capacidad,
+                ))
+            except OSError as error:
+                self._gestor.estado.activa = False
+                return ResultadoInicio(ok=False, motivo=f"No se pudo crear el registro: {error}")
+            self._bitacora.append(Mensaje("sistema", f"Registro: {self._registro.ruta}"))
         return ResultadoInicio(ok=True, semilla_efectiva=semilla_efectiva)
 
     #  Salas y red (§4.2)
@@ -354,6 +384,8 @@ class Aplicacion:
 
     def _matar_enemigo(self, enemigo, sala: SalaJuego) -> None:
         """Muerte (§2.6): cancela sus eventos, lo saca de la sala y deja su botín."""
+        self._gestor.historial.cambiar(self._gestor.estado, "enemigos_derrotados",
+                                      self._gestor.estado.enemigos_derrotados + 1)
         self._bitacora.append(Mensaje("combate", f"{enemigo.identificador} muere."))
         procesar_muerte(enemigo, self._simulacion.agenda)  # acción, regeneración, veneno, velocidad
         sala.quitar_enemigo(enemigo, self._gestor.historial)
@@ -382,7 +414,7 @@ class Aplicacion:
         return (self._simulacion is not None and self._jugador is not None
                 and self._gestor.estado.activa)
 
-    def _accion_jugador(self, nombre_costo: str, ejecutar) -> ResultadoAccion:
+    def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None) -> ResultadoAccion:
         """Plantilla común de toda acción que consume tiempo.
 
         1. abre el intervalo del historial,
@@ -408,18 +440,34 @@ class Aplicacion:
             if not resultado.ok:
                 historial.revertir_abierto(self._gestor._aplicar_reversion)
                 return resultado
+            historial.cambiar(self._gestor.estado, "acciones_ejecutadas",
+                              self._gestor.estado.acciones_ejecutadas + 1)
             if esta_vivo(self._jugador):
                 self._consumir_tiempo_jugador(nombre_costo)
             self._despues_del_ciclo()
-        except Exception:
+            self._registrar_accion(nombre_costo, argumento)
+        except Exception as error:
             anteriores = self._tipos_activos()
             historial.revertir_abierto(self._gestor._aplicar_reversion)
             self._cripta_service.liberar_fichas(anteriores)
             self._fijar_seguro(self._tipos_activos())
             self._despues_del_ciclo()
+            if isinstance(error, ErrorRegistro):
+                self._gestor.estado.activa = False
             raise
         self._gestor.cerrar_intervalo()
+        if self._gestor.estado.terminada:
+            self._guardar_puntaje()
         return resultado
+
+    def _registrar_accion(self, nombre, argumento=None):
+        if self._registro is not None:
+            try:
+                self._registro.anexar(nombre, argumento)
+            except OSError as error:
+                # Un fallo de disco detiene la sesion para no seguir sin registro.
+                self._gestor.estado.activa = False
+                raise ErrorRegistro(f"No se pudo registrar la accion: {error}") from error
 
     def _consumir_tiempo_jugador(self, nombre_costo: str) -> None:
         sim = self._simulacion
@@ -439,6 +487,7 @@ class Aplicacion:
         self._sincronizar_estado()
         if not esta_vivo(self._jugador):
             self._gestor.estado.derrota = True
+            self._gestor.estado.terminada = True
             self._gestor.estado.activa = False
             self._bitacora.append(Mensaje("sistema", "Has muerto."))
             self._bitacora.append(Mensaje("sistema", self.resumen_red()))
@@ -501,16 +550,16 @@ class Aplicacion:
     #  Inventario (delegado a InventarioController; aquí se les da costo de tiempo)
 
     def recoger(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("recoger", lambda: self._inventario.recoger(instancia_id))
+        return self._accion_jugador("recoger", lambda: self._inventario.recoger(instancia_id), instancia_id)
 
     def soltar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("soltar", lambda: self._inventario.soltar(instancia_id, self._jugador))
+        return self._accion_jugador("soltar", lambda: self._inventario.soltar(instancia_id, self._jugador), instancia_id)
 
     def equipar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("equipar_objeto", lambda: self._inventario.equipar(instancia_id, self._jugador))
+        return self._accion_jugador("equipar_objeto", lambda: self._inventario.equipar(instancia_id, self._jugador), instancia_id)
 
     def usar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("usar_objeto", lambda: self._usar_objeto(instancia_id))
+        return self._accion_jugador("usar_objeto", lambda: self._usar_objeto(instancia_id), instancia_id)
 
     def _tipos_activos(self) -> list[str]:
         tipos = [item.tipo_id for item in self._gestor.inventario.items()]
@@ -531,6 +580,7 @@ class Aplicacion:
             return ResultadoAccion.fallo("No tienes pergaminos.")
         if not len(self._gestor.historial):
             return ResultadoAccion.fallo("No hay nada que deshacer.")
+        self._registrar_accion("retroceder")
         anteriores = self._tipos_activos()
         inv.soltar_por_id(pergamino.instancia_id)
         self._gestor.deshacer()
@@ -541,10 +591,16 @@ class Aplicacion:
         return ResultadoAccion.exito()
 
     def siguiente_item(self) -> ResultadoAccion:
-        return self._inventario.siguiente()
+        resultado = self._inventario.siguiente()
+        if resultado.ok:
+            self._registrar_accion("siguiente_item")
+        return resultado
 
     def anterior_item(self) -> ResultadoAccion:
-        return self._inventario.anterior()
+        resultado = self._inventario.anterior()
+        if resultado.ok:
+            self._registrar_accion("anterior_item")
+        return resultado
 
     def vista_inventario(self, criterio: str) -> list:
         return self._inventario.vista_ordenada(criterio)
@@ -633,7 +689,7 @@ class Aplicacion:
         if error is not None:
             return ResultadoAccion.fallo(f"No se pudo cargar la sala destino: {error}")
 
-        resultado = self._accion_jugador("mover", lambda: self._ejecutar_movimiento(destino_id, direccion))
+        resultado = self._accion_jugador("mover", lambda: self._ejecutar_movimiento(destino_id, direccion), direccion)
         if resultado.ok and self._partida_en_curso():
             self._precargar_alrededor(self._jugador.sala)  # lista para la próxima puerta
         return resultado
@@ -661,7 +717,7 @@ class Aplicacion:
         return ResultadoAccion.exito()
 
     def atacar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("atacar", lambda: self._ejecutar_ataque(instancia_id))
+        return self._accion_jugador("atacar", lambda: self._ejecutar_ataque(instancia_id), instancia_id)
 
     def _ejecutar_ataque(self, instancia_id: str) -> ResultadoAccion:
         sala_actual = self._salas.obtener(self._jugador.sala)
@@ -683,7 +739,32 @@ class Aplicacion:
             self._matar_enemigo(enemigo, sala_actual)
         return ResultadoAccion.exito()
 
+    def puntajes(self):
+        return self._puntajes.ordenados() if self._puntajes is not None else []
+
+    def _guardar_puntaje(self):
+        if self._puntajes is None or self._puntaje_guardado or self._partida_id is None:
+            return
+        estado = self._gestor.estado
+        resultado = "victoria" if estado.victoria else "derrota" if estado.derrota else "abandono"
+        try:
+            self._puntajes.registrar(Puntaje(
+                self._partida_id, estado.nombre_jugador, estado.cripta_id, estado.version_cripta,
+                estado.acciones_ejecutadas, estado.enemigos_derrotados, estado.reloj_virtual, resultado))
+        except (OSError, ValueError) as error:
+            self.error_puntaje = f"No se pudo guardar el puntaje: {error}"
+            self._bitacora.append(Mensaje("sistema", self.error_puntaje))
+            return
+        self._puntaje_guardado = True
+        self.error_puntaje = ""
+
     def terminar(self) -> None:
+        if self._gestor.estado.terminada:
+            self._guardar_puntaje()
+            return
+        if self._registro is not None and self._registro.ruta is not None:
+            self._registrar_accion("terminar")
         self._gestor.estado.activa = False
         self._gestor.estado.terminada = True
+        self._guardar_puntaje()
         self._bitacora.append(Mensaje("sistema", self.resumen_red()))

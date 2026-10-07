@@ -18,6 +18,9 @@ class NetworkAdapter(CryptDataSource):
     def requests_made(self) -> int:
         return self._requests_made
 
+    def reiniciar_partida(self) -> None:
+        self.__init__(self.timeout, self.max_reintentos_429)
+
     def fijar_presupuesto(self, presupuesto: int) -> None:
         self._presupuesto = presupuesto
 

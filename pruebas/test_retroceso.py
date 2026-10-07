@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from pruebas.test_inventario_p3 import FuentePrueba
+from pruebas.test_inventario import FuentePrueba
 from cripta.controlador.Aplicacion import Aplicacion
 from cripta.controlador.GestorPartida import GestorPartida
 from cripta.estructuras.Agenda_Eventos import HeapAgendaEventos
@@ -59,7 +59,7 @@ def estado(app):
 class RetrocesoPruebas(unittest.TestCase):
     def setUp(self):
         self.app = Aplicacion(FuenteRetroceso())
-        self.assertTrue(self.app.iniciar_partida("P3", "42", "cripta-01").ok)
+        self.assertTrue(self.app.iniciar_partida("Jugador", "42", "cripta-01").ok)
         for objeto in list(self.app.estado_partida().objetos_suelo)[:6]:
             self.assertTrue(self.app.recoger(objeto.id).ok)
         self.app._gestor.historial.limpiar()
