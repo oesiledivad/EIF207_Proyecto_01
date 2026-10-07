@@ -39,4 +39,4 @@ class Actor:
                 self.velocidad, nueva_velocidad
         )
             agenda.reprogramar(self, nuevo_tiempo, self._proximo_evento.tipo)
-        self.velocidad = nueva_velocidad
+        agenda.cambiar(self, "velocidad", nueva_velocidad)

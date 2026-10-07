@@ -72,6 +72,31 @@ class Historial_Retroceso:
             raise RuntimeError("No hay intervalo abierto.")
         self._abierto.cambios.append(Cambio(etiqueta, datos))
 
+    def registrar_si_abierto(self, etiqueta: str, datos: Any) -> None:
+        if self._abierto is not None:
+            self.registrar(etiqueta, datos)
+
+    def cambiar(self, objeto, atributo: str, valor) -> None:
+        anterior = getattr(objeto, atributo)
+        if anterior != valor:
+            self.registrar_si_abierto("atributo", (objeto, atributo, anterior))
+            setattr(objeto, atributo, valor)
+
+    def agregar(self, lista: list, objeto) -> None:
+        self.registrar_si_abierto("lista_agregada", (lista, objeto))
+        lista.append(objeto)
+
+    def quitar(self, lista: list, objeto) -> None:
+        posicion = lista.index(objeto)
+        self.registrar_si_abierto("lista_quitada", (lista, posicion, objeto))
+        lista.pop(posicion)
+
+    def revertir_abierto(self, aplicar) -> None:
+        if self._abierto is not None:
+            for cambio in reversed(self._abierto.cambios):
+                aplicar(cambio.etiqueta, cambio.datos)
+            self._abierto = None
+
     def cerrar_intervalo(self) -> None:
         """Cierra el intervalo abierto y lo apila.
 
@@ -102,9 +127,10 @@ class Historial_Retroceso:
         """
         if not self._intervalos:
             return False
-        intervalo = self._intervalos.pop()
+        intervalo = self._intervalos[-1]
         for cambio in reversed(intervalo.cambios):
             aplicar(cambio.etiqueta, cambio.datos)
+        self._intervalos.pop()
         return True
 
     def limpiar(self) -> None:

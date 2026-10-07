@@ -62,7 +62,7 @@ class InventarioControlador:
 
         posicion_suelo = self._gestor.estado.objetos_suelo.index(obj)
         if item.clase != "pergamino_retroceso":
-            self._gestor.registrar_cambio("item_suelo_quitado", (obj, posicion_suelo))
+            self._gestor.registrar_cambio("item_suelo_quitado", (self._gestor.estado.objetos_suelo, obj, posicion_suelo))
             self._gestor.registrar_cambio("inventario_agregado", item)
 
         inv.agregar(item)
@@ -85,7 +85,7 @@ class InventarioControlador:
 
         if item.clase != "pergamino_retroceso":
             self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
-            self._gestor.registrar_cambio("item_suelo_agregado", item.instancia_id)
+            self._gestor.registrar_cambio("item_suelo_agregado", (self._gestor.estado.objetos_suelo, item.instancia_id))
         if item.equipado:
             self._quitar_bonus(item, jugador)
             self._gestor.registrar_cambio("atributo", (item, "equipado", True))
@@ -137,31 +137,6 @@ class InventarioControlador:
         jugador.ataque -= item.ataque_bonus
         jugador.defensa -= item.defensa_bonus
 
-    def usar_pergamino(self) -> ResultadoAccion:
-        """Usa un pergamino de retroceso.
-
-        No consume tiempo virtual ni se registra como acción del jugador
-        (§2.11). El pergamino se descuenta fuera del alcance de la reversión.
-        """
-        inv = self._gestor.inventario
-        if inv is None:
-            return ResultadoAccion.fallo("Inventario no inicializado.")
-
-        pergamino = self._buscar_clase(inv, "pergamino_retroceso")
-        if pergamino is None:
-            return ResultadoAccion.fallo("No tienes pergaminos.")
-
-        exito = self._gestor.deshacer()
-        if not exito:
-            return ResultadoAccion.fallo("No hay nada que deshacer.")
-
-        # El consumo del pergamino queda fuera del alcance de la reversión.
-        inv.soltar_por_id(pergamino.instancia_id)
-        self._bitacora.append(
-            Mensaje("efecto", "Usaste un pergamino de retroceso.")
-        )
-        return ResultadoAccion.exito()
-
     #  Recorrido
 
     def siguiente(self) -> ResultadoAccion:
@@ -200,10 +175,4 @@ class InventarioControlador:
         for o in self._gestor.estado.objetos_suelo:
             if o.id == instancia_id:
                 return o
-        return None
-
-    def _buscar_clase(self, inv: Inventario, clase: str) -> ItemInventario | None:
-        for item in inv.items():
-            if item.clase == clase:
-                return item
         return None

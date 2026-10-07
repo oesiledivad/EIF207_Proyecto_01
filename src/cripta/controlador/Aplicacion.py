@@ -144,7 +144,7 @@ class Aplicacion:
         # §4.4: validar lo persistido ANTES de cargar esqueleto, contenido o fichas.
         self._bitacora.append(Mensaje("sistema", self._cripta_service.preparar_persistencia(detalles)))
 
-        self._simulacion = Simulacion(semilla_efectiva)
+        self._simulacion = Simulacion(semilla_efectiva, self._gestor.historial)
         self._jugador = Jugador(
             identificador="jugador", vida=detalles.jugador_vida_max, vida_max=detalles.jugador_vida_max,
             ataque=detalles.jugador_ataque, defensa=detalles.jugador_defensa,
@@ -345,7 +345,8 @@ class Aplicacion:
         # §2.4: primera acción = acción base de costo 100 desde el reloj actual.
         intervalo = calcular_intervalo(costo_accion("esperar"), enemigo.velocidad)
         evento = self._simulacion.agenda.insertar(tiempo_actual + intervalo, enemigo, "accion_actor")
-        enemigo._proximo_evento = evento
+        self._simulacion.agenda.cambiar(enemigo, "_proximo_evento", evento)
+        self._simulacion.agenda.cambiar(enemigo, "tiempo_siguiente", evento.tiempo_siguiente)
         self._fijar_seguro([enemigo.tipo])  # enemigo activo: su ficha está en uso
 
         if enemigo.regeneracion_objetivo:
@@ -355,7 +356,7 @@ class Aplicacion:
         """Muerte (§2.6): cancela sus eventos, lo saca de la sala y deja su botín."""
         self._bitacora.append(Mensaje("combate", f"{enemigo.identificador} muere."))
         procesar_muerte(enemigo, self._simulacion.agenda)  # acción, regeneración, veneno, velocidad
-        sala.quitar_enemigo(enemigo)
+        sala.quitar_enemigo(enemigo, self._gestor.historial)
         self._cripta_service.liberar_fichas([enemigo.tipo])
 
         if enemigo.suelta:
@@ -365,9 +366,13 @@ class Aplicacion:
             for posicion, tipo in enumerate(enemigo.suelta):
                 ficha = self._cripta_service.obtener_ficha(tipo)
                 nombre = ficha.nombre if ficha is not None else tipo
-                sala.objetos.append(ObjetoSuelo(
+                objeto = ObjetoSuelo(
                     id=f"botin-{enemigo.identificador}-{posicion}", nombre=nombre, tipo_id=tipo,
-                ))
+                )
+                if ficha is not None and ficha.clase == "pergamino_retroceso":
+                    sala.objetos.append(objeto)
+                else:
+                    self._gestor.historial.agregar(sala.objetos, objeto)
                 nombres.append(nombre)
             self._bitacora.append(Mensaje("combate", f"{enemigo.identificador} deja caer: {', '.join(nombres)}."))
 
@@ -391,26 +396,36 @@ class Aplicacion:
         if self._gestor.historial.hay_intervalo_abierto():
             self._gestor.descartar_intervalo()
         self._gestor.abrir_intervalo()
+        historial = self._gestor.historial
+        historial.registrar("azar", (self._simulacion.azar, self._simulacion.azar.getstate()))
+        for atributo in ("activa", "derrota", "victoria", "terminada"):
+            historial.registrar("atributo",
+                               (self._gestor.estado, atributo, getattr(self._gestor.estado, atributo)))
+        actual = self._gestor.inventario.item_actual()
+        historial.registrar("seleccion_inventario", actual.instancia_id if actual else None)
         try:
             resultado = ejecutar()
+            if not resultado.ok:
+                historial.revertir_abierto(self._gestor._aplicar_reversion)
+                return resultado
+            if esta_vivo(self._jugador):
+                self._consumir_tiempo_jugador(nombre_costo)
+            self._despues_del_ciclo()
         except Exception:
-            self._gestor.descartar_intervalo()
+            anteriores = self._tipos_activos()
+            historial.revertir_abierto(self._gestor._aplicar_reversion)
+            self._cripta_service.liberar_fichas(anteriores)
+            self._fijar_seguro(self._tipos_activos())
+            self._despues_del_ciclo()
             raise
-        if not resultado.ok:
-            self._gestor.descartar_intervalo()  # Apéndice B: acción rechazada no consume tiempo
-            return resultado
-
-        if esta_vivo(self._jugador):
-            self._consumir_tiempo_jugador(nombre_costo)
         self._gestor.cerrar_intervalo()
-        self._despues_del_ciclo()
         return resultado
 
     def _consumir_tiempo_jugador(self, nombre_costo: str) -> None:
         sim = self._simulacion
         tiempo_actual = sim.reloj.tiempo_actual
         # Apéndice B: el rastro de la sala actual se refresca en cada acción del jugador.
-        self._salas.obtener(self._jugador.sala).ultimo_tiempo_visita = tiempo_actual
+        sim.agenda.cambiar(self._salas.obtener(self._jugador.sala), "ultimo_tiempo_visita", tiempo_actual)
 
         intervalo = calcular_intervalo(costo_accion(nombre_costo), self._jugador.velocidad)
         sim.agenda.reprogramar(self._jugador, tiempo_actual + intervalo, "accion_actor")
@@ -497,8 +512,33 @@ class Aplicacion:
     def usar(self, instancia_id: str) -> ResultadoAccion:
         return self._accion_jugador("usar_objeto", lambda: self._usar_objeto(instancia_id))
 
+    def _tipos_activos(self) -> list[str]:
+        tipos = [item.tipo_id for item in self._gestor.inventario.items()]
+        for sala in self._salas._datos:
+            if sala is not None:
+                tipos.extend(e.tipo for e in sala.enemigos
+                             if esta_vivo(e) and e._proximo_evento is not None)
+        tipos.extend(self._tipos_visibles(self._salas.obtener(self._jugador.sala)))
+        return tipos
+
     def usar_pergamino(self) -> ResultadoAccion:
-        return self._inventario.usar_pergamino()  # no consume tiempo (§2.11)
+        if not self._partida_en_curso():
+            return ResultadoAccion.fallo("La partida no está activa.")
+        inv = self._gestor.inventario
+        pergamino = next((item for item in inv.items()
+                          if item.clase == "pergamino_retroceso"), None)
+        if pergamino is None:
+            return ResultadoAccion.fallo("No tienes pergaminos.")
+        if not len(self._gestor.historial):
+            return ResultadoAccion.fallo("No hay nada que deshacer.")
+        anteriores = self._tipos_activos()
+        inv.soltar_por_id(pergamino.instancia_id)
+        self._gestor.deshacer()
+        self._cripta_service.liberar_fichas(anteriores)
+        self._fijar_seguro(self._tipos_activos())
+        self._despues_del_ciclo()
+        self._bitacora.append(Mensaje("efecto", "Usaste un pergamino de retroceso."))
+        return ResultadoAccion.exito()
 
     def siguiente_item(self) -> ResultadoAccion:
         return self._inventario.siguiente()
@@ -535,7 +575,7 @@ class Aplicacion:
             case "pocion":
                 partes: list[str] = []
                 if ficha.cura:
-                    partes.append(f"recuperás {curar(jugador, ficha.cura)} de vida")
+                    partes.append(f"recuperás {curar(jugador, ficha.cura, agenda)} de vida")
                 if ficha.modificador_velocidad and ficha.duracion:
                     aplicar_modificador_velocidad(jugador, ficha.modificador_velocidad,
                                                   ficha.duracion, tiempo, agenda)
@@ -604,8 +644,8 @@ class Aplicacion:
         tiempo_actual = self._simulacion.reloj.tiempo_actual
 
         self._liberar_contenido_visible(sala_origen)   # deja de ser la sala actual
-        self._jugador.sala = destino_id
-        sala_destino.ultimo_tiempo_visita = tiempo_actual  # §2.9
+        self._simulacion.agenda.cambiar(self._jugador, "sala", destino_id)
+        self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # §2.9
         self._activar_sala(sala_destino)                  # §2.4
         self._fijar_contenido_visible(sala_destino)
         self._gestor.estado.objetos_suelo = sala_destino.objetos
@@ -636,7 +676,7 @@ class Aplicacion:
             return ResultadoAccion.fallo("Ese enemigo no está aquí.")
 
         dano = calcular_danio(self._jugador, enemigo, self._simulacion.azar)
-        aplicar_danio(enemigo, dano)
+        aplicar_danio(enemigo, dano, self._simulacion.agenda)
         self._bitacora.append(Mensaje("combate", f"Atacás a {enemigo.identificador} por {dano}."))
 
         if not esta_vivo(enemigo):

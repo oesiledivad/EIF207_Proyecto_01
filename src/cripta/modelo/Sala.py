@@ -22,15 +22,21 @@ class SalaJuego:
         self.ultimo_tiempo_visita: int | None = None
         self.contenido_cargado = False
 
-    def agregar_enemigo(self, enemigo) -> None:
+    def agregar_enemigo(self, enemigo, historial=None) -> None:
         """O(1) amortizado."""
-        self.enemigos.append(enemigo)
+        if historial is None:
+            self.enemigos.append(enemigo)
+        else:
+            historial.agregar(self.enemigos, enemigo)
 
-    def quitar_enemigo(self, enemigo) -> None:
+    def quitar_enemigo(self, enemigo, historial=None) -> None:
         """O(k), k = enemigos en la sala (pocos). Compara por identidad."""
         i = 0
         while i < len(self.enemigos):
             if self.enemigos[i] is enemigo:
-                self.enemigos.pop(i)
+                if historial is None:
+                    self.enemigos.pop(i)
+                else:
+                    historial.quitar(self.enemigos, enemigo)
                 return
             i += 1

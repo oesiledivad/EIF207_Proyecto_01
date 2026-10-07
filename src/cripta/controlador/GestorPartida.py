@@ -99,6 +99,27 @@ class GestorPartida:
         if etiqueta == "atributo":
             objeto, atributo, anterior = datos
             setattr(objeto, atributo, anterior)
+        elif etiqueta == "azar":
+            azar, anterior = datos
+            azar.setstate(anterior)
+        elif etiqueta == "evento_insertado":
+            agenda, evento = datos
+            agenda._quitar(evento)
+        elif etiqueta == "evento_extraido":
+            agenda, evento = datos
+            agenda._agregar(evento)
+        elif etiqueta == "lista_agregada":
+            lista, objeto = datos
+            for posicion, actual in enumerate(lista):
+                if actual is objeto:
+                    lista.pop(posicion)
+                    break
+        elif etiqueta == "lista_quitada":
+            lista, posicion, objeto = datos
+            lista.insert(posicion, objeto)
+        elif etiqueta == "seleccion_inventario":
+            if self.inventario is not None and datos is not None:
+                self.inventario.seleccionar(datos)
         elif etiqueta == "inventario_agregado":
             self._revertir_inventario_agregado(datos)
         elif etiqueta == "inventario_quitado":
@@ -109,7 +130,8 @@ class GestorPartida:
             self._revertir_suelo_agregado(datos)
         elif etiqueta == "item_suelo_quitado":
             self._revertir_suelo_quitado(datos)
-        # TODO: Otras etiquetas (vida, reloj, rastro, puertas, efectos, eventos)
+        else:
+            raise ValueError(f"Delta desconocido: {etiqueta}")
 
     #  Reversiones de inventario
 
@@ -138,7 +160,7 @@ class GestorPartida:
         """El item se había equipado; hay que restaurar el estado previo.
 
         Args:
-            datos: Lista de (instancia_id, estaba_equipado_antes).
+            datos: Item, posición, marcas previas de equipo e id seleccionado.
         """
         if self.inventario is None:
             return
@@ -157,19 +179,19 @@ class GestorPartida:
         """Se había agregado un objeto al suelo; hay que quitarlo.
 
         Args:
-            datos: instancia_id del objeto agregado.
+            datos: Lista del suelo e instancia_id del objeto agregado.
         """
-        instancia_id = datos
-        for posicion, objeto in enumerate(self.estado.objetos_suelo):
+        suelo, instancia_id = datos
+        for posicion, objeto in enumerate(suelo):
             if objeto.id == instancia_id:
-                self.estado.objetos_suelo.pop(posicion)
+                suelo.pop(posicion)
                 break
 
     def _revertir_suelo_quitado(self, datos) -> None:
         """Se había quitado un objeto del suelo; hay que reinsertarlo.
 
         Args:
-            datos: (objeto, posición en el suelo).
+            datos: (lista del suelo, objeto, posición).
         """
-        obj, posicion = datos
-        self.estado.objetos_suelo.insert(posicion, obj)
+        suelo, obj, posicion = datos
+        suelo.insert(posicion, obj)

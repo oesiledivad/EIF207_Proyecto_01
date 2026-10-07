@@ -16,11 +16,15 @@ def calcular_danio(atacante, defensor, azar):
     )
     return dano
 
-def aplicar_danio(defensor, dano):
+def aplicar_danio(defensor, dano, agenda=None):
     """
     Aplica el daño a un defensor.
     """
-    defensor.vida = max(0, defensor.vida - dano)
+    vida = max(0, defensor.vida - dano)
+    if agenda is None:
+        defensor.vida = vida
+    else:
+        agenda.cambiar(defensor, "vida", vida)
 
 def esta_vivo(actor) -> bool:
     """
@@ -30,9 +34,9 @@ def esta_vivo(actor) -> bool:
 
 def procesar_muerte(actor, agenda) -> None:
     """Cancela todos los eventos pendientes de un actor que acaba de morir (§2.6)."""
-    for atributo in ("_proximo_evento", "evento_veneno", "evento_regeneracion", "evento_fin_velocidad"):
+    for atributo in ("_proximo_evento", "evento_veneno", "evento_regeneracion", "evento_fin_velocidad", "evento_antorcha"):
         evento = getattr(actor, atributo, None)
         if evento is not None:
             agenda.cancelar(evento)
-            setattr(actor, atributo, None)
+            agenda.cambiar(actor, atributo, None)
 
