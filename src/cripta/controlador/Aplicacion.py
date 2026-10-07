@@ -6,6 +6,7 @@ from __future__ import annotations
 import random
 
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
+from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.controlador.GestorPartida import GestorPartida
 from cripta.controlador.InventarioControlador import InventarioControlador
 from cripta.dto.Partida_dto import (
@@ -54,10 +55,14 @@ class Aplicacion:
     Args:
         data_source: Adaptador de datos (red u offline).
         capacidad_cache: Tope de fichas en memoria (--cache-size, §4.4).
+        almacen: Caché persistente en disco (None = desactivada).
     """
 
-    def __init__(self, data_source: CryptDataSource, capacidad_cache: int = 25) -> None:
-        self._cripta_service = CriptaService(data_source, Cache_Fichas(capacidad=capacidad_cache))
+    def __init__(self, data_source: CryptDataSource, capacidad_cache: int = 25,
+                 almacen: AlmacenDisco | None = None) -> None:
+        self._cripta_service = CriptaService(
+            data_source, Cache_Fichas(capacidad=capacidad_cache), almacen
+        )
         self._gestor = GestorPartida()
         self._bitacora = Bitacora(capacidad=20)
         self._inventario = InventarioControlador(self._gestor, self._bitacora)
@@ -136,6 +141,8 @@ class Aplicacion:
         self._bitacora.limpiar()
         self._bitacora.append(Mensaje("sistema", f"Partida iniciada en {cripta_id}."))
         self._bitacora.append(Mensaje("sistema", f"Semilla: {semilla_efectiva}."))
+        # §4.4: validar lo persistido ANTES de cargar esqueleto, contenido o fichas.
+        self._bitacora.append(Mensaje("sistema", self._cripta_service.preparar_persistencia(detalles)))
 
         self._simulacion = Simulacion(semilla_efectiva)
         self._jugador = Jugador(
@@ -469,7 +476,8 @@ class Aplicacion:
         """§5.1: solicitudes realizadas, presupuesto, aciertos y fallos de caché."""
         s = self._cripta_service
         return (f"Red: {s.requests_made}/{self._gestor.estado.presupuesto_solicitudes} solicitudes · "
-                f"caché: {s.aciertos_cache} aciertos, {s.fallos_cache} fallos")
+                f"caché: {s.aciertos_cache} aciertos, {s.fallos_cache} fallos, "
+                f"{s.lecturas_disco} lecturas de disco")
 
     #  Inventario (delegado a InventarioController; aquí se les da costo de tiempo)
 

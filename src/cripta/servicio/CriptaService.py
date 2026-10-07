@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from cripta.adaptadores.Crypt_Data_Source import CryptDataSource
+from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
+from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.dto.Partida_dto import (
     CriptaResumen,
     DetallesCripta,
@@ -35,10 +36,51 @@ def _buscar_ficha(catalogo: Catalogo_Lista, id_tipo):
 
 
 class CriptaService:
-    def __init__(self, data_source: CryptDataSource, cache_fichas: Cache_Fichas | None = None) -> None:
+    def __init__(self, data_source: CryptDataSource, cache_fichas: Cache_Fichas | None = None,
+                 almacen: AlmacenDisco | None = None) -> None:
         self._data_source = data_source
         self._cache_fichas = cache_fichas if cache_fichas is not None else Cache_Fichas()
         self._detalles: DetallesCripta | None = None  # evita pedir 2 veces los datos generales
+        # Persistencia (§4.4). Solo se usa lo del disco si su versión fue validada.
+        self._almacen = almacen
+        self._catalogo_en_disco = False
+        self._cripta_en_disco = False
+        self._lecturas_disco = 0
+
+    #  Persistencia (§4.4)
+
+    def preparar_persistencia(self, detalles: DetallesCripta) -> str:
+        """Valida lo guardado en disco contra las versiones actuales.
+
+        - Cripta: la versión viene en los datos generales (ya pedidos), así
+          que validar esqueleto y contenido no cuesta solicitudes extra.
+        - Catálogo: cuesta 1 solicitud liviana (GET /catalogo/version).
+        Si algo falla, se juega sin disco para ese dato: nunca con datos viejos.
+
+        Returns:
+            Mensaje para la bitácora.
+        """
+        self._catalogo_en_disco = False
+        self._cripta_en_disco = False
+        if self._almacen is None:
+            return "Caché persistente desactivada."
+
+        cripta_vigente = self._almacen.validar_cripta(detalles.id, detalles.version)
+        self._cripta_en_disco = True
+        try:
+            version_cat = str(self._data_source.get_catalog_version().get("version", ""))
+        except (PresupuestoAgotado, RuntimeError, OSError) as e:
+            return f"No se pudo validar el catálogo en disco ({e}); se usará solo la red."
+        if not version_cat:
+            return "El servicio no informó versión de catálogo; se usará solo la red."
+        cat_vigente = self._almacen.validar_catalogo(version_cat)
+        self._catalogo_en_disco = True
+        return (f"Caché en disco: cripta {'vigente' if cripta_vigente else 'nueva/actualizada'}, "
+                f"catálogo {'vigente' if cat_vigente else 'nuevo/actualizado'}.")
+
+    @property
+    def lecturas_disco(self) -> int:
+        return self._lecturas_disco
 
     #  Catálogo (§4.3, §4.4)
 
@@ -63,16 +105,32 @@ class CriptaService:
                 if fijar:
                     self._fijar_apariciones(id_, ids)
 
-        for i in range(0, len(faltantes), MAX_POR_LOTE):
-            lote = faltantes[i:i + MAX_POR_LOTE]
+        # 1) Disco: una ficha liberada de memoria cuesta una lectura, no una solicitud.
+        para_red: list[str] = []
+        for id_ in faltantes:
+            bruto = self._almacen.leer_ficha(id_) if self._catalogo_en_disco else None
+            if bruto is None:
+                para_red.append(id_)
+                continue
+            self._lecturas_disco += 1
+            self._incorporar_ficha(bruto, resueltas, ids, fijar)
+
+        # 2) Red: solo lo que nunca se persistió (o cuya versión cambió), en lotes de 10.
+        for i in range(0, len(para_red), MAX_POR_LOTE):
+            lote = para_red[i:i + MAX_POR_LOTE]
             resp = self._data_source.catalog(lote)
             for bruto in resp.get("entidades", []):
-                ficha = parsear_ficha(bruto)
-                self._cache_fichas.insertar(ficha.id, ficha)
-                resueltas.agregar(ficha)
-                if fijar:
-                    self._fijar_apariciones(ficha.id, ids)
+                if self._catalogo_en_disco:
+                    self._almacen.guardar_ficha(bruto)
+                self._incorporar_ficha(bruto, resueltas, ids, fijar)
         return resueltas
+
+    def _incorporar_ficha(self, bruto: dict, resueltas: Catalogo_Lista, ids: list[str], fijar: bool) -> None:
+        ficha = parsear_ficha(bruto)
+        self._cache_fichas.insertar(ficha.id, ficha)
+        resueltas.agregar(ficha)
+        if fijar:
+            self._fijar_apariciones(ficha.id, ids)
 
     def _fijar_apariciones(self, id_: str, ids: list[str]) -> None:
         for otro in ids:
@@ -153,10 +211,14 @@ class CriptaService:
         salas_conocidas: list[SalaModelo] = []
         pagina = 1
         while True:
-            try:
-                resp = self._data_source.list_rooms(cripta_id, pagina)
-            except NotImplementedError:
-                break
+            resp = self._almacen.leer_pagina_salas(cripta_id, pagina) if self._cripta_en_disco else None
+            if resp is None:
+                try:
+                    resp = self._data_source.list_rooms(cripta_id, pagina)
+                except NotImplementedError:
+                    break
+                if self._cripta_en_disco:
+                    self._almacen.guardar_pagina_salas(cripta_id, pagina, resp)
 
             salas_brutas = resp.get("salas", [])
             for item_sala in salas_brutas:
@@ -209,13 +271,26 @@ class CriptaService:
         resultado: list[tuple[int, ContenidoSala]] = []
         for i in range(0, len(sala_ids), MAX_POR_LOTE):
             lote = sala_ids[i:i + MAX_POR_LOTE]
-            try:
-                resp = self._data_source.room_content(cripta_id, lote)
-            except NotImplementedError:
-                for sala_id in lote:
-                    resultado.append((sala_id, ContenidoSala()))
-                continue
-            entradas = resp.get("contenido", [])
+
+            # Primero disco; a la red solo van las salas que no estaban guardadas.
+            entradas: list[dict] = []
+            para_red: list[int] = []
+            for sala_id in lote:
+                entrada = self._almacen.leer_contenido(cripta_id, sala_id) if self._cripta_en_disco else None
+                if entrada is None:
+                    para_red.append(sala_id)
+                else:
+                    self._lecturas_disco += 1
+                    entradas.append(entrada)
+            if para_red:
+                try:
+                    resp = self._data_source.room_content(cripta_id, para_red)
+                except NotImplementedError:
+                    resp = {}
+                for entrada in resp.get("contenido", []):
+                    if self._cripta_en_disco:
+                        self._almacen.guardar_contenido(cripta_id, entrada)
+                    entradas.append(entrada)
 
             tipos: list[str] = []
             for entrada in entradas:

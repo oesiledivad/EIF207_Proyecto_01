@@ -15,3 +15,5 @@ wheels/
 
 # JetBrains (.idea)
 .idea/
+# Caché persistente del juego (se genera al jugar)
+.cripta_cache/

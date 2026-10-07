@@ -15,6 +15,7 @@ import sys
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource
 from cripta.adaptadores.Network_Adapter import NetworkAdapter
 from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
+from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.controlador.Aplicacion import Aplicacion
 
 
@@ -41,6 +42,11 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
         type=int,
         default=25,
         help="Tope de fichas de catálogo en memoria (§4.4). Por defecto 25.",
+    )
+    parser.add_argument(
+        "--cache-dir",
+        default=".cripta_cache",
+        help="Carpeta de la caché persistente (fichas, esqueleto, contenido).",
     )
     return parser.parse_args(argv)
 
@@ -74,7 +80,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.cache_size <= 0:
         print("--cache-size debe ser un entero positivo.", file=sys.stderr)
         return 2
-    controlador = Aplicacion(data_source, capacidad_cache=args.cache_size)
+    # En --offline los datos ya vienen de disco: no hace falta la caché persistente.
+    almacen = None if args.offline else AlmacenDisco(args.cache_dir)
+    controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen)
 
     # Import diferido: la vista Textual solo se construye si vamos a usarla.
     from cripta.vista.textual.app import CriptaApp
