@@ -23,8 +23,11 @@ class FinModal(ModalScreen):
             with VerticalScroll(id="fin-detalle"):
                 if estado.derrota:
                     mensajes = [m for m in self.controlador.bitacora().ultimos() if m is not None]
-                    causa = next((m.texto for m in reversed(mensajes)
-                                  if m.tipo == "combate" and m.texto), "Tu vida llegó a 0.")
+                    causa = "Tu vida llegó a 0."
+                    for i in range(len(mensajes) - 1, -1, -1):
+                        if mensajes[i].tipo == "combate" and mensajes[i].texto:
+                            causa = mensajes[i].texto
+                            break
                     yield Static(f"Causa de muerte: {causa}", id="fin-causa", markup=False)
                     recientes = [m.texto for m in mensajes if m.tipo in ("jugador", "combate", "efecto")]
                     yield Static("Últimos acontecimientos:\n" + "\n".join(recientes[-4:]),

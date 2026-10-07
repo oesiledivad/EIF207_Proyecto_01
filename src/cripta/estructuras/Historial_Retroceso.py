@@ -93,7 +93,8 @@ class Historial_Retroceso:
 
     def revertir_abierto(self, aplicar) -> None:
         if self._abierto is not None:
-            for cambio in reversed(self._abierto.cambios):
+            for i in range(len(self._abierto.cambios) - 1, -1, -1):
+                cambio = self._abierto.cambios[i]
                 aplicar(cambio.etiqueta, cambio.datos)
             self._abierto = None
 
@@ -128,7 +129,8 @@ class Historial_Retroceso:
         if not self._intervalos:
             return False
         intervalo = self._intervalos[-1]
-        for cambio in reversed(intervalo.cambios):
+        for i in range(len(intervalo.cambios) - 1, -1, -1):
+            cambio = intervalo.cambios[i]
             aplicar(cambio.etiqueta, cambio.datos)
         self._intervalos.pop()
         return True
