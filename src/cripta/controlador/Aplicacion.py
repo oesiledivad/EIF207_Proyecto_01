@@ -65,7 +65,7 @@ class Aplicacion:
         )
         self._gestor = GestorPartida()
         self._bitacora = Bitacora(capacidad=20)
-        self._inventario = InventarioControlador(self._gestor, self._bitacora)
+        self._inventario = InventarioControlador(self._gestor, self._bitacora, self._cripta_service)
         self._simulacion: Simulacion | None = None
         self._jugador: Jugador | None = None
         self._salas: IndiceSalas = IndiceSalas()  # antes: dict[int, SalaJuego]
@@ -299,7 +299,7 @@ class Aplicacion:
 
     @staticmethod
     def _tipos_visibles(sala: SalaJuego) -> list[str]:
-        tipos = [o.id for o in sala.objetos]
+        tipos = [o.tipo_id or o.id for o in sala.objetos]
         for t in sala.trampas:
             tipos.append(t.tipo)
         return tipos
@@ -362,10 +362,12 @@ class Aplicacion:
             # El botín queda en el suelo de la sala actual: sus fichas pasan a estar en uso.
             self._fijar_seguro(enemigo.suelta)
             nombres: list[str] = []
-            for tipo in enemigo.suelta:
+            for posicion, tipo in enumerate(enemigo.suelta):
                 ficha = self._cripta_service.obtener_ficha(tipo)
                 nombre = ficha.nombre if ficha is not None else tipo
-                sala.objetos.append(ObjetoSuelo(id=tipo, nombre=nombre))
+                sala.objetos.append(ObjetoSuelo(
+                    id=f"botin-{enemigo.identificador}-{posicion}", nombre=nombre, tipo_id=tipo,
+                ))
                 nombres.append(nombre)
             self._bitacora.append(Mensaje("combate", f"{enemigo.identificador} deja caer: {', '.join(nombres)}."))
 
@@ -430,6 +432,8 @@ class Aplicacion:
         estado = self._gestor.estado
         estado.reloj_virtual = self._simulacion.reloj.tiempo_actual
         estado.jugador_vida = self._jugador.vida
+        estado.jugador_ataque = self._jugador.ataque
+        estado.jugador_defensa = self._jugador.defensa
         estado.jugador_velocidad = self._jugador.velocidad
         sala_actual = self._salas.obtener(self._jugador.sala)
         if sala_actual is not None:
@@ -485,10 +489,10 @@ class Aplicacion:
         return self._accion_jugador("recoger", lambda: self._inventario.recoger(instancia_id))
 
     def soltar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("soltar", lambda: self._inventario.soltar(instancia_id))
+        return self._accion_jugador("soltar", lambda: self._inventario.soltar(instancia_id, self._jugador))
 
     def equipar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("equipar_objeto", lambda: self._inventario.equipar(instancia_id))
+        return self._accion_jugador("equipar_objeto", lambda: self._inventario.equipar(instancia_id, self._jugador))
 
     def usar(self, instancia_id: str) -> ResultadoAccion:
         return self._accion_jugador("usar_objeto", lambda: self._usar_objeto(instancia_id))

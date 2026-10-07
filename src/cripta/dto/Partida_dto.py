@@ -38,6 +38,7 @@ class EnemigoPartida:
 class ObjetoSuelo:
     id: str
     nombre: str
+    tipo_id: str = ""
 
 @dataclass
 class TrampaPartida:

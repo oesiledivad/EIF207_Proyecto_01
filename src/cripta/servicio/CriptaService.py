@@ -341,9 +341,12 @@ class CriptaService:
             ))
 
         objetos: list[ObjetoSuelo] = []
-        for o in entrada.get("objetos", []):
+        for posicion, o in enumerate(entrada.get("objetos", [])):
             ficha = _buscar_ficha(catalogo, str(o))
-            objetos.append(ObjetoSuelo(id=str(o), nombre=ficha.nombre if ficha else str(o)))
+            objetos.append(ObjetoSuelo(
+                id=f"sala-{entrada['sala']}-objeto-{posicion}",
+                nombre=ficha.nombre if ficha else str(o), tipo_id=str(o),
+            ))
 
         trampas: list[TrampaPartida] = []
         for t in entrada.get("trampas", []):

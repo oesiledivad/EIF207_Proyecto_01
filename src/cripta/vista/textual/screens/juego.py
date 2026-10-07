@@ -8,6 +8,7 @@ from textual.screen import Screen
 from textual.widgets import Button, Footer, Static
 
 from cripta.controlador.Aplicacion import Aplicacion
+from cripta.estructuras.Inventario import ItemInventario
 from cripta.vista.textual.modales.ayuda import AyudaModal
 from cripta.vista.textual.modales.confirmar import ConfirmarModal
 from cripta.vista.textual.modales.elegir_item import ElegirItemModal
@@ -168,10 +169,14 @@ class JuegoScreen(Screen):
         elif btn == "btn-atacar":
             self._modal_elegir_enemigo()
         elif btn == "btn-recoger":
-            # Recoger se hace sobre el suelo, no sobre el inventario.
-            # Hasta que exista el modal de objetos del suelo (P1),
-            # se reporta como no implementado.
-            self.notify("Recoger aún no implementado.", title="Cripta")
+            objetos = self._controlador.estado_partida().objetos_suelo
+            if not objetos:
+                self.notify("No hay objetos en el suelo.", title="Cripta")
+                return
+            items = [ItemInventario(o.id, o.tipo_id or o.id, o.nombre, "", 0, 0)
+                     for o in objetos]
+            self.app.push_screen(ElegirItemModal(items, "recoger"),
+                                 lambda item: self._al_elegir_item("recoger", item))
         elif btn == "btn-usar":
             self._modal_elegir("usar")
         elif btn == "btn-equipar":
@@ -236,7 +241,9 @@ class JuegoScreen(Screen):
     def _al_elegir_item(self, accion: str, item) -> None:
         if item is None:
             return
-        if accion == "usar":
+        if accion == "recoger":
+            self._ejecutar(self._controlador.recoger(item.instancia_id))
+        elif accion == "usar":
             self._ejecutar(self._controlador.usar(item.instancia_id))
         elif accion == "equipar":
             self._ejecutar(self._controlador.equipar(item.instancia_id))
