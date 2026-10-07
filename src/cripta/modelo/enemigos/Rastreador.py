@@ -20,7 +20,7 @@ class Rastreador(Enemigo):
             if s.cerrada:
                 continue
             vecina = salas.obtener(s.sala_destino)
-            if vecina.ultimo_tiempo_visita is None:
+            if vecina is None or vecina.ultimo_tiempo_visita is None:
                 continue
             antiguedad = tiempo_actual - vecina.ultimo_tiempo_visita
             if antiguedad < 400:

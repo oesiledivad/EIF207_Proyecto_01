@@ -1,5 +1,5 @@
 """
-    src/cripta/controlador/simulacion.py
+    src/cripta/modelo/Simulacion.py
     Contiene el motor encargado de avanzar la simulación
     mediante la agenda de eventos y el reloj virtual.
 """
@@ -7,7 +7,14 @@ from cripta.estructuras.Agenda_Eventos import HeapAgendaEventos
 from cripta.estructuras.Indice_Salas import IndiceSalas
 from cripta.util.Reloj import Reloj
 from cripta.modelo.Combate import calcular_danio, aplicar_danio, esta_vivo
-from cripta.util.Costo_Acciones import COSTOS, calcular_intervalo
+from cripta.util.Costo_Acciones import costo_accion, calcular_intervalo
+from cripta.modelo.Efectos import (
+    procesar_pulso_veneno,
+    procesar_regeneracion,
+    procesar_fin_velocidad,
+    procesar_apagar_antorcha,
+    procesar_rearme_trampa,
+)
 
 import random
 
@@ -41,40 +48,64 @@ class Simulacion:
             if not esta_vivo(jugador):
                 return mensajes  # jugador murió: no reprogramamos nada más
         elif tipo_accion == "mover":
-            enemigo.sala = destino
+            self._mover_enemigo(enemigo, destino, salas)
 
-        intervalo = calcular_intervalo(COSTOS[tipo_accion], enemigo.velocidad)
+        intervalo = calcular_intervalo(costo_accion(tipo_accion), enemigo.velocidad)
         self.agenda.reprogramar(enemigo, tiempo_actual + intervalo, "accion_actor")
         return mensajes
 
+    @staticmethod
+    def _mover_enemigo(enemigo, destino_id: int, salas: IndiceSalas) -> None:
+        """Cambia la pertenencia del enemigo: sale de su sala y entra a la destino.
+
+        El enemigo sigue activo aunque el jugador nunca haya entrado a la
+        sala destino (§2.4). O(k) por quitar de la lista de la sala origen.
+        """
+        sala_origen = salas.obtener(enemigo.sala)
+        sala_destino = salas.obtener(destino_id)
+        if sala_destino is None:
+            return  # no debería pasar: todas las salas del esqueleto existen
+        if sala_origen is not None:
+            sala_origen.quitar_enemigo(enemigo)
+        sala_destino.agregar_enemigo(enemigo)
+        enemigo.sala = destino_id
+
     def avanzar_hasta_turno_jugador(self, jugador, salas) -> list[str]:
+        """Ejecuta eventos en orden (tiempo, secuencia) hasta que le toque al jugador.
+
+        Al encontrar el evento del jugador NO lo extrae: solo adelanta el
+        reloj a su instante. Así la siguiente acción del jugador se programa
+        desde el tiempo correcto (§2.3). Se detiene si el jugador muere.
+        """
         mensajes: list[str] = []
         while True:
             siguiente = self.agenda.peek()
             if siguiente is None:
                 return mensajes
             if siguiente.actor is jugador and siguiente.tipo == "accion_actor":
+                self.reloj.avanzar_hasta(siguiente.tiempo_siguiente)
                 return mensajes
             evento = self.agenda.extraer_siguiente()
             self.reloj.avanzar_hasta(evento.tiempo_siguiente)
             mensajes.extend(self.ejecutar_evento(evento, jugador, salas))
+            if not esta_vivo(jugador):
+                return mensajes
 
     def ejecutar_evento(self, evento, jugador, salas) -> list[str]:
-        if evento.tipo == "accion_actor" and evento.actor is not jugador:
-            return self._ejecutar_turno_enemigo(evento.actor, jugador, salas)
-        if evento.tipo == "veneno":
-            from cripta.modelo.Efectos import procesar_pulso_veneno
-            return [procesar_pulso_veneno(evento.actor, self.reloj.tiempo_actual, self.agenda)]
-        if evento.tipo == "regeneracion":
-            from cripta.modelo.Efectos import procesar_regeneracion
-            return [procesar_regeneracion(evento.actor, self.reloj.tiempo_actual, self.agenda)]
-        if evento.tipo == "fin_velocidad":
-            from cripta.modelo.Efectos import procesar_fin_velocidad
-            return [procesar_fin_velocidad(evento.actor, self.reloj.tiempo_actual, self.agenda)]
-        if evento.tipo == "antorcha_apagar":
-            from cripta.modelo.Efectos import procesar_apagar_antorcha
-            return [procesar_apagar_antorcha(evento.actor)]
-        if evento.tipo == "trampa_rearme":
-            from cripta.modelo.Efectos import procesar_rearme_trampa
-            return [procesar_rearme_trampa(evento.actor)]
+        tiempo = self.reloj.tiempo_actual
+        match evento.tipo:
+            case "accion_actor":
+                if evento.actor is jugador:
+                    return []
+                return self._ejecutar_turno_enemigo(evento.actor, jugador, salas)
+            case "veneno":
+                return [procesar_pulso_veneno(evento.actor, tiempo, self.agenda)]
+            case "regeneracion":
+                return [procesar_regeneracion(evento.actor, tiempo, self.agenda)]
+            case "fin_velocidad":
+                return [procesar_fin_velocidad(evento.actor, tiempo, self.agenda)]
+            case "antorcha_apagar":
+                return [procesar_apagar_antorcha(evento.actor)]
+            case "trampa_rearme":
+                return [procesar_rearme_trampa(evento.actor)]
         return []

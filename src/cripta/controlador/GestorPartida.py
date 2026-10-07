@@ -75,6 +75,9 @@ class GestorPartida:
     def cerrar_intervalo(self) -> None:
         self.historial.cerrar_intervalo()
 
+    def descartar_intervalo(self) -> None:
+        self.historial.descartar_intervalo()
+
     def registrar_cambio(self, etiqueta: str, datos) -> None:
         """Registra un cambio invertible en el intervalo abierto.
 

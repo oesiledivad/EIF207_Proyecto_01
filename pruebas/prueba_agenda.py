@@ -2,7 +2,7 @@
 # Por ahora esta asi con lo basico despues se puede hacer mejor
 
 from cripta.modelo.Jugador import Jugador
-from estructuras.Agenda_Eventos import HeapAgendaEventos
+from cripta.estructuras.Agenda_Eventos import HeapAgendaEventos
 
 agenda = HeapAgendaEventos()
 

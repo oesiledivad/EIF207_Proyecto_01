@@ -1,7 +1,7 @@
 import uuid
 import time
 import requests
-from .Crypt_Data_Source import CryptDataSource
+from .Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 
 
 class NetworkAdapter(CryptDataSource):
@@ -9,19 +9,38 @@ class NetworkAdapter(CryptDataSource):
         self.BASE_URL = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
         self.timeout = timeout
         self.max_reintentos_429 = max_reintentos_429
-        self.client_id = str(uuid.uuid4())
+        self.client_id = str(uuid.uuid4())  # uno por ejecución
         self.headers = {"X-Cripta-Client-Id": self.client_id}
         self._requests_made = 0
-        
+        self._presupuesto: int | None = None  # se conoce al leer los datos generales
+
     @property
     def requests_made(self) -> int:
         return self._requests_made
+
+    def fijar_presupuesto(self, presupuesto: int) -> None:
+        self._presupuesto = presupuesto
+
+    def solicitudes_restantes(self) -> int | None:
+        if self._presupuesto is None:
+            return None
+        return max(0, self._presupuesto - self._requests_made)
 
     def _request(self, endpoint: str, params: dict = None) -> dict:
         url = f"{self.BASE_URL}{endpoint}"
         intentos = 0
         while True:
-            respuesta = requests.get(url, headers=self.headers, params=params, timeout=self.timeout)
+            # Control estricto: se revisa ANTES de cada intento, reintentos incluidos (§5.1).
+            if self._presupuesto is not None and self._requests_made >= self._presupuesto:
+                raise PresupuestoAgotado(
+                    f"Presupuesto de red agotado ({self._requests_made}/{self._presupuesto}) "
+                    f"al solicitar {endpoint}"
+                )
+            try:
+                respuesta = requests.get(url, headers=self.headers, params=params, timeout=self.timeout)
+            except requests.RequestException as e:
+                self._requests_made += 1  # la solicitud salió, cuenta
+                raise RuntimeError(f"Error de red en {endpoint}: {e}") from e
             self._requests_made += 1
 
             if respuesta.status_code == 200:
@@ -31,7 +50,11 @@ class NetworkAdapter(CryptDataSource):
                 intentos += 1
                 if intentos > self.max_reintentos_429:
                     raise RuntimeError(f"Limite de reintentos 429 excedido en {endpoint}")
-                time.sleep(respuesta.json().get("reintentar_en", 1))
+                try:
+                    espera = respuesta.json().get("reintentar_en", 1)
+                except ValueError:
+                    espera = 1
+                time.sleep(espera)  # tiempo real: nunca toca el reloj virtual
                 continue
 
             raise RuntimeError(f"Error {respuesta.status_code} en {endpoint}: {respuesta.text}")
@@ -57,4 +80,3 @@ class NetworkAdapter(CryptDataSource):
 
     def get_catalog_version(self) -> dict:
         return self._request("/catalogo/version")
-    

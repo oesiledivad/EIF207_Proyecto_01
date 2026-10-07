@@ -31,6 +31,8 @@ class EnemigoPartida:
     comportamiento: str = "errante" # este valor es de respaldo, nunca se usa a menos que creemos un
     # EnemigoPartida sin pasar comportamiento, errante es el mas neutral
     regeneracion: int | None = None
+    tipo: str = ""                                          # id de catálogo
+    suelta: list[str] = field(default_factory=list)         # botín (§2.6)
 
 @dataclass
 class ObjetoSuelo:
@@ -42,6 +44,9 @@ class TrampaPartida:
     id: str
     tipo: str
     activa: bool
+    dano: int = 0
+    rearme: int | None = None
+    efecto: str = "daño"
 
 @dataclass
 class ObjetoInventario:
