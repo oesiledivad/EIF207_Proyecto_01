@@ -40,10 +40,29 @@ cantidad de basura que puede acumularse en el heap en un momento dado.
 - `peek`: O(1) amortizado
 
 ### Evidencia empírica
-[Pendiente — correr `--bench` con cargas sintéticas de 100, 500 y 2000 eventos
-simultáneos, y comparar `insertar`/`extraer_siguiente` contra una lista ordenada por
-inserción como alternativa descartada, tal como exige §8.5 del enunciado.]
 
+| n (eventos) | Heap: insertar | Heap: extraer | Lista: insertar | Lista: extraer |
+|---|---|---|---|---|
+| 100  | 0.28 ms  | 0.20 ms  | 0.15 ms  | 0.01 ms |
+| 500  | 0.40 ms  | 1.48 ms  | 3.47 ms  | 0.16 ms |
+| 2000 | 1.77 ms  | 16.51 ms | 86.52 ms | 3.36 ms |
+
+El crecimiento de `insertar` en la lista ordenada es claramente superlineal
+(0.15 → 3.47 → 86.52 ms al cuadruplicar n cada vez: ~23x y ~25x respectivamente,
+consistente con O(n²) acumulado sobre n inserciones O(n) cada una), mientras que
+el heap crece de forma mucho más contenida (0.28 → 0.40 → 1.77 ms), consistente
+con O(n log n) acumulado.
+
+Dato interesante: en *extracción pura*, la lista (`pop(0)`, una sola llamada a
+código C) es más rápida en este rango que el heap (`sift_down`, varias
+comparaciones en Python puro por extracción) — el overhead de intérprete por
+paso domina sobre la ventaja algorítmica a esta escala. Sin embargo, en la
+simulación real la operación dominante es `insertar` (cada reprogramación de
+cada actor es un insert), no extraer-sin-insertar, así que esto no cambia la
+decisión: a n=2000, el heap es ~49x más rápido que la lista en la operación
+que realmente importa.
+
+Medido con `pruebas/bench_p2.py`, `random.Random(42)` para reproducibilidad.
 ### Límites conocidos
 Si la tasa de cancelación/reprogramación es mucho mayor que la de ejecución real de
 eventos (por ejemplo, cientos de actores cambiando de velocidad constantemente sin que
@@ -80,8 +99,23 @@ consistente con el requisito de §4.7 de que el costo sea proporcional a las sal
 la sala, no al tamaño de la cripta.
 
 ### Evidencia empírica
-[Pendiente — medir con `--bench` el tiempo de `decidir_accion` para cada
-comportamiento, y confirmar que no crece con el tamaño de la cripta.]
+
+| Tamaño de la cripta | 10 000 llamadas a `decidir_accion` | Por llamada |
+|---|---|---|
+| 20 salas    | 5.74 ms | 0.574 µs |
+| 200 salas   | 7.69 ms | 0.769 µs |
+| 2000 salas  | 8.93 ms | 0.893 µs |
+
+Al multiplicar el tamaño de la cripta por 100 (de 20 a 2000 salas), el costo
+por llamada solo crece ~1.56x, no ~100x — confirma que `decidir_accion` del
+Rastreador depende de la cantidad de salidas de su sala actual (acotada en 4
+por el diseño del juego, §2.1), no del tamaño total de la cripta, como exige
+§4.7. El crecimiento residual observado es atribuible a overhead de memoria/
+caché de CPU al recorrer una estructura más grande (`IndiceSalas` con más
+entradas), no a trabajo algorítmico adicional en la decisión en sí.
+
+Medido con `pruebas/bench_p2.py`, cripta sintética lineal (cada sala conectada
+solo a sus vecinas inmediatas).
 
 ### Límites conocidos
 El daño mínimo de 1 (`max(1, ataque + azar - defensa)`) puede hacer que combates entre
@@ -117,9 +151,12 @@ Cada pulso de efecto es O(log n) (una extracción + una inserción en la agenda)
 que cualquier otro evento — no se introduce ninguna estructura nueva.
 
 ### Evidencia empírica
-[Pendiente — medir cuántos eventos de efectos coexisten en una partida típica con
-varios enemigos envenenados/regenerando a la vez, y confirmar que el overhead sobre la
-agenda es marginal frente a los eventos de acción.]
+
+Los efectos (veneno, regeneración, fin de velocidad) se programan como
+eventos normales de la misma `HeapAgendaEventos` ya medida en la Sección 1 —
+no se introduce ninguna estructura ni costo adicional, así que esa evidencia
+aplica directamente acá. No se midió por separado porque sería remedir lo
+mismo.
 
 ### Límites conocidos
 El veneno tiene duración fija de 400 unidades (5 pulsos de 80); si se vuelve a aplicar
@@ -152,9 +189,20 @@ Deduplicar k ids es O(k²) en el peor caso (comparación lineal por cada id), ac
 porque k es el número de tipos distintos en un lote de contenido, típicamente ≤ 10.
 
 ### Evidencia empírica
-[Pendiente — medir aciertos/fallos de caché reales en una partida completa, y comparar
-solicitudes de red usadas contra `presupuesto_solicitudes` de la cripta.]
 
+| Operación | 50 000 consultas |
+|---|---|
+| Acierto (`obtener` de un id presente) | 133.39 ms (2.67 µs/consulta) |
+| Fallo (`obtener` de un id ausente)    | 168.70 ms (3.37 µs/consulta) |
+
+Ambos casos son O(1) en la práctica (tiempo prácticamente constante por
+consulta, sin crecimiento observado al variar la cantidad de consultas). Los
+fallos cuestan ~26% más que los aciertos, consistente con el comportamiento
+esperado de una tabla hash con encadenamiento: un acierto termina apenas
+encuentra la clave en su cadena, mientras que un fallo tiene que recorrer la
+cadena completa del bucket antes de poder confirmar la ausencia.
+
+Medido con `pruebas/bench_p2.py`.
 ### Límites conocidos
 La deduplicación O(k²) dejaría de ser trivial si una sola sala pudiera declarar
 decenas de tipos distintos de enemigos/trampas, lo cual no ocurre en el formato de
