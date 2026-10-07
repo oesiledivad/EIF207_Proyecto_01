@@ -18,6 +18,7 @@ class SalidaVecina:
     es_salida_final: bool
     tiene_enemigos: bool
     tiene_objetos: bool
+    cierre_automatico: int | None = None
 
 @dataclass
 class EnemigoPartida:

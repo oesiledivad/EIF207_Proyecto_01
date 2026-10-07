@@ -23,14 +23,12 @@ _FRAMES = ["|", "/", "-", "\\"]
 
 class CargandoScreen(ModalScreen):
     """Pantalla con spinner ASCII.
-
     Args:
         mensaje: Texto a mostrar junto al spinner.
         controlador: Si se pasa, se usa para precargar datos.
         siguiente: Nombre de la pantalla destino (solo modo pantalla).
         modo: "pantalla" o "modal".
     """
-
     def __init__(
         self,
         mensaje: str = "Cargando",
@@ -45,11 +43,9 @@ class CargandoScreen(ModalScreen):
         self._modo = modo
         self._frame = 0
         self._timer = None
-
     def compose(self) -> ComposeResult:
         with Vertical(id="cargando-caja"):
             yield Static("", id="cargando-texto")
-
     def on_mount(self) -> None:
         # Modo pantalla ocupa todo el ancho; modo modal queda centrado.
         if self._modo == "pantalla":
@@ -72,7 +68,6 @@ class CargandoScreen(ModalScreen):
         self.query_one("#cargando-texto", Static).update(
             f"[bold #e8a33d]{spinner}[/]  [#d6cfc4]{self._mensaje}...[/]"
         )
-
     def _precargar(self) -> None:
         """Ejecuta la precarga en un worker y encadena según `siguiente`."""
 

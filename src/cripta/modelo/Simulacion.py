@@ -15,7 +15,7 @@ from cripta.modelo.Efectos import (
     procesar_apagar_antorcha,
     procesar_rearme_trampa,
 )
-
+from cripta.modelo.Puertas import procesar_cierre_puerta
 import random
 
 class Simulacion:
@@ -108,4 +108,6 @@ class Simulacion:
                 return [procesar_apagar_antorcha(evento.actor)]
             case "trampa_rearme":
                 return [procesar_rearme_trampa(evento.actor)]
+            case "cierre_puerta":                                   
+                return [procesar_cierre_puerta(evento.actor)]
         return []

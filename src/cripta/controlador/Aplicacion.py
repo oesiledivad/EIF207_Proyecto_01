@@ -34,6 +34,7 @@ from cripta.modelo.Efectos import (
     encender_antorcha,
 )
 from cripta.modelo.Jugador import Jugador
+from cripta.modelo.Puertas import abrir_salida, buscar_llave
 from cripta.modelo.Sala import SalaJuego
 from cripta.modelo.enemigos.Guardian import Guardian
 from cripta.modelo.enemigos.Errante import Errante
@@ -188,7 +189,7 @@ class Aplicacion:
         for sala_modelo in esqueleto:
             salidas = Salidas()
             for v in sala_modelo.salidas:
-                salidas.agregar(v.direccion, v.sala_id, v.cerrada)
+                salidas.agregar(v.direccion, v.sala_id, v.cerrada, v.llave or None, v.cierre_automatico)
             self._salas.insertar(sala_modelo.id, SalaJuego(
                 id=sala_modelo.id, nombre=sala_modelo.nombre, salidas=salidas,
                 enemigos=[], objetos=[], trampas=[],
@@ -425,9 +426,36 @@ class Aplicacion:
             self._gestor.estado.activa = False
             self._bitacora.append(Mensaje("sistema", "Has muerto."))
             self._bitacora.append(Mensaje("sistema", self.resumen_red()))
+            
+    def _actualizar_vecindad(self) -> None:
+        """Pone al día la vecindad que lee la Vista a partir del Modelo (fuente de verdad).
 
+        Copia el estado vivo de cada puerta (SalaJuego.salidas) y marca si la sala
+        vecina tiene enemigos vivos u objetos. O(k * e), k = salidas (máx. 4).
+        """
+        sala = self._salas.obtener(self._jugador.sala)
+        if sala is None:
+            return
+        for v in self._gestor.estado.vecindad:
+            salida = sala.salidas.obtener(v.direccion)
+            if salida is not None:
+                v.cerrada = salida.cerrada
+                v.transitable = not salida.cerrada
+                v.llave = salida.llave or ""
+                v.cierre_automatico = salida.cierre_automatico
+            vecina = self._salas.obtener(v.sala_id)
+            if vecina is None:
+                continue
+            hay_enemigos = False
+            for e in vecina.enemigos:
+                if esta_vivo(e):
+                    hay_enemigos = True
+                    break
+            v.tiene_enemigos = hay_enemigos
+            v.tiene_objetos = len(vecina.objetos) > 0
     def _sincronizar_estado(self) -> None:
         estado = self._gestor.estado
+        self._actualizar_vecindad()          # <- NUEVO
         estado.reloj_virtual = self._simulacion.reloj.tiempo_actual
         estado.jugador_vida = self._jugador.vida
         estado.jugador_velocidad = self._jugador.velocidad
@@ -451,7 +479,6 @@ class Aplicacion:
         if self._jugador.antorcha_encendida:
             efectos.append("Antorcha encendida")
         estado.efectos = efectos
-
     # ---- acción: esperar ----
 
     def esperar(self) -> ResultadoAccion:
@@ -615,9 +642,42 @@ class Aplicacion:
                 if not esta_vivo(self._jugador):
                     break
         return ResultadoAccion.exito()
+    #kyara
+    def abrir(self, direccion: str) -> ResultadoAccion:                                     # <- NUEVO
+        """Abre la puerta de la sala actual en `direccion` (§2.5). Costo 50."""
+        direccion = direccion.strip().upper()
+        return self._accion_jugador("abrir_puerta", lambda: self._ejecutar_apertura(direccion))
+
+    def _ejecutar_apertura(self, direccion: str) -> ResultadoAccion:
+        sala = self._salas.obtener(self._jugador.sala)
+        if sala is None:
+            return ResultadoAccion.fallo("Sala actual no cargada.")
+        salida = sala.salidas.obtener(direccion)
+        if salida is None:
+            return ResultadoAccion.fallo("No hay salida en esa dirección.")
+        if not salida.cerrada:
+            return ResultadoAccion.fallo("Esa puerta ya está abierta.")
+        if not salida.llave:
+            return ResultadoAccion.fallo("Esa puerta no se abre con llave.")
+        inv = self._gestor.inventario
+        llave = buscar_llave(inv.items(), salida.llave) if inv is not None else None
+        if llave is None:
+            return ResultadoAccion.fallo("No tienes la llave correcta.")
+
+        tiempo = self._simulacion.reloj.tiempo_actual
+        evento = abrir_salida(salida, tiempo, self._simulacion.agenda)
+        # Dato para invertir el cambio (retroceso, §2.11): sala, dirección y evento de cierre.
+        self._gestor.registrar_cambio("puerta_abierta", (sala.id, direccion, evento))
+        self._bitacora.append(Mensaje("jugador", f"Abres la puerta {direccion} con {llave.nombre}."))
+        return ResultadoAccion.exito()
+
+
 
     def atacar(self, instancia_id: str) -> ResultadoAccion:
         return self._accion_jugador("atacar", lambda: self._ejecutar_ataque(instancia_id))
+
+
+    
 
     def _ejecutar_ataque(self, instancia_id: str) -> ResultadoAccion:
         sala_actual = self._salas.obtener(self._jugador.sala)

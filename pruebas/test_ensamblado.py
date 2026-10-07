@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src" / "cripta"))
-
+from modelo.Sala import SalaJuego
 from dto.FactoryDto_Ficha import parsear_ficha
 from dto.Crypta_Details import Crypta_Details
 from dto.contenidoDto import EnemigoContenido
@@ -81,6 +81,9 @@ from ensamblador.ensamblador_cripta import ensamblar_cripta
 # 6. sala: primero solo el mapa
 pagina = List_rooms(**crudo_esqueleto)
 sala1 = ensamblar_sala(pagina.salas[0])
+for s in sala1.salidas:
+    print("  ", s)
+
 assert sala1.nombre == "Entrada"
 assert sala1.objetos == [] and sala1.enemigos == []        # todavía sin contenido
 print("6. ensamblar_sala OK (sin contenido)")
@@ -105,4 +108,3 @@ assert cripta.obtener_sala(3).nombre == "Cripta final"
 print("9. ensamblar_cripta OK:", cripta.resumen())
 
 #TAREA, HACERLO CON EL ADAPTADOR DE RED
-

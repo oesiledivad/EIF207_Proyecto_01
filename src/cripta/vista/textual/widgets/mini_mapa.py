@@ -4,13 +4,10 @@ from pathlib import Path
 from textual.app import ComposeResult
 from textual.containers import Grid
 from textual.widgets import Static
-
 from cripta.dto.Partida_dto import EstadoPartida, SalidaVecina
-
 
 class CeldaMapa(Static):
     """Representa una celda individual dentro del Grid del minimapa."""
-
 
 class MiniMapa(Grid):
     """Grid 3x3 que renderiza la sala actual y sus vecinas con widgets nativos."""
