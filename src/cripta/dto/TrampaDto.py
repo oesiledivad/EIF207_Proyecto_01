@@ -5,3 +5,4 @@ from .CatalogoDto import FichaCatalogo
 class FichaTrampa(FichaCatalogo):
     daño: int
     rearme: int | None = None
+    efecto: str = "daño"  # "daño" (default) o "veneno"

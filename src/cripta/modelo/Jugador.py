@@ -30,4 +30,7 @@ class Jugador(Actor):
         )
         # Estos le pertenecen al jugador y no a los enemigos, por eso se definen aquí.
         self.inventario_max = inventario_max
+        self.antorcha_encendida = False
+        self.evento_antorcha = None
+
 

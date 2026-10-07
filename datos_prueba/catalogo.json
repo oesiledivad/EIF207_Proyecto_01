@@ -78,7 +78,8 @@
       "clase": "trampa",
       "nombre": "Dardos en la pared",
       "daño": 4,
-      "rearme": 300
+      "rearme": 300,
+      "efecto": "veneno"
     }
   ]
 }

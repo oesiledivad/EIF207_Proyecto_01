@@ -30,6 +30,7 @@ class EnemigoPartida:
     velocidad: int = 100
     comportamiento: str = "errante" # este valor es de respaldo, nunca se usa a menos que creemos un
     # EnemigoPartida sin pasar comportamiento, errante es el mas neutral
+    regeneracion: int | None = None
 
 @dataclass
 class ObjetoSuelo:

@@ -150,6 +150,7 @@ class CriptaService:
             enemigos = []
             for e in brutos:
                 ficha = self._cache_fichas.obtener(e.get("tipo"))
+                regeneracion = ficha.regeneracion if ficha else None,
                 enemigos.append(EnemigoPartida(
                     id=str(e.get("instancia", "")),
                     nombre=ficha.nombre if ficha else str(e.get("tipo", "")),

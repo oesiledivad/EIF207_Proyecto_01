@@ -71,6 +71,9 @@ class Simulacion:
         if evento.tipo == "fin_velocidad":
             from cripta.modelo.Efectos import procesar_fin_velocidad
             return [procesar_fin_velocidad(evento.actor, self.reloj.tiempo_actual, self.agenda)]
+        if evento.tipo == "antorcha_apagar":
+            from cripta.modelo.Efectos import procesar_apagar_antorcha
+            return [procesar_apagar_antorcha(evento.actor)]
         if evento.tipo == "trampa_rearme":
             from cripta.modelo.Efectos import procesar_rearme_trampa
             return [procesar_rearme_trampa(evento.actor)]
