@@ -77,10 +77,10 @@ class PruebasReplay(unittest.TestCase):
         self.assertTrue(app.usar_pergamino().ok)
         self.assertTrue(app.usar_pergamino().ok)
         app.terminar()
-        replay = reproducir(app._registro.ruta, [FuenteReplay()])
+        replay = reproducir(app._partida.registro.ruta, [FuenteReplay()])
         self.assertEqual(firma(replay), firma(app))
         self.assertEqual(replay.solicitudes_usadas(), 0)
-        cabecera, acciones = leer_partida(app._registro.ruta)
+        cabecera, acciones = leer_partida(app._partida.registro.ruta)
         self.assertEqual(cabecera.semilla, 42)
         self.assertEqual(cabecera.version_catalogo, "catalogo-prueba-1")
         self.assertEqual(acciones[-3:], [["retroceder", None], ["retroceder", None], ["terminar", None]])
@@ -91,31 +91,31 @@ class PruebasReplay(unittest.TestCase):
         vieja.get_catalog_version = lambda: {"version": "otra"}
         with patch.object(vieja, "room_content") as contenido:
             with self.assertRaisesRegex(ValueError, "reproduccion fiel"):
-                reproducir(app._registro.ruta, [vieja])
+                reproducir(app._partida.registro.ruta, [vieja])
             contenido.assert_not_called()
-        self.assertEqual(firma(reproducir(app._registro.ruta, [vieja, FuenteReplay()])), firma(app))
+        self.assertEqual(firma(reproducir(app._partida.registro.ruta, [vieja, FuenteReplay()])), firma(app))
         distinta = FuenteReplay()
         original = distinta.crypta_details
         distinta.crypta_details = lambda cid: {**original(cid), "version": "otra-cripta"}
         with self.assertRaisesRegex(ValueError, "reproduccion fiel"):
-            reproducir(app._registro.ruta, [distinta])
+            reproducir(app._partida.registro.ruta, [distinta])
 
     def test_registro_append_no_reescribe_y_fallo_no_se_registra(self):
         app = self.iniciar()
-        ruta = app._registro.ruta
+        ruta = app._partida.registro.ruta
         anterior = ruta.read_bytes()
         self.assertFalse(app.recoger("no-existe").ok)
         self.assertEqual(ruta.read_bytes(), anterior)
         self.assertTrue(app.esperar().ok)
         self.assertTrue(ruta.read_bytes().startswith(anterior))
         otro = self.iniciar()
-        self.assertNotEqual(otro._registro.ruta, ruta)
+        self.assertNotEqual(otro._partida.registro.ruta, ruta)
         self.assertTrue(ruta.read_bytes().startswith(anterior))
 
     def test_error_disco_revierte_accion_y_detiene_sesion(self):
         app = self.iniciar()
         antes = firma(app)
-        with patch.object(app._registro, "anexar", side_effect=OSError("disco lleno")):
+        with patch.object(app._partida.registro, "anexar", side_effect=OSError("disco lleno")):
             with self.assertRaisesRegex(ErrorRegistro, "disco lleno"):
                 app.esperar()
         self.assertEqual(firma(app), antes)
@@ -138,7 +138,7 @@ class PruebasReplay(unittest.TestCase):
         app.esperar()
         with patch("cripta.bootstrap._construir_data_source", return_value=FuenteReplay()):
             with patch("cripta.bootstrap.AlmacenDisco") as almacen:
-                self.assertEqual(main(["--offline", "--replay", str(app._registro.ruta)]), 0)
+                self.assertEqual(main(["--offline", "--replay", str(app._partida.registro.ruta)]), 0)
                 almacen.assert_not_called()
         self.assertNotIn("cripta.vista.textual.app", sys.modules)
 
@@ -159,7 +159,7 @@ class PruebasReplay(unittest.TestCase):
         app.mover("N")
         proceso = subprocess.run(
             [sys.executable, "-B", "-m", "cripta", "--offline", "--offline-dir", str(datos),
-             "--replay", str(app._registro.ruta)],
+             "--replay", str(app._partida.registro.ruta)],
             capture_output=True, text=True,
         )
         self.assertEqual(proceso.returncode, 0, proceso.stderr)
@@ -179,7 +179,7 @@ class PruebasReplay(unittest.TestCase):
         app = self.iniciar()
         fuente = FuenteReplay()
         with patch.object(fuente, "room_content", side_effect=RuntimeError("datos no disponibles")):
-            replay = reproducir(app._registro.ruta, [fuente, FuenteReplay()])
+            replay = reproducir(app._partida.registro.ruta, [fuente, FuenteReplay()])
         self.assertEqual(firma(app), firma(replay))
 
     def test_nombres_descriptivos_consecutivos_por_cripta(self):
@@ -219,4 +219,4 @@ class PruebasReplay(unittest.TestCase):
         ruta = self.carpeta / "puntajes.json"
         self.assertTrue(ruta.exists())
         self.assertEqual(len(json.loads(ruta.read_text(encoding="utf-8"))), 1)
-        self.assertEqual(app._registro.ruta.parent, ruta.parent)
+        self.assertEqual(app._partida.registro.ruta.parent, ruta.parent)

@@ -1,0 +1,125 @@
+"""Registro, retroceso y cierre de la partida; no ejecuta el ciclo de simulación."""
+from uuid import uuid4
+
+from cripta.adaptadores.Puntajes import Puntaje, TablaPuntajes
+from cripta.dto.ResultadoAccion import ResultadoAccion
+from cripta.dto.Partida_dto import EstadoPartida
+from cripta.estructuras.Bitacora import Mensaje
+from cripta.replay.reproductor import Cabecera, RegistroPartida, ErrorRegistro
+
+
+class PartidaControlador:
+    def __init__(self, gestor, bitacora, carpeta_logs=None, ruta_puntajes=None):
+        self._gestor = gestor
+        self._bitacora = bitacora
+        self._registro = RegistroPartida(carpeta_logs) if carpeta_logs is not None else None
+        if ruta_puntajes is None and self._registro is not None:
+            ruta_puntajes = self._registro.carpeta / "puntajes.json"
+        self._puntajes = TablaPuntajes(ruta_puntajes) if ruta_puntajes is not None else None
+        self._partida_id = None
+        self._puntaje_guardado = False
+        self.error_puntaje = ""
+
+    @property
+    def registro(self):
+        return self._registro
+
+    def reiniciar(self):
+        self._partida_id = uuid4().hex
+        self._puntaje_guardado = False
+        self.error_puntaje = ""
+        self._gestor.historial.limpiar()
+
+    def iniciar(self, detalles, nombre: str, semilla: int, modo: str):
+        self.reiniciar()
+        self._gestor.estado = EstadoPartida(
+            activa=True,
+            nombre_jugador=nombre,
+            cripta_id=detalles.id,
+            version_cripta=detalles.version,
+            semilla=semilla,
+            modo=modo,
+            presupuesto_solicitudes=detalles.presupuesto_solicitudes,
+            inventario_max=detalles.inventario_max,
+            sala_actual_id=detalles.sala_inicial,
+            sala_actual_nombre="(cargando...)",
+            sala_salida_id=detalles.sala_salida,
+            llave_salida=detalles.llave_salida,
+            jugador_vida=detalles.jugador_vida_max,
+            jugador_vida_max=detalles.jugador_vida_max,
+            jugador_ataque=detalles.jugador_ataque,
+            jugador_defensa=detalles.jugador_defensa,
+            jugador_velocidad=detalles.jugador_velocidad,
+        )
+
+        self._gestor.reiniciar_inventario(detalles.inventario_max)
+
+
+    def comprobar_derrota(self, vivo: bool, resumen_red: str):
+        if not vivo:
+            self._gestor.estado.derrota = True
+            self._gestor.estado.terminada = True
+            self._gestor.estado.activa = False
+            self._bitacora.append(Mensaje("sistema", "Has muerto."))
+            self._bitacora.append(Mensaje("sistema", resumen_red))
+
+    def iniciar_registro(self, detalles, version_catalogo, semilla, nombre, capacidad_cache):
+        if self._registro is not None:
+            self._registro.iniciar(Cabecera(
+                detalles.id, detalles.version, version_catalogo, semilla, nombre, capacidad_cache,
+            ))
+            self._bitacora.append(Mensaje("sistema", f"Registro: {self._registro.ruta}"))
+
+    def puntajes(self):
+        return self._puntajes.ordenados() if self._puntajes is not None else []
+
+    def registrar_accion(self, nombre, argumento=None):
+        if self._registro is not None:
+            try:
+                self._registro.anexar(nombre, argumento)
+            except OSError as error:
+                # Un fallo de disco detiene la sesion para no seguir sin registro.
+                self._gestor.estado.activa = False
+                raise ErrorRegistro(f"No se pudo registrar la accion: {error}") from error
+
+    def retroceder(self) -> ResultadoAccion:
+        if not self._gestor.estado.activa:
+            return ResultadoAccion.fallo("La partida no está activa.")
+        inv = self._gestor.inventario
+        pergamino = next((item for item in inv.items()
+                          if item.clase == "pergamino_retroceso"), None)
+        if pergamino is None:
+            return ResultadoAccion.fallo("No tienes pergaminos.")
+        if not len(self._gestor.historial):
+            return ResultadoAccion.fallo("No hay nada que deshacer.")
+        self.registrar_accion("retroceder")
+        inv.soltar_por_id(pergamino.instancia_id)
+        self._gestor.deshacer()
+        return ResultadoAccion.exito()
+
+    def guardar_puntaje(self):
+        if self._puntajes is None or self._puntaje_guardado or self._partida_id is None:
+            return
+        estado = self._gestor.estado
+        resultado = "victoria" if estado.victoria else "derrota" if estado.derrota else "abandono"
+        try:
+            self._puntajes.registrar(Puntaje(
+                self._partida_id, estado.nombre_jugador, estado.cripta_id, estado.version_cripta,
+                estado.acciones_ejecutadas, estado.enemigos_derrotados, estado.reloj_virtual, resultado))
+        except (OSError, ValueError) as error:
+            self.error_puntaje = f"No se pudo guardar el puntaje: {error}"
+            self._bitacora.append(Mensaje("sistema", self.error_puntaje))
+            return
+        self._puntaje_guardado = True
+        self.error_puntaje = ""
+
+    def terminar(self, resumen_red: str) -> None:
+        if self._gestor.estado.terminada:
+            self.guardar_puntaje()
+            return
+        if self._registro is not None and self._registro.ruta is not None:
+            self.registrar_accion("terminar")
+        self._gestor.estado.activa = False
+        self._gestor.estado.terminada = True
+        self.guardar_puntaje()
+        self._bitacora.append(Mensaje("sistema", resumen_red))

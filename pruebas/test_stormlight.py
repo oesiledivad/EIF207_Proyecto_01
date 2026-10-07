@@ -139,7 +139,7 @@ class PruebasStormlight(unittest.TestCase):
             self.assertEqual(sum(i.clase == "pergamino_retroceso" for i in app.inventario().items()),
                              pergaminos - 2)
             app.terminar()
-            self.assertEqual(app._registro.ruta.name, "cripta_stormlight_partida_00001.log")
+            self.assertEqual(app._partida.registro.ruta.name, "cripta_stormlight_partida_00001.log")
             self.assertTrue((Path(carpeta) / "puntajes.json").exists())
-            replay = reproducir(app._registro.ruta, [AdaptadorOffline(DATOS)])
+            replay = reproducir(app._partida.registro.ruta, [AdaptadorOffline(DATOS)])
             self.assertEqual(firma(app), firma(replay))

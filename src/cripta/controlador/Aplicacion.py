@@ -4,13 +4,12 @@
 from __future__ import annotations
 
 import random
-from uuid import uuid4
 
-from cripta.adaptadores.Puntajes import Puntaje, TablaPuntajes
-from cripta.replay.reproductor import Cabecera, RegistroPartida, ErrorRegistro
+from cripta.replay.reproductor import ErrorRegistro
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.controlador.GestorPartida import GestorPartida
+from cripta.controlador.PartidaControlador import PartidaControlador
 from cripta.controlador.InventarioControlador import InventarioControlador
 from cripta.dto.Partida_dto import (
     CriptaResumen,
@@ -73,13 +72,7 @@ class Aplicacion:
         self._jugador: Jugador | None = None
         self._salas: IndiceSalas = IndiceSalas()  # antes: dict[int, SalaJuego]
         self._max_id_sala = 0
-        self._registro = RegistroPartida(carpeta_logs) if carpeta_logs is not None else None
-        if ruta_puntajes is None and self._registro is not None:
-            ruta_puntajes = self._registro.carpeta / "puntajes.json"
-        self._puntajes = TablaPuntajes(ruta_puntajes) if ruta_puntajes is not None else None
-        self._partida_id = None
-        self._puntaje_guardado = False
-        self.error_puntaje = ""
+        self._partida = PartidaControlador(self._gestor, self._bitacora, carpeta_logs, ruta_puntajes)
 
     #  Selección
 
@@ -126,37 +119,16 @@ class Aplicacion:
         except (PresupuestoAgotado, RuntimeError) as e:
             return ResultadoInicio(ok=False, motivo=f"No se pudieron leer los datos de la cripta: {e}")
         self._cripta_service.fijar_presupuesto(detalles.presupuesto_solicitudes)
-        if self._registro is not None:
+        if self._partida.registro is not None:
             try:
                 self._cripta_service.obtener_version_catalogo(actualizar=True)
             except (OSError, RuntimeError, ValueError, NotImplementedError) as error:
                 return ResultadoInicio(ok=False, motivo=f"No se pudo preparar el registro: {error}")
 
-        self._partida_id = uuid4().hex
-        self._puntaje_guardado = False
-        self.error_puntaje = ""
-        self._gestor.estado = EstadoPartida(
-            activa=True,
-            nombre_jugador=nombre,
-            cripta_id=detalles.id,
-            version_cripta=detalles.version,
-            semilla=semilla_efectiva,
-            modo="offline" if self._cripta_service.es_offline() else "red",
-            presupuesto_solicitudes=detalles.presupuesto_solicitudes,
-            inventario_max=detalles.inventario_max,
-            sala_actual_id=detalles.sala_inicial,
-            sala_actual_nombre="(cargando...)",
-            sala_salida_id=detalles.sala_salida,
-            llave_salida=detalles.llave_salida,
-            jugador_vida=detalles.jugador_vida_max,
-            jugador_vida_max=detalles.jugador_vida_max,
-            jugador_ataque=detalles.jugador_ataque,
-            jugador_defensa=detalles.jugador_defensa,
-            jugador_velocidad=detalles.jugador_velocidad,
+        self._partida.iniciar(
+            detalles, nombre, semilla_efectiva,
+            "offline" if self._cripta_service.es_offline() else "red",
         )
-
-        self._gestor.reiniciar_inventario(detalles.inventario_max)
-        self._gestor.historial.limpiar()
 
         self._bitacora.limpiar()
         self._bitacora.append(Mensaje("sistema", f"Partida iniciada en {cripta_id}."))
@@ -193,16 +165,15 @@ class Aplicacion:
         self._gestor.refrescar_sala_actual()
         self._sincronizar_estado()
 
-        if self._registro is not None:
+        if self._partida.registro is not None:
             try:
-                self._registro.iniciar(Cabecera(
-                    detalles.id, detalles.version, self._cripta_service.obtener_version_catalogo(),
+                self._partida.iniciar_registro(
+                    detalles, self._cripta_service.obtener_version_catalogo(),
                     semilla_efectiva, nombre, self._cripta_service._cache_fichas.capacidad,
-                ))
+                )
             except OSError as error:
                 self._gestor.estado.activa = False
                 return ResultadoInicio(ok=False, motivo=f"No se pudo crear el registro: {error}")
-            self._bitacora.append(Mensaje("sistema", f"Registro: {self._registro.ruta}"))
         return ResultadoInicio(ok=True, semilla_efectiva=semilla_efectiva)
 
     #  Salas y red (§4.2)
@@ -445,7 +416,7 @@ class Aplicacion:
             if esta_vivo(self._jugador):
                 self._consumir_tiempo_jugador(nombre_costo)
             self._despues_del_ciclo()
-            self._registrar_accion(nombre_costo, argumento)
+            self._partida.registrar_accion(nombre_costo, argumento)
         except Exception as error:
             anteriores = self._tipos_activos()
             historial.revertir_abierto(self._gestor._aplicar_reversion)
@@ -457,17 +428,8 @@ class Aplicacion:
             raise
         self._gestor.cerrar_intervalo()
         if self._gestor.estado.terminada:
-            self._guardar_puntaje()
+            self._partida.guardar_puntaje()
         return resultado
-
-    def _registrar_accion(self, nombre, argumento=None):
-        if self._registro is not None:
-            try:
-                self._registro.anexar(nombre, argumento)
-            except OSError as error:
-                # Un fallo de disco detiene la sesion para no seguir sin registro.
-                self._gestor.estado.activa = False
-                raise ErrorRegistro(f"No se pudo registrar la accion: {error}") from error
 
     def _consumir_tiempo_jugador(self, nombre_costo: str) -> None:
         sim = self._simulacion
@@ -485,12 +447,7 @@ class Aplicacion:
         self._gestor.estado.sala_actual_id = self._jugador.sala
         self._gestor.refrescar_sala_actual()
         self._sincronizar_estado()
-        if not esta_vivo(self._jugador):
-            self._gestor.estado.derrota = True
-            self._gestor.estado.terminada = True
-            self._gestor.estado.activa = False
-            self._bitacora.append(Mensaje("sistema", "Has muerto."))
-            self._bitacora.append(Mensaje("sistema", self.resumen_red()))
+        self._partida.comprobar_derrota(esta_vivo(self._jugador), self.resumen_red())
 
     def _sincronizar_estado(self) -> None:
         estado = self._gestor.estado
@@ -573,33 +530,25 @@ class Aplicacion:
     def usar_pergamino(self) -> ResultadoAccion:
         if not self._partida_en_curso():
             return ResultadoAccion.fallo("La partida no está activa.")
-        inv = self._gestor.inventario
-        pergamino = next((item for item in inv.items()
-                          if item.clase == "pergamino_retroceso"), None)
-        if pergamino is None:
-            return ResultadoAccion.fallo("No tienes pergaminos.")
-        if not len(self._gestor.historial):
-            return ResultadoAccion.fallo("No hay nada que deshacer.")
-        self._registrar_accion("retroceder")
         anteriores = self._tipos_activos()
-        inv.soltar_por_id(pergamino.instancia_id)
-        self._gestor.deshacer()
-        self._cripta_service.liberar_fichas(anteriores)
-        self._fijar_seguro(self._tipos_activos())
-        self._despues_del_ciclo()
-        self._bitacora.append(Mensaje("efecto", "Usaste un pergamino de retroceso."))
-        return ResultadoAccion.exito()
+        resultado = self._partida.retroceder()
+        if resultado.ok:
+            self._cripta_service.liberar_fichas(anteriores)
+            self._fijar_seguro(self._tipos_activos())
+            self._despues_del_ciclo()
+            self._bitacora.append(Mensaje("efecto", "Usaste un pergamino de retroceso."))
+        return resultado
 
     def siguiente_item(self) -> ResultadoAccion:
         resultado = self._inventario.siguiente()
         if resultado.ok:
-            self._registrar_accion("siguiente_item")
+            self._partida.registrar_accion("siguiente_item")
         return resultado
 
     def anterior_item(self) -> ResultadoAccion:
         resultado = self._inventario.anterior()
         if resultado.ok:
-            self._registrar_accion("anterior_item")
+            self._partida.registrar_accion("anterior_item")
         return resultado
 
     def vista_inventario(self, criterio: str) -> list:
@@ -655,16 +604,9 @@ class Aplicacion:
             case otra:
                 return ResultadoAccion.fallo(f"No se puede usar un objeto de clase {otra}.")
 
-        self._consumir_item(item)
+        self._inventario.consumir(item)
         self._bitacora.append(Mensaje("jugador", texto))
         return ResultadoAccion.exito()
-
-    def _consumir_item(self, item) -> None:
-        inv = self._gestor.inventario
-        posicion = inv.posicion_de(item.instancia_id)
-        self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
-        inv.soltar_por_id(item.instancia_id)
-        self._cripta_service.liberar_fichas([item.tipo_id])  # ya no está en inventario
 
     #  Acciones de partida
 
@@ -740,31 +682,11 @@ class Aplicacion:
         return ResultadoAccion.exito()
 
     def puntajes(self):
-        return self._puntajes.ordenados() if self._puntajes is not None else []
+        return self._partida.puntajes()
 
-    def _guardar_puntaje(self):
-        if self._puntajes is None or self._puntaje_guardado or self._partida_id is None:
-            return
-        estado = self._gestor.estado
-        resultado = "victoria" if estado.victoria else "derrota" if estado.derrota else "abandono"
-        try:
-            self._puntajes.registrar(Puntaje(
-                self._partida_id, estado.nombre_jugador, estado.cripta_id, estado.version_cripta,
-                estado.acciones_ejecutadas, estado.enemigos_derrotados, estado.reloj_virtual, resultado))
-        except (OSError, ValueError) as error:
-            self.error_puntaje = f"No se pudo guardar el puntaje: {error}"
-            self._bitacora.append(Mensaje("sistema", self.error_puntaje))
-            return
-        self._puntaje_guardado = True
-        self.error_puntaje = ""
+    @property
+    def error_puntaje(self):
+        return self._partida.error_puntaje
 
     def terminar(self) -> None:
-        if self._gestor.estado.terminada:
-            self._guardar_puntaje()
-            return
-        if self._registro is not None and self._registro.ruta is not None:
-            self._registrar_accion("terminar")
-        self._gestor.estado.activa = False
-        self._gestor.estado.terminada = True
-        self._guardar_puntaje()
-        self._bitacora.append(Mensaje("sistema", self.resumen_red()))
+        self._partida.terminar(self.resumen_red())

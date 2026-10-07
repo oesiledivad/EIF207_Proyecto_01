@@ -131,6 +131,14 @@ class InventarioControlador:
         self._bitacora.append(Mensaje("jugador", f"Equipaste {item.nombre}."))
         return ResultadoAccion.exito()
 
+    def consumir(self, item: ItemInventario) -> None:
+        """Retira el consumible, registra su delta y libera su ficha."""
+        inv = self._gestor.inventario
+        posicion = inv.posicion_de(item.instancia_id)
+        self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
+        inv.soltar_por_id(item.instancia_id)
+        self._servicio.liberar_fichas([item.tipo_id])
+
     def _quitar_bonus(self, item, jugador) -> None:
         self._gestor.registrar_cambio("atributo", (jugador, "ataque", jugador.ataque))
         self._gestor.registrar_cambio("atributo", (jugador, "defensa", jugador.defensa))
