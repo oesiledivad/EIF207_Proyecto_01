@@ -27,7 +27,8 @@ def procesar_pulso_veneno(actor, tiempo_actual: int, agenda) -> str:
     aplicar_danio(actor, actor.dano_veneno)
     mensaje = f"{actor.identificador} sufre {actor.dano_veneno} de veneno."
 
-    if not esta_vivo(actor) or tiempo_actual + INTERVALO_VENENO >= actor.fin_veneno:
+    # Pulsos en t0+80, +160, +240, +320 y +400 (400/80 = 5 pulsos).
+    if not esta_vivo(actor) or tiempo_actual + INTERVALO_VENENO > actor.fin_veneno:
         actor.evento_veneno = None
         actor.fin_veneno = None
         return mensaje
@@ -44,6 +45,24 @@ def aplicar_cambio_velocidad(actor, nueva_velocidad: int, duracion: int, tiempo_
 
     actor.actualizar_velocidad(nueva_velocidad, tiempo_actual, agenda)
     actor.evento_fin_velocidad = agenda.insertar(tiempo_actual + duracion, actor, "fin_velocidad")
+
+
+def aplicar_modificador_velocidad(actor, modificador: int, duracion: int, tiempo_actual: int, agenda) -> None:
+    """Poción de velocidad: suma `modificador` a la velocidad base durante `duracion`.
+
+    Si ya hay un efecto activo, se parte de la velocidad base original
+    (no se acumulan), y se reinicia la duración.
+    """
+    base = actor.velocidad if actor.evento_fin_velocidad is None else actor.velocidad_base
+    nueva = max(1, base + modificador)
+    aplicar_cambio_velocidad(actor, nueva, duracion, tiempo_actual, agenda)
+
+
+def curar(actor, cantidad: int) -> int:
+    """Cura sin superar vida_max (Apéndice B). Devuelve lo curado realmente."""
+    antes = actor.vida
+    actor.vida = min(actor.vida_max, actor.vida + cantidad)
+    return actor.vida - antes
 
 
 def procesar_fin_velocidad(actor, tiempo_actual: int, agenda) -> str:

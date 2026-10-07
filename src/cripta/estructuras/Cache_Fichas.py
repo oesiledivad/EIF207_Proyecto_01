@@ -5,8 +5,10 @@ porque §7 prohíbe `dict` como caché y §12 anticipa muchas más búsquedas
 que inserciones. La lista doble mantiene el orden de recencia para el
 desalojo LRU en O(1).
 
-Las fichas en uso no se desalojan (§4.4): la política solo opera sobre
-nodos con `en_uso = False`.
+Las fichas en uso no se desalojan (§4.4): cada nodo lleva un contador de
+referencias (instancias que la usan: enemigo activo, objeto en inventario o
+en el suelo de la sala actual, trampa de la sala actual). La política LRU
+solo opera sobre nodos con `referencias == 0`.
 
 Complejidad (promedio, con factor de carga controlado):
     obtener: O(1)
@@ -45,7 +47,7 @@ class _Nodo:
 
     clave: str
     ficha: Any
-    en_uso: bool
+    referencias: int = 0
     siguiente_hash: "_Nodo | None" = None
     anterior_lru: "_Nodo | None" = None
     siguiente_lru: "_Nodo | None" = None
@@ -73,6 +75,7 @@ class Cache_Fichas:
         self._en_uso = 0
         self._aciertos = 0
         self._fallos = 0
+        self._desalojos = 0
 
     # ---------- API pública ----------
 
@@ -111,27 +114,38 @@ class Cache_Fichas:
 
         self._insertar_nuevo(clave, ficha)
 
-    def marcar_en_uso(self, clave: str) -> None:
-        """Marca una ficha como en uso (no desalojable).
+    def marcar_en_uso(self, clave: str) -> bool:
+        """Suma una referencia a la ficha (deja de ser desalojable).
 
         Args:
             clave: Identificador de la ficha.
+
+        Returns:
+            True si la ficha estaba en memoria; False si no (hay que traerla).
         """
         nodo = self._buscar(clave)
-        if nodo is not None and not nodo.en_uso:
-            nodo.en_uso = True
+        if nodo is None:
+            return False
+        if nodo.referencias == 0:
             self._en_uso += 1
+        nodo.referencias += 1
+        return True
 
     def liberar(self, clave: str) -> None:
-        """Quita la marca de uso de una ficha.
+        """Resta una referencia. Con 0 referencias vuelve a ser desalojable.
 
         Args:
             clave: Identificador de la ficha.
         """
         nodo = self._buscar(clave)
-        if nodo is not None and nodo.en_uso:
-            nodo.en_uso = False
-            self._en_uso -= 1
+        if nodo is not None and nodo.referencias > 0:
+            nodo.referencias -= 1
+            if nodo.referencias == 0:
+                self._en_uso -= 1
+
+    def esta_en_uso(self, clave: str) -> bool:
+        nodo = self._buscar(clave)
+        return nodo is not None and nodo.referencias > 0
 
     def contiene(self, clave: str) -> bool:
         """Indica si la clave está en caché sin alterar LRU."""
@@ -150,7 +164,7 @@ class Cache_Fichas:
 
     def _insertar_nuevo(self, clave: str, ficha: Any) -> None:
         idx = _hash_propia(clave, self._n_buckets)
-        nodo = _Nodo(clave=clave, ficha=ficha, en_uso=False)
+        nodo = _Nodo(clave=clave, ficha=ficha)
         nodo.siguiente_hash = self._buckets[idx]
         self._buckets[idx] = nodo
         self._agregar_al_frente_lru(nodo)
@@ -176,11 +190,12 @@ class Cache_Fichas:
 
     def _desalojar_uno(self) -> None:
         nodo = self._cola_lru
-        while nodo is not None and nodo.en_uso:
+        while nodo is not None and nodo.referencias > 0:
             nodo = nodo.anterior_lru
         if nodo is None:
-            return  # todas en uso: no se puede desalojar
+            return  # todas en uso: §4.4 prohíbe liberarlas, se excede el tope
         self._quitar(clave=nodo.clave, nodo=nodo)
+        self._desalojos += 1
 
     def _quitar(self, clave: str, nodo: _Nodo) -> None:
         idx = _hash_propia(clave, self._n_buckets)
@@ -236,3 +251,11 @@ class Cache_Fichas:
     @property
     def fallos(self) -> int:
         return self._fallos
+
+    @property
+    def desalojos(self) -> int:
+        return self._desalojos
+
+    @property
+    def capacidad(self) -> int:
+        return self._capacidad

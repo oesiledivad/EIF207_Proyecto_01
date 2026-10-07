@@ -84,6 +84,13 @@ class Historial_Retroceso:
         if len(self._intervalos) > self._max:
             self._intervalos.pop(0)
 
+    def descartar_intervalo(self) -> None:
+        """Descarta el intervalo abierto sin apilarlo (la acción no se ejecutó)."""
+        self._abierto = None
+
+    def hay_intervalo_abierto(self) -> bool:
+        return self._abierto is not None
+
     def deshacer(self, aplicar: Callable[[str, Any], None]) -> bool:
         """Aplica la inversión del intervalo más reciente.
 

@@ -36,6 +36,12 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Usa el paquete de respuestas descargadas en lugar de la red.",
     )
+    parser.add_argument(
+        "--cache-size",
+        type=int,
+        default=25,
+        help="Tope de fichas de catálogo en memoria (§4.4). Por defecto 25.",
+    )
     return parser.parse_args(argv)
 
 
@@ -65,7 +71,10 @@ def main(argv: list[str] | None = None) -> int:
     args = _parsear_args(argv if argv is not None else sys.argv[1:])
 
     data_source = _construir_data_source(args)
-    controlador = Aplicacion(data_source)
+    if args.cache_size <= 0:
+        print("--cache-size debe ser un entero positivo.", file=sys.stderr)
+        return 2
+    controlador = Aplicacion(data_source, capacidad_cache=args.cache_size)
 
     # Import diferido: la vista Textual solo se construye si vamos a usarla.
     from cripta.vista.textual.app import CriptaApp

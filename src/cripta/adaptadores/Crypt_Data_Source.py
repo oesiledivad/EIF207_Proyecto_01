@@ -1,4 +1,10 @@
 from abc import ABC, abstractmethod
+
+
+class PresupuestoAgotado(RuntimeError):
+    """Se lanzó una solicitud HTTP cuando ya no quedaba presupuesto (§5.1)."""
+
+
 class CryptDataSource(ABC):
     @abstractmethod
     def crypta_list(self) -> dict:
@@ -32,3 +38,10 @@ class CryptDataSource(ABC):
     @abstractmethod
     def requests_made(self) -> int:
         """Cuenta solicitudes de red reales. Offline siempre devuelve 0."""
+
+    def fijar_presupuesto(self, presupuesto: int) -> None:
+        """Fija presupuesto_solicitudes de la cripta. Offline: no aplica."""
+
+    def solicitudes_restantes(self) -> int | None:
+        """None = sin límite (offline o presupuesto aún desconocido)."""
+        return None

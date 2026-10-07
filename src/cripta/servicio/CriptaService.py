@@ -12,27 +12,89 @@ from cripta.dto.Partida_dto import (
     ContenidoSala
 )
 from cripta.estructuras.Cache_Fichas import Cache_Fichas
+from cripta.estructuras.Catalogo_Lista import Catalogo_Lista
 from cripta.dto.FactoryDto_Ficha import parsear_ficha
+
+MAX_POR_LOTE = 10  # §3.4: contenido y catálogo aceptan hasta 10 por solicitud
+
+
+def _sin_repetidos(ids: list) -> list:
+    """Quita repetidos y vacíos conservando el orden de aparición (determinista)."""
+    unicos: list = []
+    for id_ in ids:
+        if id_ and id_ not in unicos:
+            unicos.append(id_)
+    return unicos
+
+
+def _buscar_ficha(catalogo: Catalogo_Lista, id_tipo):
+    try:
+        return catalogo.obtener(id_tipo)
+    except KeyError:
+        return None
+
 
 class CriptaService:
     def __init__(self, data_source: CryptDataSource, cache_fichas: Cache_Fichas | None = None) -> None:
         self._data_source = data_source
         self._cache_fichas = cache_fichas if cache_fichas is not None else Cache_Fichas()
+        self._detalles: DetallesCripta | None = None  # evita pedir 2 veces los datos generales
 
-    def asegurar_fichas(self, ids: list[str]) -> None:
-        """Garantiza que las fichas de `ids` estén en caché; pide a la red solo lo que falte."""
-        vistos: list[str] = []
-        for id_ in ids:
-            if id_ not in vistos:
-                vistos.append(id_)
-        faltantes = [id_ for id_ in vistos if not self._cache_fichas.contiene(id_)]
+    #  Catálogo (§4.3, §4.4)
 
-        for i in range(0, len(faltantes), 10):
-            lote = faltantes[i:i + 10]
+    def asegurar_fichas(self, ids: list[str], fijar: bool = False) -> Catalogo_Lista:
+        """Resuelve los ids a fichas pidiendo a la red solo lo que falta, en lotes de 10.
+
+        Devuelve las fichas resueltas en una lista propia, así quien llama
+        puede leerlas aunque la caché desaloje alguna al insertar otras.
+
+        Si `fijar` es True, suma una referencia por cada aparición del id en
+        `ids` (dos ratas = 2 referencias) en el mismo momento en que la ficha
+        está en memoria, para que un lote posterior no la desaloje.
+        """
+        resueltas = Catalogo_Lista()
+        faltantes: list[str] = []
+        for id_ in _sin_repetidos(ids):
+            ficha = self._cache_fichas.obtener(id_)  # cuenta acierto/fallo
+            if ficha is None:
+                faltantes.append(id_)
+            else:
+                resueltas.agregar(ficha)
+                if fijar:
+                    self._fijar_apariciones(id_, ids)
+
+        for i in range(0, len(faltantes), MAX_POR_LOTE):
+            lote = faltantes[i:i + MAX_POR_LOTE]
             resp = self._data_source.catalog(lote)
             for bruto in resp.get("entidades", []):
                 ficha = parsear_ficha(bruto)
                 self._cache_fichas.insertar(ficha.id, ficha)
+                resueltas.agregar(ficha)
+                if fijar:
+                    self._fijar_apariciones(ficha.id, ids)
+        return resueltas
+
+    def _fijar_apariciones(self, id_: str, ids: list[str]) -> None:
+        for otro in ids:
+            if otro == id_:
+                self._cache_fichas.marcar_en_uso(id_)
+
+    def fijar_fichas(self, ids: list[str]) -> None:
+        """Marca fichas como en uso (una referencia por aparición). Trae las que falten."""
+        self.asegurar_fichas(ids, fijar=True)
+
+    def liberar_fichas(self, ids: list[str]) -> None:
+        """Quita una referencia por aparición; con 0 vuelven a ser desalojables."""
+        for id_ in ids:
+            if id_:
+                self._cache_fichas.liberar(id_)
+
+    def obtener_ficha_garantizada(self, id_: str):
+        """Ficha desde caché; si fue desalojada, la vuelve a resolver."""
+        ficha = self._cache_fichas.obtener(id_)
+        if ficha is not None:
+            return ficha
+        return _buscar_ficha(self.asegurar_fichas([id_]), id_)
 
     def listar_criptas(self) -> list[CriptaResumen]:
         try:
@@ -54,6 +116,8 @@ class CriptaService:
             raise RuntimeError(f"No se pudo listar criptas: {e}") from e
 
     def obtener_detalles(self, cripta_id: str) -> DetallesCripta:
+        if self._detalles is not None and self._detalles.id == cripta_id:
+            return self._detalles  # ya pedidos (p.ej. al previsualizar): no gastar otra solicitud
         try:
             detalles = self._data_source.crypta_details(cripta_id)
             if not isinstance(detalles, dict):
@@ -63,7 +127,7 @@ class CriptaService:
             if not isinstance(jugador, dict):
                 jugador = {}
 
-            return DetallesCripta(
+            self._detalles = DetallesCripta(
                 id=str(detalles.get("id", cripta_id)),
                 version=str(detalles.get("version", "offline")),
                 salas_total=int(detalles.get("salas_total", 0)),
@@ -77,6 +141,7 @@ class CriptaService:
                 jugador_defensa=int(jugador.get("defensa", 0)),
                 jugador_velocidad=int(jugador.get("velocidad", 0)),
             )
+            return self._detalles
         except NotImplementedError:
             return DetallesCripta(
                 id=cripta_id, version="offline", salas_total=0, sala_inicial=1, sala_salida=1,
@@ -134,40 +199,106 @@ class CriptaService:
 
         return salas_conocidas
 
-    def cargar_contenido_sala(self, cripta_id: str, sala_id: int) -> ContenidoSala:
-        try:
-            resp = self._data_source.room_content(cripta_id, [sala_id])
-        except NotImplementedError:
-            return ContenidoSala()
+    def cargar_contenido_salas(self, cripta_id: str, sala_ids: list[int]) -> list[tuple[int, ContenidoSala]]:
+        """Pide el contenido de varias salas en lotes de hasta 10 (§4.2).
 
-        for entrada in resp.get("contenido", []):
-            if int(entrada.get("sala", 0)) != sala_id:
+        Por cada lote: 1 solicitud de contenido + las de catálogo que falten
+        (también en lotes de 10). El resultado sigue el orden de `sala_ids`,
+        no el de la respuesta, para que la incorporación sea determinista.
+        """
+        resultado: list[tuple[int, ContenidoSala]] = []
+        for i in range(0, len(sala_ids), MAX_POR_LOTE):
+            lote = sala_ids[i:i + MAX_POR_LOTE]
+            try:
+                resp = self._data_source.room_content(cripta_id, lote)
+            except NotImplementedError:
+                for sala_id in lote:
+                    resultado.append((sala_id, ContenidoSala()))
                 continue
+            entradas = resp.get("contenido", [])
 
-            brutos = entrada.get("enemigos", [])
-            self.asegurar_fichas([e.get("tipo") for e in brutos])
+            tipos: list[str] = []
+            for entrada in entradas:
+                for e in entrada.get("enemigos", []):
+                    tipos.append(e.get("tipo"))
+                for o in entrada.get("objetos", []):
+                    tipos.append(str(o))
+                for t in entrada.get("trampas", []):
+                    tipos.append(t.get("tipo"))
+            catalogo = self.asegurar_fichas(tipos)
 
-            enemigos = []
-            for e in brutos:
-                ficha = self._cache_fichas.obtener(e.get("tipo"))
-                regeneracion = ficha.regeneracion if ficha else None,
-                enemigos.append(EnemigoPartida(
-                    id=str(e.get("instancia", "")),
-                    nombre=ficha.nombre if ficha else str(e.get("tipo", "")),
-                    vida=int(e.get("vida", ficha.vida_max if ficha else 0)),
-                    ataque=ficha.ataque if ficha else 0,
-                    defensa=ficha.defensa if ficha else 0,
-                    vida_max=ficha.vida_max if ficha else 0,
-                    velocidad=ficha.velocidad if ficha else 100,
-                    comportamiento=ficha.comportamiento if ficha else "errante",
-                ))
-            objetos = [ObjetoSuelo(id=str(o), nombre=str(o)) for o in entrada.get("objetos", [])]
-            trampas = [
-                TrampaPartida(id=str(t.get("instancia", "")), tipo=str(t.get("tipo", "")), activa=True)
-                for t in entrada.get("trampas", [])
-            ]
-            return ContenidoSala(enemigos=enemigos, objetos=objetos, trampas=trampas)
-        return ContenidoSala()
+            for sala_id in lote:
+                entrada = None
+                for candidata in entradas:
+                    if int(candidata.get("sala", 0)) == sala_id:
+                        entrada = candidata
+                        break
+                if entrada is None:
+                    resultado.append((sala_id, ContenidoSala()))
+                else:
+                    resultado.append((sala_id, self._parsear_contenido(entrada, catalogo)))
+        return resultado
+
+    def cargar_contenido_sala(self, cripta_id: str, sala_id: int) -> ContenidoSala:
+        """Compatibilidad: una sola sala (gasta un lote entero, preferir la versión por lotes)."""
+        return self.cargar_contenido_salas(cripta_id, [sala_id])[0][1]
+
+    @staticmethod
+    def _parsear_contenido(entrada: dict, catalogo: Catalogo_Lista) -> ContenidoSala:
+        enemigos: list[EnemigoPartida] = []
+        for e in entrada.get("enemigos", []):
+            tipo = str(e.get("tipo", ""))
+            ficha = _buscar_ficha(catalogo, tipo)
+            vida_max = ficha.vida_max if ficha else 0
+            vida = e.get("vida")  # puede venir null: entonces empieza con vida_max
+            enemigos.append(EnemigoPartida(
+                id=str(e.get("instancia", "")),
+                nombre=ficha.nombre if ficha else tipo,
+                vida=int(vida) if vida is not None else vida_max,
+                ataque=ficha.ataque if ficha else 0,
+                defensa=ficha.defensa if ficha else 0,
+                vida_max=vida_max,
+                velocidad=ficha.velocidad if ficha else 100,
+                comportamiento=ficha.comportamiento if ficha else "errante",
+                regeneracion=getattr(ficha, "regeneracion", None),
+                tipo=tipo,
+                suelta=list(ficha.suelta or []) if ficha else [],
+            ))
+
+        objetos: list[ObjetoSuelo] = []
+        for o in entrada.get("objetos", []):
+            ficha = _buscar_ficha(catalogo, str(o))
+            objetos.append(ObjetoSuelo(id=str(o), nombre=ficha.nombre if ficha else str(o)))
+
+        trampas: list[TrampaPartida] = []
+        for t in entrada.get("trampas", []):
+            tipo = str(t.get("tipo", ""))
+            ficha = _buscar_ficha(catalogo, tipo)
+            trampas.append(TrampaPartida(
+                id=str(t.get("instancia", "")),
+                tipo=tipo,
+                activa=True,
+                dano=ficha.daño if ficha else 0,
+                rearme=ficha.rearme if ficha else None,
+                efecto=getattr(ficha, "efecto", "daño"),
+            ))
+        return ContenidoSala(enemigos=enemigos, objetos=objetos, trampas=trampas)
+
+    #  Presupuesto y estadísticas (§5.1)
+
+    def fijar_presupuesto(self, presupuesto: int) -> None:
+        self._data_source.fijar_presupuesto(presupuesto)
+
+    def solicitudes_restantes(self) -> int | None:
+        return self._data_source.solicitudes_restantes()
+
+    @property
+    def aciertos_cache(self) -> int:
+        return self._cache_fichas.aciertos
+
+    @property
+    def fallos_cache(self) -> int:
+        return self._cache_fichas.fallos
 
     @property
     def requests_made(self) -> int:
