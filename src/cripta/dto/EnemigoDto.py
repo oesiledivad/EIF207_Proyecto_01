@@ -9,3 +9,4 @@ class FichaEnemigo(FichaCatalogo):
     velocidad: int
     comportamiento: str          # "guardián" | "errante" | "rastreador"
     suelta: list[str] | None = None
+    regeneracion: int | None = None

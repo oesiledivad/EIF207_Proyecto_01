@@ -70,14 +70,33 @@ TRAMPA_REARME_DEFECTO = 300
 
 
 def disparar_trampa(trampa, jugador, tiempo_actual: int, agenda) -> str:
-    from cripta.modelo.Combate import aplicar_danio
-
-    aplicar_danio(jugador, trampa.dano)
-    trampa.armada = False
     intervalo = trampa.rearme if trampa.rearme is not None else TRAMPA_REARME_DEFECTO
+
+    if trampa.efecto == "veneno":
+        aplicar_veneno(jugador, trampa.dano, tiempo_actual, agenda)
+        mensaje = "¡Trampa venenosa! Quedás envenenado."
+    else:
+        from cripta.modelo.Combate import aplicar_danio
+        aplicar_danio(jugador, trampa.dano)
+        mensaje = f"¡Trampa! Pierdes {trampa.dano} de vida."
+
+    trampa.armada = False
     agenda.insertar(tiempo_actual + intervalo, trampa, "trampa_rearme")
-    return f"¡Trampa! Pierdes {trampa.dano} de vida."
+    return mensaje
 
 def procesar_rearme_trampa(trampa) -> str:
     trampa.armada = True
     return "Una trampa se rearma."
+
+def encender_antorcha(jugador, duracion: int, tiempo_actual: int, agenda) -> str:
+    if jugador.evento_antorcha is not None:
+        agenda.cancelar(jugador.evento_antorcha)
+    jugador.antorcha_encendida = True
+    jugador.evento_antorcha = agenda.insertar(tiempo_actual + duracion, jugador, "antorcha_apagar")
+    return "Encendés la antorcha."
+
+
+def procesar_apagar_antorcha(jugador) -> str:
+    jugador.antorcha_encendida = False
+    jugador.evento_antorcha = None
+    return "La antorcha se apaga."

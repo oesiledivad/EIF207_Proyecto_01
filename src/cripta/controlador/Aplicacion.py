@@ -169,6 +169,7 @@ class Aplicacion:
                 instancia=t.id, armada=t.activa,
                 dano=ficha.daño if ficha else 0,
                 rearme=ficha.rearme if ficha else 300,
+                efecto=ficha.efecto if ficha else "daño",
             ))
 
         salidas = Salidas()
@@ -199,17 +200,24 @@ class Aplicacion:
                 clase = Rastreador
             case otro:
                 raise ValueError(f"Comportamiento desconocido: {otro}")
-        return clase(
+        enemigo = clase(
             identificador=dto.id, vida=dto.vida, vida_max=dto.vida_max or dto.vida,
             ataque=dto.ataque, defensa=dto.defensa, velocidad=dto.velocidad,
             sala=sala_id, tiempo_siguiente=None, comportamiento=dto.comportamiento,
         )
+        enemigo.regeneracion_objetivo = dto.regeneracion  # None si no regenera
+        return enemigo
 
     def _activar_enemigo(self, enemigo) -> None:
+        assert self._simulacion is not None
         tiempo_actual = self._simulacion.reloj.tiempo_actual
         intervalo = calcular_intervalo(COSTOS["esperar"], enemigo.velocidad)
         evento = self._simulacion.agenda.insertar(tiempo_actual + intervalo, enemigo, "accion_actor")
         enemigo._proximo_evento = evento
+
+        if getattr(enemigo, "regeneracion_objetivo", None):
+            from cripta.modelo.Efectos import activar_regeneracion
+            activar_regeneracion(enemigo, enemigo.regeneracion_objetivo, tiempo_actual, self._simulacion.agenda)
 
     def _sincronizar_estado(self) -> None:
         estado = self._gestor.estado
@@ -225,6 +233,14 @@ class Aplicacion:
                 )
                 for e in sala_actual.enemigos if esta_vivo(e)
             ]
+        efectos: list[str] = []
+        if self._jugador.evento_veneno is not None:
+            efectos.append(f"Envenenado (-{self._jugador.dano_veneno}/pulso)")
+        if self._jugador.evento_fin_velocidad is not None:
+            efectos.append(f"Velocidad alterada ({self._jugador.velocidad})")
+        if self._jugador.antorcha_encendida:
+            efectos.append("Antorcha encendida")
+        estado.efectos = efectos
 
     # ---- acción: esperar ----
 

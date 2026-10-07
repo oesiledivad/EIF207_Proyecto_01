@@ -91,6 +91,12 @@ class JuegoScreen(Screen):
         self.query_one("#panel-bitacora", PanelBitacora).actualizar(
             self._controlador.bitacora()
         )
+        # Efectos
+        if p.efectos:
+            lineas_efectos = [f"[#c9a227]{texto}[/]" for texto in p.efectos]
+            self.query_one("#efectos", Static).update("\n".join(lineas_efectos))
+        else:
+            self.query_one("#efectos", Static).update("(sin efectos)")
 
         # Salidas
         if p.vecindad:
