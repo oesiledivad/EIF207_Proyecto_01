@@ -107,11 +107,12 @@ def _bench_decidir_accion(n_salas: int, repeticiones: int) -> float:
 
 def _bench_cache(n_consultas: int) -> tuple[float, float]:
     cache = Cache_Fichas(capacidad=25)
-    cache.insertar("ent_rata_gigante", object())
+    for i in range(cache.capacidad):
+        cache.insertar(f"ficha-{i}", object())
 
     inicio = time.perf_counter()
     for _ in range(n_consultas):
-        cache.obtener("ent_rata_gigante")
+        cache.obtener("ficha-0")
     t_acierto = time.perf_counter() - inicio
 
     inicio = time.perf_counter()
@@ -135,7 +136,7 @@ def _bench_simulacion() -> None:
         print(f"cripta de {n_salas:5d} salas -> 10000 llamadas en {t*1000:.2f}ms "
               f"({t*1_000_000/10_000:.3f}µs por llamada)")
 
-    print("\n=== Cache_Fichas: acierto vs. fallo (§4.4) ===")
+    print("\n=== Cache_Fichas llena (25 fichas): acierto vs. fallo (§4.4) ===")
     ta, tf = _bench_cache(50_000)
     print(f"50000 aciertos: {ta*1000:.2f}ms   |   50000 fallos: {tf*1000:.2f}ms")
 

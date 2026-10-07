@@ -1,21 +1,12 @@
-"""Caché de fichas de catálogo con tope y desalojo LRU.
+"""Cache de fichas con lista doble enlazada propia y desalojo LRU.
 
-Se eligió tabla hash propia con encadenamiento más lista doble enlazada
-porque §7 prohíbe `dict` como caché y §12 anticipa muchas más búsquedas
-que inserciones. La lista doble mantiene el orden de recencia para el
-desalojo LRU en O(1).
+La misma lista sirve para buscar por clave y mantener la recencia.
+Las fichas con referencias activas nunca se desalojan. Si todas estan
+protegidas, insertar una ficha nueva falla sin superar la capacidad.
 
-Las fichas en uso no se desalojan (§4.4): cada nodo lleva un contador de
-referencias (instancias que la usan: enemigo activo, objeto en inventario o
-en el suelo de la sala actual, trampa de la sala actual). La política LRU
-solo opera sobre nodos con `referencias == 0`.
-
-Complejidad (promedio, con factor de carga controlado):
-    obtener: O(1)
-    insertar: O(1)
-    marcar_en_uso: O(1)
-    liberar: O(1)
-    desalojar: O(1) amortizado
+Buscar, insertar, obtener, marcar y liberar cuestan O(n), donde n esta
+limitado por --cache-size. Mover o desenlazar un nodo conocido cuesta O(1).
+El desalojo busca desde la cola la ficha libre menos reciente: O(n).
 """
 
 from __future__ import annotations
@@ -24,31 +15,13 @@ from dataclasses import dataclass
 from typing import Any
 
 
-def _hash_propia(clave: str, capacidad: int) -> int:
-    """Hash FNV-1a de 32 bits sobre una cadena.
-
-    Args:
-        clave: Cadena a hashear.
-        capacidad: Tamaño del array de buckets.
-
-    Returns:
-        Índice de bucket en [0, capacidad).
-    """
-    h = 2166136261
-    for ch in clave:
-        h ^= ord(ch)
-        h = (h * 16777619) & 0xFFFFFFFF
-    return h % capacidad
-
-
 @dataclass
 class _Nodo:
-    """Nodo de la caché: entrada hash + enlace LRU."""
+    """Nodo de la lista doble enlazada LRU."""
 
     clave: str
     ficha: Any
     referencias: int = 0
-    siguiente_hash: "_Nodo | None" = None
     anterior_lru: "_Nodo | None" = None
     siguiente_lru: "_Nodo | None" = None
 
@@ -60,15 +33,10 @@ class Cache_Fichas:
         capacidad: Número máximo de fichas en memoria.
     """
 
-    _CAPACIDAD_INICIAL_BUCKETS = 16
-    _FACTOR_CARGA_MAX = 0.75
-
     def __init__(self, capacidad: int = 25) -> None:
         if capacidad <= 0:
             raise ValueError("La capacidad debe ser positiva.")
         self._capacidad = capacidad
-        self._n_buckets = self._CAPACIDAD_INICIAL_BUCKETS
-        self._buckets: list[_Nodo | None] = [None] * self._n_buckets
         self._cabeza_lru: _Nodo | None = None
         self._cola_lru: _Nodo | None = None
         self._tamano = 0
@@ -154,64 +122,26 @@ class Cache_Fichas:
     # ---------- Internos ----------
 
     def _buscar(self, clave: str) -> _Nodo | None:
-        idx = _hash_propia(clave, self._n_buckets)
-        nodo = self._buckets[idx]
+        nodo = self._cabeza_lru
         while nodo is not None:
             if nodo.clave == clave:
                 return nodo
-            nodo = nodo.siguiente_hash
+            nodo = nodo.siguiente_lru
         return None
 
     def _insertar_nuevo(self, clave: str, ficha: Any) -> None:
-        idx = _hash_propia(clave, self._n_buckets)
-        nodo = _Nodo(clave=clave, ficha=ficha)
-        nodo.siguiente_hash = self._buckets[idx]
-        self._buckets[idx] = nodo
-        self._agregar_al_frente_lru(nodo)
+        self._agregar_al_frente_lru(_Nodo(clave=clave, ficha=ficha))
         self._tamano += 1
-
-        if self._tamano / self._n_buckets > self._FACTOR_CARGA_MAX:
-            self._rehash()
-
-    def _rehash(self) -> None:
-        nueva_n = self._n_buckets * 2
-        nuevos_buckets: list[_Nodo | None] = [None] * nueva_n
-
-        nodo = self._cabeza_lru
-        while nodo is not None:
-            sig = nodo.siguiente_lru
-            idx = _hash_propia(nodo.clave, nueva_n)
-            nodo.siguiente_hash = nuevos_buckets[idx]
-            nuevos_buckets[idx] = nodo
-            nodo = sig
-
-        self._buckets = nuevos_buckets
-        self._n_buckets = nueva_n
 
     def _desalojar_uno(self) -> None:
         nodo = self._cola_lru
         while nodo is not None and nodo.referencias > 0:
             nodo = nodo.anterior_lru
         if nodo is None:
-            return  # todas en uso: §4.4 prohíbe liberarlas, se excede el tope
-        self._quitar(clave=nodo.clave, nodo=nodo)
-        self._desalojos += 1
-
-    def _quitar(self, clave: str, nodo: _Nodo) -> None:
-        idx = _hash_propia(clave, self._n_buckets)
-        actual = self._buckets[idx]
-        previo: _Nodo | None = None
-        while actual is not None and actual is not nodo:
-            previo = actual
-            actual = actual.siguiente_hash
-        if actual is None:
-            return
-        if previo is None:
-            self._buckets[idx] = actual.siguiente_hash
-        else:
-            previo.siguiente_hash = actual.siguiente_hash
+            raise RuntimeError("Cache llena: todas las fichas estan en uso.")
         self._quitar_de_lru(nodo)
         self._tamano -= 1
+        self._desalojos += 1
 
     def _agregar_al_frente_lru(self, nodo: _Nodo) -> None:
         nodo.anterior_lru = None
