@@ -19,6 +19,10 @@ from cripta.vista.textual.widgets.mini_mapa import MiniMapa
 from cripta.vista.textual.widgets.panel_bitacora import PanelBitacora
 from cripta.vista.textual.widgets.panel_inventario import PanelInventario
 from cripta.vista.textual.widgets.panel_jugador import PanelJugador
+
+
+from cripta.vista.textual.widgets.panel_sala import PanelSala          
+
 from cripta.vista.textual.modales.elegir_enemigo import ElegirEnemigoModal
 from cripta.vista.textual.modales.elegir_direccion import ElegirDireccionModal
 
@@ -56,12 +60,7 @@ class JuegoScreen(Screen):
                 with Vertical(id="col-centro", classes="panel-col"):
                     yield Static("SALA", classes="section-title")
                     yield MiniMapa(id="mini-mapa")
-                    yield Static("SALIDAS", classes="section-title")
-                    yield Static("", id="salidas")
-                    yield Static("ENEMIGOS", classes="section-title")
-                    yield Static("", id="enemigos")
-                    yield Static("SUELO", classes="section-title")
-                    yield Static("", id="suelo")
+                    yield PanelSala(id="panel-sala")                    # <- NUEVO (reemplaza las 6 líneas de SALIDAS, ENEMIGOS y SUELO)
 
                 with Vertical(id="col-der", classes="panel-col"):
                     yield Static("INVENTARIO", classes="section-title")
@@ -102,42 +101,8 @@ class JuegoScreen(Screen):
         else:
             self.query_one("#efectos", Static).update("(sin efectos)")
 
-        # Salidas
-        if p.vecindad:
-            lineas = []
-            for v in p.vecindad:
-                if v.cerrada:
-                    estado = f"[llave] {v.llave or '?'}"
-                    color = "#c9a227"
-                else:
-                    estado = "abierta"
-                    color = "#d6cfc4"
-                final = "  [salida]" if v.es_salida_final else ""
-                lineas.append(
-                    f"[{color}]{v.direccion} -> {v.sala_id}  "
-                    f"{v.nombre}  ({estado}){final}[/]"
-                )
-            self.query_one("#salidas", Static).update("\n".join(lineas))
-        else:
-            self.query_one("#salidas", Static).update("(sin salidas)")
-
-        # Enemigos
-        if p.enemigos:
-            lineas = []
-            for e in p.enemigos:
-                nombre = getattr(e, "nombre", "?")
-                vida = getattr(e, "vida", "?")
-                lineas.append(f"! {nombre}  HP {vida}")
-            self.query_one("#enemigos", Static).update("\n".join(lineas))
-        else:
-            self.query_one("#enemigos", Static).update("(sin enemigos)")
-
-        # Suelo
-        if p.objetos_suelo:
-            lineas = [f"* {o.nombre}" for o in p.objetos_suelo]
-            self.query_one("#suelo", Static).update("\n".join(lineas))
-        else:
-            self.query_one("#suelo", Static).update("(nada)")
+        # Sala: salidas, enemigos y suelo
+        self.query_one("#panel-sala", PanelSala).actualizar(p)          
 
         # Efectos
         if p.efectos:
@@ -202,6 +167,8 @@ class JuegoScreen(Screen):
             self._modal_elegir_enemigo()
         elif btn == "btn-mover":
             self._modal_elegir_direccion()
+        elif btn == "btn-abrir":                       # NUEVO
+            self._modal_abrir_puerta()
         else:
             # Botones pendientes de integracion.
             self.notify("Acción aún no implementada.", title="Cripta")
@@ -230,6 +197,26 @@ class JuegoScreen(Screen):
         if direccion is None:
             return
         self._ejecutar(self._controlador.mover(direccion))
+
+
+    def _modal_abrir_puerta(self) -> None:                                       # <- NUEVO
+        p = self._controlador.estado_partida()
+        cerradas = [v for v in (p.vecindad or []) if v.cerrada]
+        if not cerradas:
+            self.notify("No hay puertas cerradas.", title="Cripta")
+            return
+        self.app.push_screen(ElegirDireccionModal(cerradas), self._al_elegir_puerta)
+
+    def _al_elegir_puerta(self, direccion: str | None) -> None:
+        if direccion is None:
+            return
+        self._ejecutar(self._controlador.abrir(direccion))
+
+
+
+
+
+
 
     def _modal_elegir(self, accion: str, filtro: str | None = None) -> None:
         inv = self._controlador.inventario()

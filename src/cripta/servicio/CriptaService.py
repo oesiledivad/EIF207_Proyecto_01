@@ -254,6 +254,7 @@ class CriptaService:
                         cerrada = bool(info_salida.get("cerrada", False))
                         llave = info_salida.get("llave")
                         llave_str = str(llave) if llave is not None else ""
+                        cierre = info_salida.get("cierre_automatico")
 
                         lista_salidas.append(
                             SalidaVecina(
@@ -266,6 +267,7 @@ class CriptaService:
                                 es_salida_final=(vecina_id == sala_salida_id),
                                 tiene_enemigos=False,
                                 tiene_objetos=False,
+                                cierre_automatico=int(cierre) if cierre is not None else None,
                             )
                         )
 
