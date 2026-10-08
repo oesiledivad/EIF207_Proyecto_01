@@ -448,7 +448,7 @@ class Aplicacion:
         self._gestor.estado.sala_actual_id = self._jugador.sala
         self._gestor.refrescar_sala_actual()
         self._sincronizar_estado()
-<<<<<<< HEAD
+
         if not esta_vivo(self._jugador):
             self._gestor.estado.derrota = True
             self._gestor.estado.activa = False
@@ -459,7 +459,7 @@ class Aplicacion:
         """Pone al día la vecindad que lee la Vista a partir del Modelo (fuente de verdad).
 =======
         self._partida.comprobar_derrota(esta_vivo(self._jugador), self.resumen_red())
->>>>>>> 5b98776fa401358259e98cbb892938b8b55c3365
+
 
         Copia el estado vivo de cada puerta (SalaJuego.salidas) y marca si la sala
         vecina tiene enemigos vivos u objetos. O(k * e), k = salidas (máx. 4).

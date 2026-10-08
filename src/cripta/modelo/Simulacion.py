@@ -17,7 +17,6 @@ from cripta.modelo.Efectos import (
 )
 from cripta.modelo.Puertas import procesar_cierre_puerta
 import random
-
 class Simulacion:
     """
     Coordina el avance de la simulación mediante eventos.
@@ -106,11 +105,11 @@ class Simulacion:
             case "antorcha_apagar":
                 return [procesar_apagar_antorcha(evento.actor, self.agenda)]
             case "trampa_rearme":
-<<<<<<< HEAD
+
                 return [procesar_rearme_trampa(evento.actor)]
             case "cierre_puerta":                                   
                 return [procesar_cierre_puerta(evento.actor)]
-=======
+
                 return [procesar_rearme_trampa(evento.actor, self.agenda)]
->>>>>>> 5b98776fa401358259e98cbb892938b8b55c3365
+
         return []
