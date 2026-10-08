@@ -43,7 +43,7 @@ class Simulacion:
         if tipo_accion == "atacar":
             dano = calcular_danio(enemigo, jugador, self.azar)
             aplicar_danio(jugador, dano, self.agenda)
-            mensajes.append(f"{enemigo.identificador} te ataca por {dano}.")
+            mensajes.append(f"{enemigo.etiqueta} te ataca por {dano}.")
             if not esta_vivo(jugador):
                 return mensajes  # jugador murió: no reprogramamos nada más
         elif tipo_accion == "mover":

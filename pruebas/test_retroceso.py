@@ -177,7 +177,7 @@ class RetrocesoPruebas(unittest.TestCase):
         enemigo.vida = 1
         enemigo.ataque = 1
         enemigo.regeneracion_objetivo = 2
-        self.app._activar_sala(sala)
+        self.app._combate.activar_sala(sala, self.app._simulacion)
         # Un movimiento concreto permite comprobar pertenencia sin depender del RNG.
         with patch.object(enemigo, "decidir_accion", return_value=("mover", 1)):
             antes = estado(self.app)

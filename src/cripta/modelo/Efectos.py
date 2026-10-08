@@ -25,7 +25,7 @@ def procesar_pulso_veneno(actor, tiempo_actual: int, agenda) -> str:
     from cripta.modelo.Combate import aplicar_danio, esta_vivo
 
     aplicar_danio(actor, actor.dano_veneno, agenda)
-    mensaje = f"{actor.identificador} sufre {actor.dano_veneno} de veneno."
+    mensaje = f"{actor.etiqueta} sufre {actor.dano_veneno} de veneno."
 
     # Pulsos en t0+80, +160, +240, +320 y +400 (400/80 = 5 pulsos).
     if not esta_vivo(actor) or tiempo_actual + INTERVALO_VENENO > actor.fin_veneno:
@@ -72,7 +72,7 @@ def curar(actor, cantidad: int, agenda=None) -> int:
 def procesar_fin_velocidad(actor, tiempo_actual: int, agenda) -> str:
     actor.actualizar_velocidad(actor.velocidad_base, tiempo_actual, agenda)
     agenda.cambiar(actor, "evento_fin_velocidad", None)
-    return f"El efecto de velocidad de {actor.identificador} termina."
+    return f"El efecto de velocidad de {actor.etiqueta} termina."
 
 
 def activar_regeneracion(enemigo, cantidad: int, tiempo_actual: int, agenda) -> None:
@@ -86,7 +86,7 @@ def procesar_regeneracion(enemigo, tiempo_actual: int, agenda) -> str:
     if not esta_vivo(enemigo):
         return ""
     agenda.cambiar(enemigo, "vida", min(enemigo.vida_max, enemigo.vida + enemigo.regeneracion_cantidad))
-    mensaje = f"{enemigo.identificador} regenera {enemigo.regeneracion_cantidad}."
+    mensaje = f"{enemigo.etiqueta} regenera {enemigo.regeneracion_cantidad}."
     if esta_vivo(enemigo):
         agenda.cambiar(enemigo, "evento_regeneracion", agenda.insertar(tiempo_actual + INTERVALO_REGENERACION, enemigo, "regeneracion"))
     return mensaje
