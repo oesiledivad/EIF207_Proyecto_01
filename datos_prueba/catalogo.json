@@ -62,7 +62,7 @@
       "peso": 1,
       "valor": 12
     },
-        {
+    {
       "id": "ent_rata_gigante",
       "clase": "enemigo",
       "nombre": "Rata gigante",
@@ -71,7 +71,9 @@
       "defensa": 1,
       "velocidad": 150,
       "comportamiento": "rastreador",
-      "suelta": ["itm_pocion_menor"]
+      "suelta": [
+        "itm_pocion_menor"
+      ]
     },
     {
       "id": "trp_dardos",
@@ -80,6 +82,256 @@
       "daño": 4,
       "rearme": 300,
       "efecto": "veneno"
+    },
+    {
+      "id": "sl_lanza_puentes",
+      "nombre": "Lanza de los Puenteceros",
+      "clase": "arma",
+      "peso": 2,
+      "valor": 15,
+      "ataque_bonus": 3
+    },
+    {
+      "id": "sl_hoja_esquirlada",
+      "nombre": "Hoja esquirlada de entrenamiento",
+      "clase": "arma",
+      "peso": 2,
+      "valor": 80,
+      "ataque_bonus": 7
+    },
+    {
+      "id": "sl_daga_esquirlada",
+      "nombre": "Daga de gema tallada",
+      "clase": "arma",
+      "peso": 1,
+      "valor": 45,
+      "ataque_bonus": 5
+    },
+    {
+      "id": "sl_hacha_campamento",
+      "nombre": "Hacha de campamento",
+      "clase": "arma",
+      "peso": 3,
+      "valor": 25,
+      "ataque_bonus": 4
+    },
+    {
+      "id": "sl_baston_fabrial",
+      "nombre": "Baston de fabrial",
+      "clase": "arma",
+      "peso": 2,
+      "valor": 12,
+      "ataque_bonus": 2
+    },
+    {
+      "id": "sl_lanza_guardia",
+      "nombre": "Lanza de la guardia de la torre",
+      "clase": "arma",
+      "peso": 2,
+      "valor": 18,
+      "ataque_bonus": 3
+    },
+    {
+      "id": "sl_coraza_puentecero",
+      "nombre": "Coraza de Puentecero",
+      "clase": "armadura",
+      "peso": 3,
+      "valor": 20,
+      "defensa_bonus": 2
+    },
+    {
+      "id": "sl_armadura_esquirlada",
+      "nombre": "Armadura esquirlada de entrenamiento",
+      "clase": "armadura",
+      "peso": 4,
+      "valor": 90,
+      "defensa_bonus": 5
+    },
+    {
+      "id": "sl_manto_explorador",
+      "nombre": "Manto de explorador de grietas",
+      "clase": "armadura",
+      "peso": 1,
+      "valor": 8,
+      "defensa_bonus": 1
+    },
+    {
+      "id": "sl_luz_tormentosa",
+      "nombre": "Dosis de luz tormentosa",
+      "clase": "pocion",
+      "peso": 1,
+      "valor": 10,
+      "cura": 12
+    },
+    {
+      "id": "sl_esfera_rubi",
+      "nombre": "Esfera de rubi restauradora",
+      "clase": "pocion",
+      "peso": 1,
+      "valor": 20,
+      "cura": 24
+    },
+    {
+      "id": "sl_fabrial_velocidad",
+      "nombre": "Fabrial de impulso",
+      "clase": "pocion",
+      "peso": 1,
+      "valor": 25,
+      "modificador_velocidad": 30,
+      "duracion": 300
+    },
+    {
+      "id": "sl_fabrial_pesadez",
+      "nombre": "Fabrial de lastre",
+      "clase": "pocion",
+      "peso": 1,
+      "valor": 5,
+      "modificador_velocidad": -25,
+      "duracion": 200
+    },
+    {
+      "id": "sl_antidoto_campamento",
+      "nombre": "Antidoto del campamento",
+      "clase": "antidoto",
+      "peso": 1,
+      "valor": 10
+    },
+    {
+      "id": "sl_antidoto_torre",
+      "nombre": "Antidoto de la torre",
+      "clase": "antidoto",
+      "peso": 1,
+      "valor": 15
+    },
+    {
+      "id": "sl_esfera_infusa",
+      "nombre": "Esfera infusa de zafiro",
+      "clase": "antorcha",
+      "peso": 1,
+      "valor": 8,
+      "duracion": 600
+    },
+    {
+      "id": "sl_fabrial_luz",
+      "nombre": "Fabrial de luz",
+      "clase": "antorcha",
+      "peso": 1,
+      "valor": 18,
+      "duracion": 1200
+    },
+    {
+      "id": "sl_llave_archivo",
+      "nombre": "Gema llave del archivo",
+      "clase": "llave",
+      "peso": 1,
+      "valor": 0,
+      "abre": "puerta_archivo_stormlight"
+    },
+    {
+      "id": "sl_llave_radiante",
+      "nombre": "Gema llave radiante",
+      "clase": "llave",
+      "peso": 1,
+      "valor": 0,
+      "abre": "puerta_salida"
+    },
+    {
+      "id": "sl_pergamino_memoria",
+      "nombre": "Pergamino de memoria de la torre",
+      "clase": "pergamino_retroceso",
+      "peso": 1,
+      "valor": 40
+    },
+    {
+      "id": "sl_guardia_campamento",
+      "nombre": "Guardia del campamento",
+      "clase": "enemigo",
+      "vida_max": 18,
+      "ataque": 6,
+      "defensa": 2,
+      "velocidad": 90,
+      "comportamiento": "guardian",
+      "suelta": [
+        "sl_luz_tormentosa"
+      ]
+    },
+    {
+      "id": "sl_acechador_grietas",
+      "nombre": "Acechador de las grietas",
+      "clase": "enemigo",
+      "vida_max": 14,
+      "ataque": 5,
+      "defensa": 1,
+      "velocidad": 125,
+      "comportamiento": "rastreador",
+      "suelta": [
+        "sl_antidoto_campamento"
+      ]
+    },
+    {
+      "id": "sl_patrullero_torre",
+      "nombre": "Patrullero de la torre",
+      "clase": "enemigo",
+      "vida_max": 16,
+      "ataque": 5,
+      "defensa": 2,
+      "velocidad": 110,
+      "comportamiento": "errante",
+      "suelta": [
+        "sl_esfera_infusa"
+      ]
+    },
+    {
+      "id": "sl_custodio_fabrial",
+      "nombre": "Custodio del fabrial",
+      "clase": "enemigo",
+      "vida_max": 25,
+      "ataque": 7,
+      "defensa": 3,
+      "velocidad": 90,
+      "comportamiento": "guardian",
+      "suelta": [
+        "sl_esfera_rubi",
+        "sl_pergamino_memoria"
+      ],
+      "regeneracion": 2
+    },
+    {
+      "id": "sl_sombra_tormenta",
+      "nombre": "Sombra de la tormenta",
+      "clase": "enemigo",
+      "vida_max": 22,
+      "ataque": 8,
+      "defensa": 2,
+      "velocidad": 120,
+      "comportamiento": "rastreador",
+      "suelta": [
+        "sl_fabrial_luz"
+      ]
+    },
+    {
+      "id": "sl_esquirlas_suelo",
+      "nombre": "Esquirlas entre las losas",
+      "clase": "trampa",
+      "daño": 6,
+      "rearme": 300,
+      "efecto": "daño"
+    },
+    {
+      "id": "sl_niebla_toxica",
+      "nombre": "Niebla de un fabrial averiado",
+      "clase": "trampa",
+      "daño": 2,
+      "rearme": 400,
+      "efecto": "veneno"
+    },
+    {
+      "id": "sl_descarga_fabrial",
+      "nombre": "Descarga de fabrial",
+      "clase": "trampa",
+      "daño": 9,
+      "rearme": 500,
+      "efecto": "daño"
     }
   ]
 }

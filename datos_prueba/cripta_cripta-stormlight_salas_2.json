@@ -1,0 +1,170 @@
+{
+  "pagina": 2,
+  "total_paginas": 2,
+  "salas": [
+    {
+      "id": 11,
+      "nombre": "Corredor de los Ecos",
+      "descripcion": "El acechador sigue el rastro de las salas que has visitado.",
+      "salidas": {
+        "N": {
+          "sala": 6
+        },
+        "S": {
+          "sala": 16
+        },
+        "E": {
+          "sala": 12
+        }
+      }
+    },
+    {
+      "id": 12,
+      "nombre": "Camara del Custodio",
+      "descripcion": "El custodio regenera vida sin superar su vida maxima.",
+      "salidas": {
+        "N": {
+          "sala": 7
+        },
+        "S": {
+          "sala": 17
+        },
+        "E": {
+          "sala": 13
+        },
+        "O": {
+          "sala": 11
+        }
+      }
+    },
+    {
+      "id": 13,
+      "nombre": "Jardin de Roca",
+      "descripcion": "Un cruce tranquilo permite preparar el inventario antes de avanzar.",
+      "salidas": {
+        "N": {
+          "sala": 8
+        },
+        "S": {
+          "sala": 18
+        },
+        "E": {
+          "sala": 14
+        },
+        "O": {
+          "sala": 12
+        }
+      }
+    },
+    {
+      "id": 14,
+      "nombre": "Conductos de la Torre",
+      "descripcion": "Una descarga dana al entrar y se rearma despues de un intervalo.",
+      "salidas": {
+        "S": {
+          "sala": 19
+        },
+        "E": {
+          "sala": 15
+        },
+        "O": {
+          "sala": 13
+        }
+      }
+    },
+    {
+      "id": 15,
+      "nombre": "Umbral del Juramento",
+      "descripcion": "Una de las dos entradas a la salida exige la gema llave radiante.",
+      "salidas": {
+        "N": {
+          "sala": 10
+        },
+        "S": {
+          "sala": 20,
+          "cerrada": true,
+          "llave": "sl_llave_radiante"
+        },
+        "O": {
+          "sala": 14
+        }
+      }
+    },
+    {
+      "id": 16,
+      "nombre": "Taller de los Puenteceros",
+      "descripcion": "Equipo alternativo con pesos y valores diferentes para probar las vistas ordenadas.",
+      "salidas": {
+        "N": {
+          "sala": 11
+        },
+        "E": {
+          "sala": 17
+        }
+      }
+    },
+    {
+      "id": 17,
+      "nombre": "Santuario Radiante",
+      "descripcion": "La gema llave radiante esta disponible sin atravesar la puerta de salida.",
+      "salidas": {
+        "N": {
+          "sala": 12
+        },
+        "E": {
+          "sala": 18
+        },
+        "O": {
+          "sala": 16
+        }
+      }
+    },
+    {
+      "id": 18,
+      "nombre": "Sala de la Memoria",
+      "descripcion": "Los pergaminos consecutivos no restauran la unidad consumida.",
+      "salidas": {
+        "N": {
+          "sala": 13
+        },
+        "E": {
+          "sala": 19
+        },
+        "O": {
+          "sala": 17
+        }
+      }
+    },
+    {
+      "id": 19,
+      "nombre": "Vestibulo de la Puerta Jurada",
+      "descripcion": "La sombra de la tormenta custodia la segunda entrada a la salida.",
+      "salidas": {
+        "N": {
+          "sala": 14
+        },
+        "E": {
+          "sala": 20,
+          "cerrada": true,
+          "llave": "sl_llave_radiante"
+        },
+        "O": {
+          "sala": 18
+        }
+      }
+    },
+    {
+      "id": 20,
+      "nombre": "Puerta Jurada",
+      "descripcion": "Salida del recorrido. Llegar exige abrir una de sus puertas con la gema llave radiante.",
+      "salidas": {
+        "N": {
+          "sala": 15
+        },
+        "O": {
+          "sala": 19
+        }
+      }
+    }
+  ]
+}

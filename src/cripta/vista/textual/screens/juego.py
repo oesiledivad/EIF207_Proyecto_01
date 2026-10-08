@@ -8,6 +8,8 @@ from textual.screen import Screen
 from textual.widgets import Button, Footer, Static
 
 from cripta.controlador.Aplicacion import Aplicacion
+from cripta.estructuras.Inventario import ItemInventario
+from cripta.vista.textual.modales.fin import FinModal, DerrotaModal, VictoriaModal
 from cripta.vista.textual.modales.ayuda import AyudaModal
 from cripta.vista.textual.modales.confirmar import ConfirmarModal
 from cripta.vista.textual.modales.elegir_item import ElegirItemModal
@@ -37,6 +39,8 @@ class JuegoScreen(Screen):
         self._controlador = controlador
         self._anim = 0
         self._timer = None
+        self._fin_mostrado = False
+        self._timer_fin = None
 
     def compose(self) -> ComposeResult:
         with Vertical(id="juego-root"):
@@ -168,10 +172,14 @@ class JuegoScreen(Screen):
         elif btn == "btn-atacar":
             self._modal_elegir_enemigo()
         elif btn == "btn-recoger":
-            # Recoger se hace sobre el suelo, no sobre el inventario.
-            # Hasta que exista el modal de objetos del suelo (P1),
-            # se reporta como no implementado.
-            self.notify("Recoger aún no implementado.", title="Cripta")
+            objetos = self._controlador.estado_partida().objetos_suelo
+            if not objetos:
+                self.notify("No hay objetos en el suelo.", title="Cripta")
+                return
+            items = [ItemInventario(o.id, o.tipo_id or o.id, o.nombre, "", 0, 0)
+                     for o in objetos]
+            self.app.push_screen(ElegirItemModal(items, "recoger"),
+                                 lambda item: self._al_elegir_item("recoger", item))
         elif btn == "btn-usar":
             self._modal_elegir("usar")
         elif btn == "btn-equipar":
@@ -195,7 +203,7 @@ class JuegoScreen(Screen):
         elif btn == "btn-mover":
             self._modal_elegir_direccion()
         else:
-            # Botones de P1 y P2 aún sin implementar.
+            # Botones pendientes de integracion.
             self.notify("Acción aún no implementada.", title="Cripta")
 
     def _modal_elegir_enemigo(self) -> None:
@@ -236,7 +244,9 @@ class JuegoScreen(Screen):
     def _al_elegir_item(self, accion: str, item) -> None:
         if item is None:
             return
-        if accion == "usar":
+        if accion == "recoger":
+            self._ejecutar(self._controlador.recoger(item.instancia_id))
+        elif accion == "usar":
             self._ejecutar(self._controlador.usar(item.instancia_id))
         elif accion == "equipar":
             self._ejecutar(self._controlador.equipar(item.instancia_id))
@@ -249,25 +259,59 @@ class JuegoScreen(Screen):
 
     def _al_confirmar_salir(self, confirmado: bool) -> None:
         if confirmado:
-            self.app.exit()
+            self.action_terminar()
 
     def _ejecutar(self, resultado) -> None:
         if not resultado.ok:
             self.notify(resultado.motivo or "Acción rechazada.", title="Cripta")
         self._refrescar()
+        estado = self._controlador.estado_partida()
+        if estado.terminada:
+            if estado.derrota:
+                if self._timer_fin is None:
+                    if self._timer:
+                        self._timer.stop()
+                    self._timer_fin = self.set_timer(1.2, self._mostrar_fin)
+            else:
+                self._mostrar_fin()
+
+    def _mostrar_fin(self):
+        if self._fin_mostrado:
+            return
+        self._fin_mostrado = True
+        if self._timer_fin:
+            self._timer_fin.stop()
+        if self._timer:
+            self._timer.stop()
+        estado = self._controlador.estado_partida()
+        pantalla = VictoriaModal if estado.victoria else DerrotaModal if estado.derrota else FinModal
+        self.app.push_screen(pantalla(self._controlador), self._al_finalizar)
+
+    def on_unmount(self):
+        if self._timer:
+            self._timer.stop()
+        if self._timer_fin:
+            self._timer_fin.stop()
+
+    def _al_finalizar(self, otra_partida: bool):
+        if otra_partida:
+            self.app.pop_screen()  # Regresa a la seleccion ya abierta.
+        else:
+            self.app.exit()
 
     #  Acciones de teclado
 
     def action_volver(self) -> None:
         if self._timer:
             self._timer.stop()
+        self._controlador.terminar()
         self.app.pop_screen()
 
     def action_terminar(self) -> None:
         if self._timer:
             self._timer.stop()
         self._controlador.terminar()
-        self.app.exit()
+        self._mostrar_fin()
 
     def action_refrescar(self) -> None:
         self._refrescar()

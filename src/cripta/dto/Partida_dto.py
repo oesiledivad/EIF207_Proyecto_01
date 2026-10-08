@@ -38,6 +38,7 @@ class EnemigoPartida:
 class ObjetoSuelo:
     id: str
     nombre: str
+    tipo_id: str = ""
 
 @dataclass
 class TrampaPartida:
@@ -76,6 +77,8 @@ class EstadoPartida:
     presupuesto_solicitudes: int = 0
     inventario_max: int = 10
 
+    acciones_ejecutadas: int = 0
+    enemigos_derrotados: int = 0
     reloj_virtual: int = 0
     sala_actual_id: int = 0
     sala_actual_nombre: str = ""

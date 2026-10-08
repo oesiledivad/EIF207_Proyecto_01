@@ -23,7 +23,7 @@ class ElegirItemModal(ModalScreen):
 
     def __init__(
         self,
-        inventario: Inventario,
+        inventario: Inventario | list[ItemInventario],
         accion: str,
         filtro_clase: str | None = None,
     ) -> None:
@@ -45,7 +45,8 @@ class ElegirItemModal(ModalScreen):
         tabla.cursor_type = "row"
         tabla.zebra_stripes = True
 
-        for item in self._inventario.items():
+        items = self._inventario.items() if isinstance(self._inventario, Inventario) else self._inventario
+        for item in items:
             if self._filtro is not None and item.clase != self._filtro:
                 continue
             self._items.append(item)

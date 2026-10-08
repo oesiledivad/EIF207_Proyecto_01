@@ -22,6 +22,7 @@ class CriptaApp(App):
         str(_ESTILOS / "juego.tcss"),
         str(_ESTILOS / "mini_mapa.tcss"),
         str(_ESTILOS / "modales.tcss"),
+        str(_ESTILOS / "fin.tcss"),
         str(_ESTILOS / "cargando.tcss")
     ]
 

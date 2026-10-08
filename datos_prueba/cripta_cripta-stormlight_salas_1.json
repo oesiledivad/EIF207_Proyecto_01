@@ -1,0 +1,157 @@
+{
+  "pagina": 1,
+  "total_paginas": 2,
+  "salas": [
+    {
+      "id": 1,
+      "nombre": "Vestibulo de Urithiru",
+      "descripcion": "Recorrido de pruebas inspirado en Roshar. Hay equipo, luz y pergaminos antes del peligro.",
+      "salidas": {
+        "S": {
+          "sala": 6
+        },
+        "E": {
+          "sala": 2
+        }
+      }
+    },
+    {
+      "id": 2,
+      "nombre": "Galeria del Puente Cuatro",
+      "descripcion": "Una niebla venenosa obliga a elegir entre avanzar y usar el antidoto.",
+      "salidas": {
+        "S": {
+          "sala": 7
+        },
+        "E": {
+          "sala": 3
+        },
+        "O": {
+          "sala": 1
+        }
+      }
+    },
+    {
+      "id": 3,
+      "nombre": "Taller de Fabriales",
+      "descripcion": "Dos dispositivos alteran la velocidad durante intervalos distintos.",
+      "salidas": {
+        "S": {
+          "sala": 8
+        },
+        "E": {
+          "sala": 4
+        },
+        "O": {
+          "sala": 2
+        }
+      }
+    },
+    {
+      "id": 4,
+      "nombre": "Patio de Entrenamiento",
+      "descripcion": "Un patrullero errante puede abandonar la sala por una salida abierta.",
+      "salidas": {
+        "E": {
+          "sala": 5
+        },
+        "O": {
+          "sala": 3
+        }
+      }
+    },
+    {
+      "id": 5,
+      "nombre": "Armeria de los Vientos",
+      "descripcion": "Las armas cambian las estadisticas sin acumular sus bonificaciones.",
+      "salidas": {
+        "S": {
+          "sala": 10
+        },
+        "O": {
+          "sala": 4
+        }
+      }
+    },
+    {
+      "id": 6,
+      "nombre": "Archivo de Gemas",
+      "descripcion": "La gema llave abre la boveda; el pergamino permite regresar sobre los propios pasos.",
+      "salidas": {
+        "N": {
+          "sala": 1
+        },
+        "S": {
+          "sala": 11
+        },
+        "E": {
+          "sala": 7
+        }
+      }
+    },
+    {
+      "id": 7,
+      "nombre": "Grietas de Piedra",
+      "descripcion": "Dos acechadores comparten ficha, pero tienen instancias diferentes.",
+      "salidas": {
+        "N": {
+          "sala": 2
+        },
+        "S": {
+          "sala": 12
+        },
+        "E": {
+          "sala": 8
+        },
+        "O": {
+          "sala": 6
+        }
+      }
+    },
+    {
+      "id": 8,
+      "nombre": "Atrio del Guardian",
+      "descripcion": "Un guardian permanece junto a la entrada de la boveda sellada.",
+      "salidas": {
+        "N": {
+          "sala": 3
+        },
+        "S": {
+          "sala": 13
+        },
+        "E": {
+          "sala": 9,
+          "cerrada": true,
+          "llave": "sl_llave_archivo",
+          "cierre_automatico": 400
+        },
+        "O": {
+          "sala": 7
+        }
+      }
+    },
+    {
+      "id": 9,
+      "nombre": "Boveda de Esquirlas",
+      "descripcion": "Tesoro opcional tras una puerta de cierre automatico. La llave esta fuera de la boveda.",
+      "salidas": {
+        "O": {
+          "sala": 8
+        }
+      }
+    },
+    {
+      "id": 10,
+      "nombre": "Mirador de la Alta Tormenta",
+      "descripcion": "La tormenta se observa desde un refugio de piedra.",
+      "salidas": {
+        "N": {
+          "sala": 5
+        },
+        "S": {
+          "sala": 15
+        }
+      }
+    }
+  ]
+}

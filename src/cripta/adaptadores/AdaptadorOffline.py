@@ -4,6 +4,7 @@
 from .Crypt_Data_Source import CryptDataSource
 from pathlib import Path
 import json
+from hashlib import sha256
 MAX_POR_LOTE=10
 class AdaptadorOffline(CryptDataSource):
     """Adaptador que no hace llamadas de red, sino que guarda las respuestas en archivos locales."""
@@ -50,5 +51,10 @@ class AdaptadorOffline(CryptDataSource):
         return self._leer(f"cripta_{crypta_id}_version.json")
 
     def get_catalog_version(self) -> dict:
-        return self._leer("catalogo_version.json")
+        try:
+            return self._leer("catalogo_version.json")
+        except FileNotFoundError:
+            # Sin version declarada, solo este archivo local exacto es compatible.
+            return {"version": "offline-sha256:" + sha256(
+                (self.carpeta / "catalogo.json").read_bytes()).hexdigest()}
     

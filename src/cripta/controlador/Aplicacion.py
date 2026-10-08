@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import random
 
+from cripta.replay.reproductor import ErrorRegistro
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.controlador.GestorPartida import GestorPartida
+from cripta.controlador.PartidaControlador import PartidaControlador
 from cripta.controlador.InventarioControlador import InventarioControlador
 from cripta.dto.Partida_dto import (
     CriptaResumen,
@@ -59,17 +61,18 @@ class Aplicacion:
     """
 
     def __init__(self, data_source: CryptDataSource, capacidad_cache: int = 25,
-                 almacen: AlmacenDisco | None = None) -> None:
+                 almacen: AlmacenDisco | None = None, carpeta_logs=None, ruta_puntajes=None) -> None:
         self._cripta_service = CriptaService(
             data_source, Cache_Fichas(capacidad=capacidad_cache), almacen
         )
         self._gestor = GestorPartida()
         self._bitacora = Bitacora(capacidad=20)
-        self._inventario = InventarioControlador(self._gestor, self._bitacora)
+        self._inventario = InventarioControlador(self._gestor, self._bitacora, self._cripta_service)
         self._simulacion: Simulacion | None = None
         self._jugador: Jugador | None = None
         self._salas: IndiceSalas = IndiceSalas()  # antes: dict[int, SalaJuego]
         self._max_id_sala = 0
+        self._partida = PartidaControlador(self._gestor, self._bitacora, carpeta_logs, ruta_puntajes)
 
     #  Selección
 
@@ -108,35 +111,24 @@ class Aplicacion:
         else:
             semilla_efectiva = _generar_semilla()
 
+        if self._jugador is not None:
+            self._cripta_service.reiniciar_partida()
         try:
             # Si ya se pidió al previsualizar, el servicio lo devuelve sin gastar red.
             detalles = self._cripta_service.obtener_detalles(cripta_id)
         except (PresupuestoAgotado, RuntimeError) as e:
             return ResultadoInicio(ok=False, motivo=f"No se pudieron leer los datos de la cripta: {e}")
         self._cripta_service.fijar_presupuesto(detalles.presupuesto_solicitudes)
+        if self._partida.registro is not None:
+            try:
+                self._cripta_service.obtener_version_catalogo(actualizar=True)
+            except (OSError, RuntimeError, ValueError, NotImplementedError) as error:
+                return ResultadoInicio(ok=False, motivo=f"No se pudo preparar el registro: {error}")
 
-        self._gestor.estado = EstadoPartida(
-            activa=True,
-            nombre_jugador=nombre,
-            cripta_id=detalles.id,
-            version_cripta=detalles.version,
-            semilla=semilla_efectiva,
-            modo="offline" if self._cripta_service.es_offline() else "red",
-            presupuesto_solicitudes=detalles.presupuesto_solicitudes,
-            inventario_max=detalles.inventario_max,
-            sala_actual_id=detalles.sala_inicial,
-            sala_actual_nombre="(cargando...)",
-            sala_salida_id=detalles.sala_salida,
-            llave_salida=detalles.llave_salida,
-            jugador_vida=detalles.jugador_vida_max,
-            jugador_vida_max=detalles.jugador_vida_max,
-            jugador_ataque=detalles.jugador_ataque,
-            jugador_defensa=detalles.jugador_defensa,
-            jugador_velocidad=detalles.jugador_velocidad,
+        self._partida.iniciar(
+            detalles, nombre, semilla_efectiva,
+            "offline" if self._cripta_service.es_offline() else "red",
         )
-
-        self._gestor.reiniciar_inventario(detalles.inventario_max)
-        self._gestor.historial.limpiar()
 
         self._bitacora.limpiar()
         self._bitacora.append(Mensaje("sistema", f"Partida iniciada en {cripta_id}."))
@@ -144,7 +136,7 @@ class Aplicacion:
         # §4.4: validar lo persistido ANTES de cargar esqueleto, contenido o fichas.
         self._bitacora.append(Mensaje("sistema", self._cripta_service.preparar_persistencia(detalles)))
 
-        self._simulacion = Simulacion(semilla_efectiva)
+        self._simulacion = Simulacion(semilla_efectiva, self._gestor.historial)
         self._jugador = Jugador(
             identificador="jugador", vida=detalles.jugador_vida_max, vida_max=detalles.jugador_vida_max,
             ataque=detalles.jugador_ataque, defensa=detalles.jugador_defensa,
@@ -173,6 +165,15 @@ class Aplicacion:
         self._gestor.refrescar_sala_actual()
         self._sincronizar_estado()
 
+        if self._partida.registro is not None:
+            try:
+                self._partida.iniciar_registro(
+                    detalles, self._cripta_service.obtener_version_catalogo(),
+                    semilla_efectiva, nombre, self._cripta_service._cache_fichas.capacidad,
+                )
+            except OSError as error:
+                self._gestor.estado.activa = False
+                return ResultadoInicio(ok=False, motivo=f"No se pudo crear el registro: {error}")
         return ResultadoInicio(ok=True, semilla_efectiva=semilla_efectiva)
 
     #  Salas y red (§4.2)
@@ -299,7 +300,7 @@ class Aplicacion:
 
     @staticmethod
     def _tipos_visibles(sala: SalaJuego) -> list[str]:
-        tipos = [o.id for o in sala.objetos]
+        tipos = [o.tipo_id or o.id for o in sala.objetos]
         for t in sala.trampas:
             tipos.append(t.tipo)
         return tipos
@@ -345,7 +346,8 @@ class Aplicacion:
         # §2.4: primera acción = acción base de costo 100 desde el reloj actual.
         intervalo = calcular_intervalo(costo_accion("esperar"), enemigo.velocidad)
         evento = self._simulacion.agenda.insertar(tiempo_actual + intervalo, enemigo, "accion_actor")
-        enemigo._proximo_evento = evento
+        self._simulacion.agenda.cambiar(enemigo, "_proximo_evento", evento)
+        self._simulacion.agenda.cambiar(enemigo, "tiempo_siguiente", evento.tiempo_siguiente)
         self._fijar_seguro([enemigo.tipo])  # enemigo activo: su ficha está en uso
 
         if enemigo.regeneracion_objetivo:
@@ -353,19 +355,27 @@ class Aplicacion:
 
     def _matar_enemigo(self, enemigo, sala: SalaJuego) -> None:
         """Muerte (§2.6): cancela sus eventos, lo saca de la sala y deja su botín."""
+        self._gestor.historial.cambiar(self._gestor.estado, "enemigos_derrotados",
+                                      self._gestor.estado.enemigos_derrotados + 1)
         self._bitacora.append(Mensaje("combate", f"{enemigo.identificador} muere."))
         procesar_muerte(enemigo, self._simulacion.agenda)  # acción, regeneración, veneno, velocidad
-        sala.quitar_enemigo(enemigo)
+        sala.quitar_enemigo(enemigo, self._gestor.historial)
         self._cripta_service.liberar_fichas([enemigo.tipo])
 
         if enemigo.suelta:
             # El botín queda en el suelo de la sala actual: sus fichas pasan a estar en uso.
             self._fijar_seguro(enemigo.suelta)
             nombres: list[str] = []
-            for tipo in enemigo.suelta:
+            for posicion, tipo in enumerate(enemigo.suelta):
                 ficha = self._cripta_service.obtener_ficha(tipo)
                 nombre = ficha.nombre if ficha is not None else tipo
-                sala.objetos.append(ObjetoSuelo(id=tipo, nombre=nombre))
+                objeto = ObjetoSuelo(
+                    id=f"botin-{enemigo.identificador}-{posicion}", nombre=nombre, tipo_id=tipo,
+                )
+                if ficha is not None and ficha.clase == "pergamino_retroceso":
+                    sala.objetos.append(objeto)
+                else:
+                    self._gestor.historial.agregar(sala.objetos, objeto)
                 nombres.append(nombre)
             self._bitacora.append(Mensaje("combate", f"{enemigo.identificador} deja caer: {', '.join(nombres)}."))
 
@@ -375,7 +385,7 @@ class Aplicacion:
         return (self._simulacion is not None and self._jugador is not None
                 and self._gestor.estado.activa)
 
-    def _accion_jugador(self, nombre_costo: str, ejecutar) -> ResultadoAccion:
+    def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None) -> ResultadoAccion:
         """Plantilla común de toda acción que consume tiempo.
 
         1. abre el intervalo del historial,
@@ -389,26 +399,43 @@ class Aplicacion:
         if self._gestor.historial.hay_intervalo_abierto():
             self._gestor.descartar_intervalo()
         self._gestor.abrir_intervalo()
+        historial = self._gestor.historial
+        historial.registrar("azar", (self._simulacion.azar, self._simulacion.azar.getstate()))
+        for atributo in ("activa", "derrota", "victoria", "terminada"):
+            historial.registrar("atributo",
+                               (self._gestor.estado, atributo, getattr(self._gestor.estado, atributo)))
+        actual = self._gestor.inventario.item_actual()
+        historial.registrar("seleccion_inventario", actual.instancia_id if actual else None)
         try:
             resultado = ejecutar()
-        except Exception:
-            self._gestor.descartar_intervalo()
+            if not resultado.ok:
+                historial.revertir_abierto(self._gestor._aplicar_reversion)
+                return resultado
+            historial.cambiar(self._gestor.estado, "acciones_ejecutadas",
+                              self._gestor.estado.acciones_ejecutadas + 1)
+            if esta_vivo(self._jugador):
+                self._consumir_tiempo_jugador(nombre_costo)
+            self._despues_del_ciclo()
+            self._partida.registrar_accion(nombre_costo, argumento)
+        except Exception as error:
+            anteriores = self._tipos_activos()
+            historial.revertir_abierto(self._gestor._aplicar_reversion)
+            self._cripta_service.liberar_fichas(anteriores)
+            self._fijar_seguro(self._tipos_activos())
+            self._despues_del_ciclo()
+            if isinstance(error, ErrorRegistro):
+                self._gestor.estado.activa = False
             raise
-        if not resultado.ok:
-            self._gestor.descartar_intervalo()  # Apéndice B: acción rechazada no consume tiempo
-            return resultado
-
-        if esta_vivo(self._jugador):
-            self._consumir_tiempo_jugador(nombre_costo)
         self._gestor.cerrar_intervalo()
-        self._despues_del_ciclo()
+        if self._gestor.estado.terminada:
+            self._partida.guardar_puntaje()
         return resultado
 
     def _consumir_tiempo_jugador(self, nombre_costo: str) -> None:
         sim = self._simulacion
         tiempo_actual = sim.reloj.tiempo_actual
         # Apéndice B: el rastro de la sala actual se refresca en cada acción del jugador.
-        self._salas.obtener(self._jugador.sala).ultimo_tiempo_visita = tiempo_actual
+        sim.agenda.cambiar(self._salas.obtener(self._jugador.sala), "ultimo_tiempo_visita", tiempo_actual)
 
         intervalo = calcular_intervalo(costo_accion(nombre_costo), self._jugador.velocidad)
         sim.agenda.reprogramar(self._jugador, tiempo_actual + intervalo, "accion_actor")
@@ -420,16 +447,14 @@ class Aplicacion:
         self._gestor.estado.sala_actual_id = self._jugador.sala
         self._gestor.refrescar_sala_actual()
         self._sincronizar_estado()
-        if not esta_vivo(self._jugador):
-            self._gestor.estado.derrota = True
-            self._gestor.estado.activa = False
-            self._bitacora.append(Mensaje("sistema", "Has muerto."))
-            self._bitacora.append(Mensaje("sistema", self.resumen_red()))
+        self._partida.comprobar_derrota(esta_vivo(self._jugador), self.resumen_red())
 
     def _sincronizar_estado(self) -> None:
         estado = self._gestor.estado
         estado.reloj_virtual = self._simulacion.reloj.tiempo_actual
         estado.jugador_vida = self._jugador.vida
+        estado.jugador_ataque = self._jugador.ataque
+        estado.jugador_defensa = self._jugador.defensa
         estado.jugador_velocidad = self._jugador.velocidad
         sala_actual = self._salas.obtener(self._jugador.sala)
         if sala_actual is not None:
@@ -482,25 +507,49 @@ class Aplicacion:
     #  Inventario (delegado a InventarioController; aquí se les da costo de tiempo)
 
     def recoger(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("recoger", lambda: self._inventario.recoger(instancia_id))
+        return self._accion_jugador("recoger", lambda: self._inventario.recoger(instancia_id), instancia_id)
 
     def soltar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("soltar", lambda: self._inventario.soltar(instancia_id))
+        return self._accion_jugador("soltar", lambda: self._inventario.soltar(instancia_id, self._jugador), instancia_id)
 
     def equipar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("equipar_objeto", lambda: self._inventario.equipar(instancia_id))
+        return self._accion_jugador("equipar_objeto", lambda: self._inventario.equipar(instancia_id, self._jugador), instancia_id)
 
     def usar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("usar_objeto", lambda: self._usar_objeto(instancia_id))
+        return self._accion_jugador("usar_objeto", lambda: self._usar_objeto(instancia_id), instancia_id)
+
+    def _tipos_activos(self) -> list[str]:
+        tipos = [item.tipo_id for item in self._gestor.inventario.items()]
+        for sala in self._salas._datos:
+            if sala is not None:
+                tipos.extend(e.tipo for e in sala.enemigos
+                             if esta_vivo(e) and e._proximo_evento is not None)
+        tipos.extend(self._tipos_visibles(self._salas.obtener(self._jugador.sala)))
+        return tipos
 
     def usar_pergamino(self) -> ResultadoAccion:
-        return self._inventario.usar_pergamino()  # no consume tiempo (§2.11)
+        if not self._partida_en_curso():
+            return ResultadoAccion.fallo("La partida no está activa.")
+        anteriores = self._tipos_activos()
+        resultado = self._partida.retroceder()
+        if resultado.ok:
+            self._cripta_service.liberar_fichas(anteriores)
+            self._fijar_seguro(self._tipos_activos())
+            self._despues_del_ciclo()
+            self._bitacora.append(Mensaje("efecto", "Usaste un pergamino de retroceso."))
+        return resultado
 
     def siguiente_item(self) -> ResultadoAccion:
-        return self._inventario.siguiente()
+        resultado = self._inventario.siguiente()
+        if resultado.ok:
+            self._partida.registrar_accion("siguiente_item")
+        return resultado
 
     def anterior_item(self) -> ResultadoAccion:
-        return self._inventario.anterior()
+        resultado = self._inventario.anterior()
+        if resultado.ok:
+            self._partida.registrar_accion("anterior_item")
+        return resultado
 
     def vista_inventario(self, criterio: str) -> list:
         return self._inventario.vista_ordenada(criterio)
@@ -531,7 +580,7 @@ class Aplicacion:
             case "pocion":
                 partes: list[str] = []
                 if ficha.cura:
-                    partes.append(f"recuperás {curar(jugador, ficha.cura)} de vida")
+                    partes.append(f"recuperás {curar(jugador, ficha.cura, agenda)} de vida")
                 if ficha.modificador_velocidad and ficha.duracion:
                     aplicar_modificador_velocidad(jugador, ficha.modificador_velocidad,
                                                   ficha.duracion, tiempo, agenda)
@@ -555,16 +604,9 @@ class Aplicacion:
             case otra:
                 return ResultadoAccion.fallo(f"No se puede usar un objeto de clase {otra}.")
 
-        self._consumir_item(item)
+        self._inventario.consumir(item)
         self._bitacora.append(Mensaje("jugador", texto))
         return ResultadoAccion.exito()
-
-    def _consumir_item(self, item) -> None:
-        inv = self._gestor.inventario
-        posicion = inv.posicion_de(item.instancia_id)
-        self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
-        inv.soltar_por_id(item.instancia_id)
-        self._cripta_service.liberar_fichas([item.tipo_id])  # ya no está en inventario
 
     #  Acciones de partida
 
@@ -589,7 +631,7 @@ class Aplicacion:
         if error is not None:
             return ResultadoAccion.fallo(f"No se pudo cargar la sala destino: {error}")
 
-        resultado = self._accion_jugador("mover", lambda: self._ejecutar_movimiento(destino_id, direccion))
+        resultado = self._accion_jugador("mover", lambda: self._ejecutar_movimiento(destino_id, direccion), direccion)
         if resultado.ok and self._partida_en_curso():
             self._precargar_alrededor(self._jugador.sala)  # lista para la próxima puerta
         return resultado
@@ -600,8 +642,8 @@ class Aplicacion:
         tiempo_actual = self._simulacion.reloj.tiempo_actual
 
         self._liberar_contenido_visible(sala_origen)   # deja de ser la sala actual
-        self._jugador.sala = destino_id
-        sala_destino.ultimo_tiempo_visita = tiempo_actual  # §2.9
+        self._simulacion.agenda.cambiar(self._jugador, "sala", destino_id)
+        self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # §2.9
         self._activar_sala(sala_destino)                  # §2.4
         self._fijar_contenido_visible(sala_destino)
         self._gestor.estado.objetos_suelo = sala_destino.objetos
@@ -617,7 +659,7 @@ class Aplicacion:
         return ResultadoAccion.exito()
 
     def atacar(self, instancia_id: str) -> ResultadoAccion:
-        return self._accion_jugador("atacar", lambda: self._ejecutar_ataque(instancia_id))
+        return self._accion_jugador("atacar", lambda: self._ejecutar_ataque(instancia_id), instancia_id)
 
     def _ejecutar_ataque(self, instancia_id: str) -> ResultadoAccion:
         sala_actual = self._salas.obtener(self._jugador.sala)
@@ -632,14 +674,19 @@ class Aplicacion:
             return ResultadoAccion.fallo("Ese enemigo no está aquí.")
 
         dano = calcular_danio(self._jugador, enemigo, self._simulacion.azar)
-        aplicar_danio(enemigo, dano)
+        aplicar_danio(enemigo, dano, self._simulacion.agenda)
         self._bitacora.append(Mensaje("combate", f"Atacás a {enemigo.identificador} por {dano}."))
 
         if not esta_vivo(enemigo):
             self._matar_enemigo(enemigo, sala_actual)
         return ResultadoAccion.exito()
 
+    def puntajes(self):
+        return self._partida.puntajes()
+
+    @property
+    def error_puntaje(self):
+        return self._partida.error_puntaje
+
     def terminar(self) -> None:
-        self._gestor.estado.activa = False
-        self._gestor.estado.terminada = True
-        self._bitacora.append(Mensaje("sistema", self.resumen_red()))
+        self._partida.terminar(self.resumen_red())

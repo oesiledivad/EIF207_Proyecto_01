@@ -5,6 +5,12 @@
       "nombre": "Osario menor",
       "salas": 6,
       "dificultad": 1
+    },
+    {
+      "id": "cripta-stormlight",
+      "nombre": "Urithiru: ecos de la tormenta",
+      "salas": 20,
+      "dificultad": 2
     }
   ]
 }

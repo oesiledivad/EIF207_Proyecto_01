@@ -31,7 +31,7 @@ class ItemInventario:
         instancia_id: Identificador único dentro del inventario.
         tipo_id: Identificador de la ficha de catálogo.
         nombre: Nombre legible.
-        clase: arma, armadura, pocion, antidoto, llave, antorcha, pergamino.
+        clase: arma, armadura, pocion, antidoto, llave, antorcha, pergamino_retroceso.
         peso: Peso del objeto.
         valor: Valor del objeto.
         equipado: True si está equipado (arma o armadura).
@@ -44,6 +44,8 @@ class ItemInventario:
     peso: int
     valor: int
     equipado: bool = False
+    ataque_bonus: int = 0
+    defensa_bonus: int = 0
 
 
 class _Nodo:
@@ -209,6 +211,21 @@ class Inventario:
         item.equipado = True
         return item
 
+    def equipar_por_id(self, instancia_id: str) -> ItemInventario | None:
+        nodo = self._buscar_nodo(instancia_id)
+        if nodo is None:
+            return None
+        anterior = self._actual
+        self._actual = nodo
+        item = self.equipar_actual()
+        self._actual = anterior
+        return item
+
+    def seleccionar(self, instancia_id: str) -> None:
+        nodo = self._buscar_nodo(instancia_id)
+        if nodo is not None:
+            self._actual = nodo
+
     def desequipar_clase(self, clase: str) -> None:
         """Desmarca como equipado cualquier item de la clase dada.
 
@@ -282,25 +299,15 @@ class Inventario:
             return False
 
         nuevo = _Nodo(item)
-        if posicion <= 0 or self._tamano == 0:
-            # Al frente
-            frente = self._centinela.sig
-            nuevo.sig = frente
-            nuevo.ant = self._centinela
-            self._centinela.sig = nuevo
-            frente.ant = nuevo
-        else:
-            # Avanzar hasta la posición o hasta el final.
-            actual = self._centinela.sig
-            i = 0
-            while i < posicion and actual.sig is not self._centinela:
-                actual = actual.sig
-                i += 1
-            # Insertar antes de 'actual'.
-            nuevo.sig = actual
-            nuevo.ant = actual.ant
-            actual.ant.sig = nuevo
-            actual.ant = nuevo
+        actual = self._centinela.sig
+        for _ in range(max(0, posicion)):
+            if actual is self._centinela:
+                break
+            actual = actual.sig
+        nuevo.sig = actual
+        nuevo.ant = actual.ant
+        actual.ant.sig = nuevo
+        actual.ant = nuevo
 
         self._tamano += 1
         if self._actual is None:
