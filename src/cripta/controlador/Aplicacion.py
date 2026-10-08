@@ -685,11 +685,14 @@ class Aplicacion:
                 if not esta_vivo(self._jugador):
                     break
         return ResultadoAccion.exito()
+
+    
     #kyara
-    def abrir(self, direccion: str) -> ResultadoAccion:                                     # <- NUEVO
+    def abrir(self, direccion: str) -> ResultadoAccion:                                     #NUEVO
         """Abre la puerta de la sala actual en `direccion` (§2.5). Costo 50."""
         direccion = direccion.strip().upper()
-        return self._accion_jugador("abrir_puerta", lambda: self._ejecutar_apertura(direccion))
+        return self._accion_jugador("abrir_puerta", lambda: self._ejecutar_apertura(direccion), direccion)
+    abrir_puerta = abrir
 
     def _ejecutar_apertura(self, direccion: str) -> ResultadoAccion:
         sala = self._salas.obtener(self._jugador.sala)

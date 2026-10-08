@@ -21,10 +21,10 @@ def _validar_accion(nombre, argumento):
     if nombre in ("esperar", "retroceder", "siguiente_item", "anterior_item", "terminar"):
         if argumento is not None:
             raise ValueError("La accion no admite argumento.")
-    elif nombre in ("mover", "recoger", "soltar", "equipar_objeto", "usar_objeto", "atacar"):
+    elif nombre in ("mover", "recoger", "soltar", "equipar_objeto", "usar_objeto", "atacar", "abrir_puerta"):
         if not isinstance(argumento, str) or not argumento.strip():
             raise ValueError("La accion requiere un argumento de texto.")
-        if nombre == "mover" and argumento not in ("N", "S", "E", "O"):
+        if nombre in ("mover", "abrir_puerta") and argumento not in ("N", "S", "E", "O"):
             raise ValueError("Direccion invalida.")
     else:
         raise ValueError(f"Accion desconocida: {nombre!r}.")
