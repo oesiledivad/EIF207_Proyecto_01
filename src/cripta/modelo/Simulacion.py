@@ -105,11 +105,7 @@ class Simulacion:
             case "antorcha_apagar":
                 return [procesar_apagar_antorcha(evento.actor, self.agenda)]
             case "trampa_rearme":
-
-                return [procesar_rearme_trampa(evento.actor)]
-            case "cierre_puerta":                                   
-                return [procesar_cierre_puerta(evento.actor)]
-
                 return [procesar_rearme_trampa(evento.actor, self.agenda)]
-
+            case "cierre_puerta":
+                return [procesar_cierre_puerta(evento.actor, self.agenda)]
         return []

@@ -448,18 +448,10 @@ class Aplicacion:
         self._gestor.estado.sala_actual_id = self._jugador.sala
         self._gestor.refrescar_sala_actual()
         self._sincronizar_estado()
-
-        if not esta_vivo(self._jugador):
-            self._gestor.estado.derrota = True
-            self._gestor.estado.activa = False
-            self._bitacora.append(Mensaje("sistema", "Has muerto."))
-            self._bitacora.append(Mensaje("sistema", self.resumen_red()))
+        self._partida.comprobar_derrota(esta_vivo(self._jugador), self.resumen_red())
             
     def _actualizar_vecindad(self) -> None:
         """Pone al día la vecindad que lee la Vista a partir del Modelo (fuente de verdad).
-=======
-        self._partida.comprobar_derrota(esta_vivo(self._jugador), self.resumen_red())
-
 
         Copia el estado vivo de cada puerta (SalaJuego.salidas) y marca si la sala
         vecina tiene enemigos vivos u objetos. O(k * e), k = salidas (máx. 4).
@@ -484,6 +476,7 @@ class Aplicacion:
                     break
             v.tiene_enemigos = hay_enemigos
             v.tiene_objetos = len(vecina.objetos) > 0
+
     def _sincronizar_estado(self) -> None:
         estado = self._gestor.estado
         self._actualizar_vecindad()          # <- NUEVO
@@ -715,9 +708,7 @@ class Aplicacion:
             return ResultadoAccion.fallo("No tienes la llave correcta.")
 
         tiempo = self._simulacion.reloj.tiempo_actual
-        evento = abrir_salida(salida, tiempo, self._simulacion.agenda)
-        # Dato para invertir el cambio (retroceso, §2.11): sala, dirección y evento de cierre.
-        self._gestor.registrar_cambio("puerta_abierta", (sala.id, direccion, evento))
+        abrir_salida(salida, tiempo, self._simulacion.agenda)
         self._bitacora.append(Mensaje("jugador", f"Abres la puerta {direccion} con {llave.nombre}."))
         return ResultadoAccion.exito()
 
