@@ -32,6 +32,15 @@ class Actor:
         self.evento_regeneracion = None
         self.regeneracion_cantidad = 0
 
+    @property
+    def etiqueta(self) -> str:
+        """Cómo se muestra en mensajes. Un enemigo se ve como "Rata gigante (e-201)":
+        identificable aunque haya varios del mismo tipo (§2.6)."""
+        nombre = getattr(self, "nombre", None)
+        if not nombre or nombre == self.identificador:
+            return self.identificador
+        return f"{nombre} ({self.identificador})"
+
     def actualizar_velocidad(self, nueva_velocidad: int, tiempo_actual: int, agenda) -> None:
         if self._proximo_evento is not None and self._proximo_evento.valido:
             nuevo_tiempo = reescalar_tiempo_siguiente(
