@@ -52,12 +52,7 @@ class PanelInventario(Static):
             color = "#e8a33d" if marca_actual == ">" else "#d6cfc4"
             lineas.append(f"[{color}]{marca_actual} {marca_equipo} {item.nombre}[/]")
 
-        encabezado = {
-            "real": "orden real",
-            "peso": "por peso",
-            "valor": "por valor",
-            "nombre": "por nombre",
-        }.get(self._criterio, "orden real")
+        encabezado = "orden real" if self._criterio == "real" else f"por {self._criterio}"
 
         lineas.append("")
         lineas.append(

@@ -3,8 +3,7 @@
 Lee flags, elige adaptador (red u offline), construye el controlador
 y lanza la vista Textual. No es controlador MVC: solo prepara el arranque.
 
-Solo se soporta --offline. --replay, --bench y --cache-size
-se añadirán cuando existan sus módulos.
+El modo --bench ejecuta mediciones sin red ni vista interactiva.
 """
 
 from __future__ import annotations
@@ -48,6 +47,14 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
         default=".cripta_cache",
         help="Carpeta de la caché persistente (fichas, esqueleto, contenido).",
     )
+    modos = parser.add_mutually_exclusive_group()
+    modos.add_argument("--replay", metavar="PARTIDA.LOG",
+                       help="Reproduce acciones sin interfaz; exige versiones compatibles.")
+    parser.add_argument("--puntajes", help="Archivo de puntajes (por defecto, dentro de --log-dir).")
+    parser.add_argument("--log-dir", default="partidas", help="Carpeta de registros de partida.")
+    parser.add_argument("--offline-dir", default="datos_prueba", help="Carpeta de respuestas offline.")
+    modos.add_argument("--bench", action="store_true",
+                        help="Ejecuta cargas sinteticas sin red ni interfaz.")
     return parser.parse_args(argv)
 
 
@@ -61,7 +68,7 @@ def _construir_data_source(args: argparse.Namespace) -> CryptDataSource:
         Instancia de CryptDataSource (OfflineAdapter o NetworkAdapter).
     """
     if args.offline:
-        return AdaptadorOffline("datos_prueba")
+        return AdaptadorOffline(args.offline_dir)
     return NetworkAdapter()
 
 
@@ -76,13 +83,35 @@ def main(argv: list[str] | None = None) -> int:
     """
     args = _parsear_args(argv if argv is not None else sys.argv[1:])
 
-    data_source = _construir_data_source(args)
     if args.cache_size <= 0:
         print("--cache-size debe ser un entero positivo.", file=sys.stderr)
         return 2
+    if args.bench:
+        from cripta.bench import main as medir
+        medir()
+        return 0
+
+    data_source = _construir_data_source(args)
+    if args.replay:
+        from cripta.replay.reproductor import reproducir
+        fuentes = [data_source]
+        if not args.offline:
+            fuentes.append(AdaptadorOffline(args.offline_dir))
+        try:
+            controlador = reproducir(args.replay, fuentes)
+        except (OSError, RuntimeError, ValueError) as error:
+            print(str(error), file=sys.stderr)
+            return 2
+        estado = controlador.estado_partida()
+        print(f"Replay completado: sala={estado.sala_actual_id} "
+              f"vida={estado.jugador_vida} tiempo={estado.reloj_virtual}")
+        print(controlador.resumen_red())
+        return 0
+
     # En --offline los datos ya vienen de disco: no hace falta la caché persistente.
     almacen = None if args.offline else AlmacenDisco(args.cache_dir)
-    controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen)
+    controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen,
+                             carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes)
 
     # Import diferido: la vista Textual solo se construye si vamos a usarla.
     from cripta.vista.textual.app import CriptaApp

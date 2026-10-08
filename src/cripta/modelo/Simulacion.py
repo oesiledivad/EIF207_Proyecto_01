@@ -24,13 +24,13 @@ class Simulacion:
     Utiliza una agenda de eventos para determinar qué debe ocurrir
     a continuación y un reloj virtual para controlar el tiempo.
     """
-    def __init__(self, semilla):
+    def __init__(self, semilla, historial=None):
         """
         Inicializa una simulación con su agenda, reloj y azar.
         Complejidad temporal: O(1).
         """
-        self.agenda = HeapAgendaEventos()
-        self.reloj = Reloj()
+        self.agenda = HeapAgendaEventos(historial)
+        self.reloj = Reloj(historial)
         self.azar = random.Random(semilla)
 
     def _ejecutar_turno_enemigo(self, enemigo, jugador, salas: IndiceSalas) -> list[str]:
@@ -43,7 +43,7 @@ class Simulacion:
 
         if tipo_accion == "atacar":
             dano = calcular_danio(enemigo, jugador, self.azar)
-            aplicar_danio(jugador, dano)
+            aplicar_danio(jugador, dano, self.agenda)
             mensajes.append(f"{enemigo.identificador} te ataca por {dano}.")
             if not esta_vivo(jugador):
                 return mensajes  # jugador murió: no reprogramamos nada más
@@ -54,8 +54,7 @@ class Simulacion:
         self.agenda.reprogramar(enemigo, tiempo_actual + intervalo, "accion_actor")
         return mensajes
 
-    @staticmethod
-    def _mover_enemigo(enemigo, destino_id: int, salas: IndiceSalas) -> None:
+    def _mover_enemigo(self, enemigo, destino_id: int, salas: IndiceSalas) -> None:
         """Cambia la pertenencia del enemigo: sale de su sala y entra a la destino.
 
         El enemigo sigue activo aunque el jugador nunca haya entrado a la
@@ -66,9 +65,9 @@ class Simulacion:
         if sala_destino is None:
             return  # no debería pasar: todas las salas del esqueleto existen
         if sala_origen is not None:
-            sala_origen.quitar_enemigo(enemigo)
-        sala_destino.agregar_enemigo(enemigo)
-        enemigo.sala = destino_id
+            sala_origen.quitar_enemigo(enemigo, self.agenda.historial)
+        sala_destino.agregar_enemigo(enemigo, self.agenda.historial)
+        self.agenda.cambiar(enemigo, "sala", destino_id)
 
     def avanzar_hasta_turno_jugador(self, jugador, salas) -> list[str]:
         """Ejecuta eventos en orden (tiempo, secuencia) hasta que le toque al jugador.
@@ -105,9 +104,13 @@ class Simulacion:
             case "fin_velocidad":
                 return [procesar_fin_velocidad(evento.actor, tiempo, self.agenda)]
             case "antorcha_apagar":
-                return [procesar_apagar_antorcha(evento.actor)]
+                return [procesar_apagar_antorcha(evento.actor, self.agenda)]
             case "trampa_rearme":
+<<<<<<< HEAD
                 return [procesar_rearme_trampa(evento.actor)]
             case "cierre_puerta":                                   
                 return [procesar_cierre_puerta(evento.actor)]
+=======
+                return [procesar_rearme_trampa(evento.actor, self.agenda)]
+>>>>>>> 5b98776fa401358259e98cbb892938b8b55c3365
         return []

@@ -39,6 +39,9 @@ class CryptDataSource(ABC):
     def requests_made(self) -> int:
         """Cuenta solicitudes de red reales. Offline siempre devuelve 0."""
 
+    def reiniciar_partida(self) -> None:
+        """Prepara una nueva sesion; offline no necesita reinicio."""
+
     def fijar_presupuesto(self, presupuesto: int) -> None:
         """Fija presupuesto_solicitudes de la cripta. Offline: no aplica."""
 

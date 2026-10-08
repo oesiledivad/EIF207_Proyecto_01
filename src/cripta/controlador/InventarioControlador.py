@@ -8,6 +8,8 @@ historial los cambios invertibles.
 from __future__ import annotations
 
 from cripta.controlador.GestorPartida import GestorPartida
+from cripta.adaptadores.Crypt_Data_Source import PresupuestoAgotado
+from cripta.servicio.CriptaService import CriptaService
 from cripta.dto.Partida_dto import ObjetoSuelo
 from cripta.dto.ResultadoAccion import ResultadoAccion
 from cripta.estructuras.Bitacora import Bitacora, Mensaje
@@ -22,9 +24,10 @@ class InventarioControlador:
         bitacora: Bitácora compartida del juego.
     """
 
-    def __init__(self, gestor: GestorPartida, bitacora: Bitacora) -> None:
+    def __init__(self, gestor: GestorPartida, bitacora: Bitacora, servicio: CriptaService) -> None:
         self._gestor = gestor
         self._bitacora = bitacora
+        self._servicio = servicio
 
     #  Acciones
 
@@ -40,25 +43,34 @@ class InventarioControlador:
         if obj is None:
             return ResultadoAccion.fallo("Ese objeto no está en el suelo.")
 
+        try:
+            ficha = self._servicio.obtener_ficha_garantizada(obj.tipo_id or obj.id)
+        except (PresupuestoAgotado, RuntimeError) as error:
+            return ResultadoAccion.fallo(str(error))
+        if ficha is None or ficha.clase in ("enemigo", "trampa"):
+            return ResultadoAccion.fallo("El objeto no tiene una ficha válida.")
         item = ItemInventario(
             instancia_id=obj.id,
-            tipo_id=obj.id,
-            nombre=obj.nombre,
-            clase="desconocido",
-            peso=0,
-            valor=0,
+            tipo_id=ficha.id,
+            nombre=ficha.nombre,
+            clase=ficha.clase,
+            peso=ficha.peso,
+            valor=ficha.valor,
+            ataque_bonus=getattr(ficha, "ataque_bonus", 0),
+            defensa_bonus=getattr(ficha, "defensa_bonus", 0),
         )
 
         posicion_suelo = self._gestor.estado.objetos_suelo.index(obj)
-        self._gestor.registrar_cambio("item_suelo_quitado", (obj, posicion_suelo))
-        self._gestor.registrar_cambio("inventario_agregado", item)
+        if item.clase != "pergamino_retroceso":
+            self._gestor.registrar_cambio("item_suelo_quitado", (self._gestor.estado.objetos_suelo, obj, posicion_suelo))
+            self._gestor.registrar_cambio("inventario_agregado", item)
 
         inv.agregar(item)
         self._gestor.estado.objetos_suelo.remove(obj)
         self._bitacora.append(Mensaje("jugador", f"Recogiste {obj.nombre}."))
         return ResultadoAccion.exito()
 
-    def soltar(self, instancia_id: str) -> ResultadoAccion:
+    def soltar(self, instancia_id: str, jugador) -> ResultadoAccion:
         inv = self._gestor.inventario
         if inv is None:
             return ResultadoAccion.fallo("Inventario no inicializado.")
@@ -71,17 +83,22 @@ class InventarioControlador:
         if item is None:
             return ResultadoAccion.fallo("No tienes ese objeto.")
 
-        self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
-        self._gestor.registrar_cambio("item_suelo_agregado", item.instancia_id)
+        if item.clase != "pergamino_retroceso":
+            self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
+            self._gestor.registrar_cambio("item_suelo_agregado", (self._gestor.estado.objetos_suelo, item.instancia_id))
+        if item.equipado:
+            self._quitar_bonus(item, jugador)
+            self._gestor.registrar_cambio("atributo", (item, "equipado", True))
+            item.equipado = False
 
         inv.soltar_por_id(instancia_id)
         self._gestor.estado.objetos_suelo.append(
-            ObjetoSuelo(id=item.instancia_id, nombre=item.nombre)
+            ObjetoSuelo(id=item.instancia_id, nombre=item.nombre, tipo_id=item.tipo_id)
         )
         self._bitacora.append(Mensaje("jugador", f"Soltaste {item.nombre}."))
         return ResultadoAccion.exito()
 
-    def equipar(self, instancia_id: str) -> ResultadoAccion:
+    def equipar(self, instancia_id: str, jugador) -> ResultadoAccion:
         inv = self._gestor.inventario
         if inv is None:
             return ResultadoAccion.fallo("Inventario no inicializado.")
@@ -96,53 +113,37 @@ class InventarioControlador:
         for i in inv.items():
             if i.clase == item.clase:
                 previos.append((i.instancia_id, i.equipado))
-        self._gestor.registrar_cambio("item_equipado", previos)
+        seleccion = inv.item_actual()
+        self._gestor.registrar_cambio("item_equipado",
+                                     (item, inv.posicion_de(instancia_id), previos,
+                                      seleccion.instancia_id if seleccion else None))
+        self._gestor.registrar_cambio("atributo", (jugador, "ataque", jugador.ataque))
+        self._gestor.registrar_cambio("atributo", (jugador, "defensa", jugador.defensa))
+        for anterior in inv.items():
+            if anterior.clase == item.clase and anterior.equipado:
+                jugador.ataque -= anterior.ataque_bonus
+                jugador.defensa -= anterior.defensa_bonus
+        jugador.ataque += item.ataque_bonus
+        jugador.defensa += item.defensa_bonus
 
         inv.desequipar_clase(item.clase)
         inv.equipar_por_id(instancia_id)
         self._bitacora.append(Mensaje("jugador", f"Equipaste {item.nombre}."))
         return ResultadoAccion.exito()
 
-    def usar(self, instancia_id: str) -> ResultadoAccion:
+    def consumir(self, item: ItemInventario) -> None:
+        """Retira el consumible, registra su delta y libera su ficha."""
         inv = self._gestor.inventario
-        if inv is None:
-            return ResultadoAccion.fallo("Inventario no inicializado.")
+        posicion = inv.posicion_de(item.instancia_id)
+        self._gestor.registrar_cambio("inventario_quitado", (item, posicion))
+        inv.soltar_por_id(item.instancia_id)
+        self._servicio.liberar_fichas([item.tipo_id])
 
-        item = inv.buscar_por_id(instancia_id)
-        if item is None:
-            return ResultadoAccion.fallo("No tienes ese objeto.")
-
-        if item.clase == "llave":
-            return ResultadoAccion.fallo("Las llaves no se consumen.")
-
-        # El efecto concreto lo conecta P2 (poción, antídoto, antorcha).
-        self._bitacora.append(Mensaje("jugador", f"Usaste {item.nombre}."))
-        return ResultadoAccion.exito()
-
-    def usar_pergamino(self) -> ResultadoAccion:
-        """Usa un pergamino de retroceso.
-
-        No consume tiempo virtual ni se registra como acción del jugador
-        (§2.11). El pergamino se descuenta fuera del alcance de la reversión.
-        """
-        inv = self._gestor.inventario
-        if inv is None:
-            return ResultadoAccion.fallo("Inventario no inicializado.")
-
-        pergamino = self._buscar_clase(inv, "pergamino")
-        if pergamino is None:
-            return ResultadoAccion.fallo("No tienes pergaminos.")
-
-        exito = self._gestor.deshacer()
-        if not exito:
-            return ResultadoAccion.fallo("No hay nada que deshacer.")
-
-        # El consumo del pergamino queda fuera del alcance de la reversión.
-        inv.soltar_por_id(pergamino.instancia_id)
-        self._bitacora.append(
-            Mensaje("efecto", "Usaste un pergamino de retroceso.")
-        )
-        return ResultadoAccion.exito()
+    def _quitar_bonus(self, item, jugador) -> None:
+        self._gestor.registrar_cambio("atributo", (jugador, "ataque", jugador.ataque))
+        self._gestor.registrar_cambio("atributo", (jugador, "defensa", jugador.defensa))
+        jugador.ataque -= item.ataque_bonus
+        jugador.defensa -= item.defensa_bonus
 
     #  Recorrido
 
@@ -182,10 +183,4 @@ class InventarioControlador:
         for o in self._gestor.estado.objetos_suelo:
             if o.id == instancia_id:
                 return o
-        return None
-
-    def _buscar_clase(self, inv: Inventario, clase: str) -> ItemInventario | None:
-        for item in inv.items():
-            if item.clase == clase:
-                return item
         return None

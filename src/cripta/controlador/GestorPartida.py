@@ -96,7 +96,31 @@ class GestorPartida:
         return self.historial.deshacer(self._aplicar_reversion)
 
     def _aplicar_reversion(self, etiqueta: str, datos) -> None:
-        if etiqueta == "inventario_agregado":
+        if etiqueta == "atributo":
+            objeto, atributo, anterior = datos
+            setattr(objeto, atributo, anterior)
+        elif etiqueta == "azar":
+            azar, anterior = datos
+            azar.setstate(anterior)
+        elif etiqueta == "evento_insertado":
+            agenda, evento = datos
+            agenda._quitar(evento)
+        elif etiqueta == "evento_extraido":
+            agenda, evento = datos
+            agenda._agregar(evento)
+        elif etiqueta == "lista_agregada":
+            lista, objeto = datos
+            for posicion, actual in enumerate(lista):
+                if actual is objeto:
+                    lista.pop(posicion)
+                    break
+        elif etiqueta == "lista_quitada":
+            lista, posicion, objeto = datos
+            lista.insert(posicion, objeto)
+        elif etiqueta == "seleccion_inventario":
+            if self.inventario is not None and datos is not None:
+                self.inventario.seleccionar(datos)
+        elif etiqueta == "inventario_agregado":
             self._revertir_inventario_agregado(datos)
         elif etiqueta == "inventario_quitado":
             self._revertir_inventario_quitado(datos)
@@ -106,7 +130,8 @@ class GestorPartida:
             self._revertir_suelo_agregado(datos)
         elif etiqueta == "item_suelo_quitado":
             self._revertir_suelo_quitado(datos)
-        # TODO: Otras etiquetas (vida, reloj, rastro, puertas, efectos, eventos)
+        else:
+            raise ValueError(f"Delta desconocido: {etiqueta}")
 
     #  Reversiones de inventario
 
@@ -128,17 +153,24 @@ class GestorPartida:
         """
         item, posicion = datos
         if self.inventario is not None:
-            self.inventario.reinsertar_en(item, posicion)
+            if not self.inventario.reinsertar_en(item, posicion):
+                raise RuntimeError("No se pudo restaurar el objeto del inventario.")
 
     def _revertir_item_equipado(self, datos) -> None:
         """El item se había equipado; hay que restaurar el estado previo.
 
         Args:
-            datos: Lista de (instancia_id, estaba_equipado_antes).
+            datos: Item, posición, marcas previas de equipo e id seleccionado.
         """
         if self.inventario is None:
             return
-        for instancia_id, estaba_equipado in datos:
+        item, posicion, previos, seleccion = datos
+        self.inventario.soltar_por_id(item.instancia_id)
+        if not self.inventario.reinsertar_en(item, posicion):
+            raise RuntimeError("No se pudo restaurar el orden del inventario.")
+        if seleccion is not None:
+            self.inventario.seleccionar(seleccion)
+        for instancia_id, estaba_equipado in previos:
             item = self.inventario.buscar_por_id(instancia_id)
             if item is not None:
                 item.equipado = estaba_equipado
@@ -147,18 +179,19 @@ class GestorPartida:
         """Se había agregado un objeto al suelo; hay que quitarlo.
 
         Args:
-            datos: instancia_id del objeto agregado.
+            datos: Lista del suelo e instancia_id del objeto agregado.
         """
-        instancia_id = datos
-        self.estado.objetos_suelo = [
-            o for o in self.estado.objetos_suelo if o.id != instancia_id
-        ]
+        suelo, instancia_id = datos
+        for posicion, objeto in enumerate(suelo):
+            if objeto.id == instancia_id:
+                suelo.pop(posicion)
+                break
 
     def _revertir_suelo_quitado(self, datos) -> None:
         """Se había quitado un objeto del suelo; hay que reinsertarlo.
 
         Args:
-            datos: (objeto, posición en el suelo).
+            datos: (lista del suelo, objeto, posición).
         """
-        obj, posicion = datos
-        self.estado.objetos_suelo.insert(posicion, obj)
+        suelo, obj, posicion = datos
+        suelo.insert(posicion, obj)
