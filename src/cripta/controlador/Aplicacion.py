@@ -199,6 +199,7 @@ class Aplicacion:
         if not self._partida_en_curso():
             return ResultadoAccion.fallo("La partida no está activa.")
 
+        sala_origen = self._jugador.sala
         if self._gestor.historial.hay_intervalo_abierto():
             self._gestor.descartar_intervalo()
         self._gestor.abrir_intervalo()
@@ -219,6 +220,8 @@ class Aplicacion:
             if esta_vivo(self._jugador):
                 self._consumir_tiempo_jugador(nombre_costo)
             self._despues_del_ciclo()
+            if nombre_costo == "mover":
+                self._partida.comprobar_victoria(sala_origen, argumento, self.resumen_red())
             self._partida.registrar_accion(nombre_costo, argumento)
         except Exception as error:
             anteriores = self._tipos_activos()
@@ -454,6 +457,7 @@ class Aplicacion:
 
         tiempo = self._simulacion.reloj.tiempo_actual
         abrir_salida(salida, tiempo, self._simulacion.agenda)
+        self._partida.registrar_apertura_salida(self._jugador.sala, salida)
         self._bitacora.append(Mensaje("jugador", f"Abres la puerta {direccion} con {llave.nombre}."))
         return ResultadoAccion.exito()
 

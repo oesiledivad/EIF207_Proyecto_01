@@ -13,6 +13,9 @@ dependencies = [
     "textual>=8.2.8",
 ]
 
+[project.optional-dependencies]
+grafica = ["arcade>=3.3,<4"]
+
 [project.scripts]
 cripta = "cripta.__main__:main"
 

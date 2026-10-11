@@ -55,6 +55,10 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--offline-dir", default="datos_prueba", help="Carpeta de respuestas offline.")
     modos.add_argument("--bench", action="store_true",
                         help="Ejecuta cargas sinteticas sin red ni interfaz.")
+    modos.add_argument("--grafica", action="store_true", help="Vista Arcade (red u offline).")
+    parser.add_argument("--cripta", help="Id de cripta para el prototipo gráfico.")
+    parser.add_argument("--nombre", default="Jugador", help="Nombre para el prototipo gráfico.")
+    parser.add_argument("--semilla", default="", help="Semilla para el prototipo gráfico.")
     return parser.parse_args(argv)
 
 
@@ -112,6 +116,16 @@ def main(argv: list[str] | None = None) -> int:
     almacen = None if args.offline else AlmacenDisco(args.cache_dir)
     controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen,
                              carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes)
+
+    if args.grafica:
+        try:
+            from cripta.vista.grafica import iniciar
+        except ModuleNotFoundError as error:
+            if error.name != "arcade":
+                raise
+            print('Instala la vista opcional con: uv sync --extra grafica', file=sys.stderr)
+            return 2
+        return iniciar(controlador, args.cripta, args.nombre, args.semilla, args.offline)
 
     # Import diferido: la vista Textual solo se construye si vamos a usarla.
     from cripta.vista.textual.app import CriptaApp
