@@ -131,6 +131,18 @@ class InventarioControlador:
         self._bitacora.append(Mensaje("jugador", f"Equipaste {item.nombre}."))
         return ResultadoAccion.exito()
 
+    def usar(self, instancia_id: str, jugador, simulacion, efectos) -> ResultadoAccion:
+        inv = self._gestor.inventario
+        item = inv.buscar_por_id(instancia_id) if inv is not None else None
+        if item is None:
+            return ResultadoAccion.fallo("No tienes ese objeto.")
+        resultado = efectos.aplicar_consumible(item, jugador, simulacion)
+        if resultado.ok:
+            self.consumir(item)
+            self._bitacora.append(Mensaje("jugador", resultado.datos))
+            return ResultadoAccion.exito()
+        return resultado
+
     def consumir(self, item: ItemInventario) -> None:
         """Retira el consumible, registra su delta y libera su ficha."""
         inv = self._gestor.inventario

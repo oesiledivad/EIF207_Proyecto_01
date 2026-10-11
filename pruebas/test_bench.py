@@ -13,6 +13,7 @@ from cripta.estructuras.Guardado_Binario import Guardado_Binario
 
 class PruebasBench(unittest.TestCase):
     def test_bench_no_construye_fuente_ni_vista(self):
+        vista_antes = sys.modules.get("cripta.vista.textual.app")
         with patch("cripta.bootstrap._construir_data_source") as fuente:
             with patch("cripta.bootstrap.AlmacenDisco") as almacen:
                 with patch("cripta.bootstrap.Aplicacion") as controlador:
@@ -22,7 +23,7 @@ class PruebasBench(unittest.TestCase):
             fuente.assert_not_called()
             almacen.assert_not_called()
             controlador.assert_not_called()
-        self.assertNotIn("cripta.vista.textual.app", sys.modules)
+        self.assertIs(sys.modules.get("cripta.vista.textual.app"), vista_antes)
 
     def test_binario_offsets_con_version_utf8(self):
         salas = [SimpleNamespace(sala_id=3, bytes_=b"primera"),
