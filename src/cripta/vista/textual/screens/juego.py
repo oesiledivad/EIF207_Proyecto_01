@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Static
@@ -45,6 +46,8 @@ class JuegoScreen(Screen):
         ("alt+v", "vista_valor", "Valor"),
         ("alt+n", "vista_nombre", "Nombre"),
         ("alt+r", "vista_real", "Real"),
+        Binding("left", "item_anterior", "Item anterior", priority=True),
+        Binding("right", "item_siguiente", "Item siguiente", priority=True),
         ("?", "ayuda", "Ayuda"),
     ]
 
@@ -312,6 +315,12 @@ class JuegoScreen(Screen):
 
     def action_pulsar(self, boton_id: str) -> None:
         self.query_one("#" + boton_id, Button).press()
+
+    def action_item_anterior(self) -> None:
+        self._ejecutar(self._controlador.anterior_item())
+
+    def action_item_siguiente(self) -> None:
+        self._ejecutar(self._controlador.siguiente_item())
 
     def action_vista_peso(self) -> None:
         self.query_one("#panel-inventario", PanelInventario).set_criterio("peso")

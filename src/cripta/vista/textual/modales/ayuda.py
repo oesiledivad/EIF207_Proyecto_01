@@ -18,6 +18,7 @@ ATAJOS
   Guardar/cargar: pendientes de integración.
 
 INVENTARIO
+  ← / →  objeto anterior / siguiente (sin consumir tiempo)
   Alt+P  por peso     Alt+V  por valor
   Alt+N  por nombre   Alt+R  orden real
 

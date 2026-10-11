@@ -44,6 +44,7 @@ class ElegirItemModal(ModalScreen):
         tabla.add_columns("Nombre", "Clase", "Peso", "Valor", "Equip.")
         tabla.cursor_type = "row"
         tabla.zebra_stripes = True
+        tabla.focus()
 
         items = self._inventario.items() if isinstance(self._inventario, Inventario) else self._inventario
         for item in items:

@@ -55,6 +55,7 @@ class PanelInventario(Static):
         encabezado = "orden real" if self._criterio == "real" else f"por {self._criterio}"
 
         lineas.append("")
+        lineas.append("[#8a7f72]← anterior | → siguiente[/]")
         lineas.append(
             f"[#8a7f72]{inventario.tamano}/{inventario.capacidad}  "
             f"({encabezado})  Alt+P peso | Alt+V valor | Alt+N nombre | Alt+R real[/]"
