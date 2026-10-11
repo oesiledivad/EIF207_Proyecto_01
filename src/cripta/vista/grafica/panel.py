@@ -1,10 +1,14 @@
-"""Selección y ayuda gráficas; abrirlas no consume tiempo del juego."""
+"""Ventanas emergentes (ayuda, sala, menú, confirmación); no consumen tiempo del juego."""
 import arcade
-from .escena import FONDO, ORO, lineas_bitacora
+
+from .escena import lineas_bitacora
+from .lienzo import ALTO, ANCHO, ORO, TEXTO
 
 
 class Panel(arcade.View):
-    """Muestra ayuda, información de sala o la confirmación para terminar."""
+    """Caja centrada sobre la partida oscurecida, con texto u opciones."""
+
+    ANCHO_CAJA = 460
 
     def __init__(self, ventana, titulo, opciones=None, texto=""):
         """Prepara contenido informativo y botones opcionales.
@@ -21,51 +25,66 @@ class Panel(arcade.View):
         self.texto = texto
         self.inicio = 0
 
+    def _lineas(self):
+        return lineas_bitacora(self.texto.splitlines(), self.ANCHO_CAJA - 32) if self.texto else []
+
+    def _capacidad(self):
+        return 9 if self.opciones else 18
+
     def on_draw(self):
-        """Dibuja el contenido visible y el botón para regresar al juego."""
-        self.clear(FONDO)
-        e = self.window.escena
-        e.texto_actual = 0
-        e.zonas = []
-        w, h = [self.window.width, self.window.height]
-        e.texto(self.titulo, 30, h - 55, 24, ORO)
-        cantidad = max(1, int((h - 160) / 40))
-        for i, opcion in enumerate(self.opciones[self.inicio:self.inicio + cantidad]):
-            e.boton(30, h - 115 - i * 40, w - 60, 34, opcion[0][:int((w - 80) / 7)], "elegir", str(self.inicio + i))
-        if self.texto:
-            for i, linea in enumerate(lineas_bitacora(self.texto.splitlines(), int((w - 60) / 8))[self.inicio:self.inicio + cantidad * 2]):
-                e.texto(linea, 30, h - 95 - i * 19, 12)
-        e.boton(30, 25, 180, 36, "VOLVER [ESC]", "volver")
-        e.texto("Rueda: más opciones", w - 200, 38, 10)
+        """Dibuja la partida de fondo, la caja y el botón para regresar."""
+        v = self.window
+        v.dibujar_juego(interactivo=False)
+        l = v.lienzo
+        l.zonas = []
+        l.rect(0, 0, ANCHO, ALTO, (6, 5, 8, 190))
+        filas = min(self._capacidad(), max(1, len(self.opciones) or len(self._lineas())))
+        alto_contenido = filas * (30 if self.opciones else 12)
+        alto = 78 + alto_contenido
+        x, y = (ANCHO - self.ANCHO_CAJA) / 2, (ALTO - alto) / 2 + 10
+        l.panel(x, y, self.ANCHO_CAJA, alto)
+        l.texto(self.titulo, ANCHO / 2, y + alto - 26, 2, ORO, negrita=True, ancla="centro")
+        l.rect(x + 16, y + alto - 34, self.ANCHO_CAJA - 32, 2, (70, 64, 56))
+        arriba = y + alto - 46
+        for i, opcion in enumerate(self.opciones[self.inicio:self.inicio + self._capacidad()]):
+            l.boton(x + 16, arriba - (i + 1) * 30 + 4, self.ANCHO_CAJA - 32, 26, opcion[0], "elegir",
+                    str(self.inicio + i))
+        for i, linea in enumerate(self._lineas()[self.inicio:self.inicio + self._capacidad()]):
+            l.texto(linea, x + 16, arriba - 10 - i * 12, 1, TEXTO)
+        l.boton(x + 16, y + 10, 140, 22, "VOLVER [ESC]", "volver")
+        if len(self.opciones) > self._capacidad() or len(self._lineas()) > self._capacidad():
+            l.texto("rueda: más", x + self.ANCHO_CAJA - 16, y + 17, 1, (150, 140, 120), ancla="derecha")
+        l.globo_ayuda()
+        l.bandas(v)
 
     def on_mouse_motion(self, x, y, dx, dy):
         """Actualiza el resaltado de los botones."""
-        self.window.escena.raton = [x, y]
+        self.window.raton = self.window.lienzo.a_virtual(x, y)
 
     def on_mouse_press(self, x, y, button, modifiers):
         """Cierra el panel y ejecuta la opción elegida, mostrando posibles errores."""
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            for zona in self.window.escena.zonas:
-                if zona.contiene(x, y):
-                    self.window.hide_view()
-                    if zona.accion == "elegir":
-                        try:
-                            self.opciones[int(zona.argumento)][1]()
-                        except (OSError, RuntimeError, ValueError) as error:
-                            self.window.show_view(Panel(self.window, "NO SE PUDO COMPLETAR", texto=str(error)))
-                    break
+        if button != arcade.MOUSE_BUTTON_LEFT:
+            return
+        vx, vy = self.window.lienzo.a_virtual(x, y)
+        for zona in self.window.lienzo.zonas:
+            if zona.contiene(vx, vy):
+                self.window.hide_view()
+                if zona.accion == "elegir":
+                    try:
+                        self.opciones[int(zona.argumento)][1]()
+                    except (OSError, RuntimeError, ValueError) as error:
+                        self.window.show_view(Panel(self.window, "NO SE PUDO COMPLETAR", texto=str(error)))
+                break
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         """Desplaza opciones o texto dentro de los límites del contenido."""
-        cantidad = max(1, int((self.window.height - 160) / 40))
-        total = len(self.opciones)
-        if self.texto:
-            cantidad *= 2
-            total = len(lineas_bitacora(self.texto.splitlines(), int((self.window.width - 60) / 8)))
-        self.inicio = max(0, min(max(0, total - cantidad), self.inicio - int(scroll_y)))
+        total = len(self.opciones) or len(self._lineas())
+        self.inicio = max(0, min(max(0, total - self._capacidad()), self.inicio - int(scroll_y)))
 
     def on_key_press(self, symbol, modifiers):
         """Cierra con Esc y consume el evento para evitar salir también del juego."""
         if symbol == arcade.key.ESCAPE:
             self.window.hide_view()
             return True
+        return None
+

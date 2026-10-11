@@ -2,7 +2,9 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import arcade
-from .escena import FONDO, ORO, ROJO
+
+from . import fuente_pixel as fp
+from .lienzo import ALTO, ANCHO, ORO, ROJO, TEXTO_SUAVE
 
 
 class PantallaCarga(arcade.View):
@@ -29,20 +31,24 @@ class PantallaCarga(arcade.View):
 
     def on_draw(self):
         """Dibuja el progreso indeterminado o el error con opción de reintento."""
-        self.clear(FONDO)
-        e = self.window.escena
-        e.texto_actual = 0
-        e.zonas = []
-        w, h = [self.window.width, self.window.height]
-        e.texto(self.titulo, 40, h / 2 + 45, 24, ORO)
-        e.texto(self.error[:int((w - 80) / 8)] if self.error else "Cargando" + "." * (int(self.tiempo * 3) % 4),
-                40, h / 2, 12, ROJO if self.error else ORO)
+        v = self.window
+        l = v.lienzo
+        l.iniciar(v)
+        r = v.escena.recursos
+        cuadro = int(self.tiempo * 6)
+        l.imagen(r.resplandores[int(self.tiempo * 3) % 3], ANCHO / 2 - 64, ALTO / 2 + 10, 128, 128)
+        l.imagen(r.antorchas[cuadro % 4], ANCHO / 2 - 24, ALTO / 2 + 50, 48, 48)
+        l.texto(self.titulo.upper(), ANCHO / 2, ALTO / 2 + 10, 3, ORO, negrita=True, ancla="centro")
         if self.error:
-            e.boton(40, 40, 160, 40, "REINTENTAR", "reintentar")
+            l.texto(fp.recortar(self.error, ANCHO - 80), ANCHO / 2, ALTO / 2 - 20, 1, ROJO, ancla="centro")
+            l.boton(ANCHO / 2 - 70, ALTO / 2 - 70, 140, 30, "REINTENTAR", "reintentar")
         else:
-            e.bloque(40, h / 2 - 30, w - 80, 4, [55, 49, 40])
-            e.bloque(40 + (w - 160) * (self.tiempo % 1), h / 2 - 30, 80, 4, ORO)
-        e.texto(self.window.modo, w - 100, h - 25, 10)
+            l.texto("Cargando" + "." * (int(self.tiempo * 3) % 4), ANCHO / 2, ALTO / 2 - 20, 1,
+                    TEXTO_SUAVE, ancla="centro")
+            l.rect(ANCHO / 2 - 150, ALTO / 2 - 44, 300, 6, (40, 36, 32))
+            l.rect(ANCHO / 2 - 150 + 240 * (self.tiempo % 1), ALTO / 2 - 44, 60, 6, ORO)
+        l.texto(v.modo, ANCHO - 10, ALTO - 16, 1, TEXTO_SUAVE, ancla="derecha")
+        l.bandas(v)
         self.dibujada = True
 
     def on_update(self, delta_time):
@@ -64,9 +70,13 @@ class PantallaCarga(arcade.View):
         # Los cambios de vista y OpenGL se realizan únicamente en este hilo.
         self.terminado(resultado)
 
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.window.raton = self.window.lienzo.a_virtual(x, y)
+
     def on_mouse_press(self, x, y, button, modifiers):
         """Reintenta la operación al pulsar su botón después de un error."""
-        if self.error and button == arcade.MOUSE_BUTTON_LEFT and any(z.contiene(x, y) for z in self.window.escena.zonas):
+        vx, vy = self.window.lienzo.a_virtual(x, y)
+        if self.error and button == arcade.MOUSE_BUTTON_LEFT and any(z.contiene(vx, vy) for z in self.window.lienzo.zonas):
             self.window.cargar(self.titulo, self.operacion, self.terminado)
 
     def on_hide_view(self):

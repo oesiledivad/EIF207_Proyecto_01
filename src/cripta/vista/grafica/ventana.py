@@ -4,22 +4,36 @@ from time import monotonic
 
 import arcade
 
-from .escena import Escena, FONDO
+from .escena import Escena, PANEL_X, FONDO
+from .lienzo import Lienzo, cargar_fuentes, tamano_ventana_inicial
 from .recursos import Recursos
+from .sonidos import Sonidos
+
+
+def _tamano_inicial():
+    """Tamaño proporcional a la pantalla de cada computadora (16:9)."""
+    try:
+        ancho, alto = arcade.get_display_size()
+    except Exception:   # sin pantalla detectable (pruebas, escritorio remoto)
+        ancho, alto = 1280, 720
+    return tamano_ventana_inicial(ancho, alto)
 
 
 class VentanaCripta(arcade.Window):
     """Traduce la entrada del usuario en acciones y conserva efectos visuales."""
 
-    def __init__(self, controlador, visible=True, offline=True):
+    def __init__(self, controlador, visible=True, offline=True, tamano=None):
         """Prepara la ventana, los recursos y el estado exclusivo de la vista.
 
         Args:
             controlador: Aplicación que ejecuta las reglas y guarda la partida.
             visible: Permite ocultar la ventana durante las pruebas.
             offline: Indica el modo mostrado en la barra de conexión.
+            tamano: [ancho, alto] fijo; por defecto se calcula según la pantalla.
         """
-        super().__init__(1100, 740, "Cripta · prototipo gráfico", resizable=True, visible=visible, antialiasing=False)
+        ancho, alto = tamano or _tamano_inicial()
+        super().__init__(ancho, alto, "Cripta", resizable=True, visible=visible, antialiasing=False)
+        cargar_fuentes()
         self.controlador = controlador
         self.modo = "OFFLINE" if offline else "EN RED"
         self.animacion = 0.0
@@ -31,30 +45,48 @@ class VentanaCripta(arcade.Window):
         self.ultimo_click = None
         self.item = ""
         self.criterio = "real"
-        self.mensaje = "Pulsa una puerta, enemigo u objeto."
+        self.modo_mover = False
+        self.mensaje = "Haz clic en una puerta, un enemigo o un objeto."
         self.zonas = []
         self.bitacora_desplazamiento = 0
         self.bitacora_limite = 0
-        self.raton = [-1, -1]
+        self.inventario_fondo = 0
         self.atacantes = []
         self.dano_visual = 0
         self.cambio_vida = 0
         self.cambios_enemigos = []
-        self.set_minimum_size(640, 480)
+        self.set_minimum_size(640, 360)
         self.background_color = FONDO
-        self.escena = Escena(Recursos())
+        self.lienzo = Lienzo()
+        self.escena = Escena(Recursos(), self.lienzo)
+        self.sonidos = Sonidos(activo=visible)   # en las pruebas (ventana oculta) no suena
+
+    @property
+    def raton(self):
+        """Cursor en coordenadas virtuales (las mismas que las zonas)."""
+        return self.lienzo.raton
+
+    @raton.setter
+    def raton(self, valor):
+        self.lienzo.raton = list(valor)
+
+    def dibujar_juego(self, interactivo=True):
+        """Dibuja la partida en el lienzo (también lo usan los paneles como fondo)."""
+        self.lienzo.iniciar(self)
+        self.escena.dibujar(
+            self, self.controlador.estado_partida(), self.controlador.inventario(),
+            [m.texto for m in self.controlador.bitacora().ultimos() if m is not None],
+            interactivo=interactivo,
+        )
 
     def on_draw(self):
         """Dibuja el juego cuando ninguna pantalla independiente está activa."""
         if self.current_view is not None:
             return
-        self.clear()
-        self.escena.dibujar(
-            self, self.controlador.estado_partida(), self.controlador.inventario(),
-            [m.texto for m in self.controlador.bitacora().ultimos() if m is not None],
-        )
-        self.zonas = self.escena.zonas
-        self.escena.texto(self.indicador_red(), self.width - 220, self.height - 22, 10)
+        self.dibujar_juego()
+        self.zonas = self.lienzo.zonas
+        self.lienzo.globo_ayuda()
+        self.lienzo.bandas(self)
 
     def volver_menu(self):
         """Termina la partida y carga la selección sin cerrar la ventana."""
@@ -76,7 +108,8 @@ class VentanaCripta(arcade.Window):
         self.duracion_visual = 0.65
         self.enemigos_muertos = []
         self.bitacora_desplazamiento = 0
-        self.mensaje = "Pulsa una puerta, enemigo u objeto."
+        self.modo_mover = False
+        self.mensaje = "Haz clic en una puerta, un enemigo o un objeto."
 
     def cargar(self, titulo, operacion, terminado):
         """Muestra una carga antes de ejecutar trabajo bloqueante.
@@ -92,17 +125,10 @@ class VentanaCripta(arcade.Window):
     def indicador_red(self):
         """Devuelve el modo y las solicitudes usadas frente al presupuesto."""
         p = self.controlador.estado_partida()
-        return f"{self.modo} · Red {self.controlador.solicitudes_usadas()}/{p.presupuesto_solicitudes}"
+        return f"{self.modo} · RED {self.controlador.solicitudes_usadas()}/{p.presupuesto_solicitudes}"
 
     def iniciar_partida(self, nombre, semilla, cripta_id, retorno):
-        """Inicia con pantalla de carga y regresa al origen si la validación falla.
-
-        Args:
-            nombre: Nombre escrito por el jugador.
-            semilla: Texto de la semilla, que puede estar vacío.
-            cripta_id: Identificador de la cripta seleccionada.
-            retorno: Pantalla donde se muestra un resultado de inicio rechazado.
-        """
+        """Inicia con pantalla de carga y regresa al origen si la validación falla."""
         def terminado(resultado):
             """Aplica el resultado del inicio y cambia la pantalla desde la ventana."""
             if resultado.ok:
@@ -124,6 +150,13 @@ class VentanaCripta(arcade.Window):
             self.ultimo_click = None
         if self.pausa_visual:
             return
+        if accion == "modo_mover":
+            self.modo_mover = not self.modo_mover
+            self.mensaje = ("Elige una puerta abierta (clic o flechas)." if self.modo_mover
+                            else "Haz clic en una puerta, un enemigo o un objeto.")
+            return
+        if accion in ["mover", "abrir", "mover_mapa"]:
+            self.modo_mover = False
         if accion == "mover_mapa":
             vecina = next((v for v in self.controlador.estado_partida().vecindad if v.direccion == argumento), None)
             if vecina is None or vecina.cerrada or not vecina.transitable:
@@ -134,7 +167,7 @@ class VentanaCripta(arcade.Window):
             criterios = ["real", "peso", "valor", "nombre"]
             self.criterio = criterios[(criterios.index(self.criterio) + 1) % 4]
             return
-        if accion in ["ayuda", "terminar", "informacion"]:
+        if accion in ["ayuda", "terminar", "informacion", "menu"]:
             self.abrir_panel(accion)
             return
         if accion == "seleccionar_item":
@@ -143,7 +176,8 @@ class VentanaCripta(arcade.Window):
         if accion == "seleccionar":
             self.enemigo = argumento
             enemigo = next((e for e in self.controlador.estado_partida().enemigos if e.id == argumento), None)
-            self.mensaje = f"{enemigo.nombre} ({enemigo.id}) · Doble clic o A para atacar" if enemigo else "Enemigo ausente."
+            self.mensaje = (f"{enemigo.nombre} ({enemigo.id}) · doble clic o A para atacar" if enemigo
+                            else "Enemigo ausente.")
             return
         if accion in ["mover", "abrir", "recoger"] and not argumento:
             argumento = next((z.argumento for z in self.zonas if z.contiene(*self.raton)
@@ -181,18 +215,17 @@ class VentanaCripta(arcade.Window):
                 resultado = getattr(self.controlador, accion)(self.item)
             else:
                 return
-            self.mensaje = "Acción completada." if resultado.ok else resultado.motivo
+            self.mensaje = "" if resultado.ok else resultado.motivo
             if resultado.ok:
                 self.accion_visual = accion
                 despues = self.controlador.estado_partida()
                 self.dano_visual = max(0, vida_antes - despues.jugador_vida)
                 self.cambio_vida = despues.jugador_vida - vida_antes
                 self.cambios_enemigos = [[id_, next((e.vida for e in despues.enemigos if e.id == id_), 0) - vida]
-                                        for id_, vida in vidas_enemigos] if sala_antes == despues.sala_actual_id else []
+                                         for id_, vida in vidas_enemigos] if sala_antes == despues.sala_actual_id else []
                 # El motor elimina al enemigo; la vista conserva su figura hasta animar la muerte.
                 self.enemigos_muertos = [e for e in enemigos_antes
-                                        if not any(vivo.id == e.id for vivo in despues.enemigos)] if sala_antes == despues.sala_actual_id else []
-                # ponytail: últimos 20 mensajes -> eventos visuales del motor si una acción supera el buffer.
+                                         if not any(vivo.id == e.id for vivo in despues.enemigos)] if sala_antes == despues.sala_actual_id else []
                 nuevos = [m for m in self.controlador.bitacora().ultimos()
                           if m is not None and not any(m is anterior for anterior in mensajes_antes)]
                 self.atacantes = [e.id for e in enemigos_antes + despues.enemigos
@@ -201,38 +234,77 @@ class VentanaCripta(arcade.Window):
                 self.duracion_visual = 1.2 if despues.derrota or self.enemigos_muertos else 0.65
                 self.pausa_visual = self.duracion_visual if accion == "atacar" or self.atacantes or self.cambio_vida else 0.18
                 self.bitacora_desplazamiento = 0
+            self._sonar(accion, resultado.ok)
         except (OSError, RuntimeError, ValueError) as error:
             self.mensaje = str(error)
 
+    def _sonar(self, accion, ok):
+        """Elige el efecto según lo que pasó en la acción (solo lee el estado)."""
+        if not ok:
+            self.sonidos.tocar("error")
+            return
+        p = self.controlador.estado_partida()
+        if p.derrota:
+            self.sonidos.tocar("derrota")
+            return
+        if p.victoria:
+            self.sonidos.tocar("victoria")
+            return
+        if self.enemigos_muertos:
+            self.sonidos.tocar("muerte_enemigo")
+        else:
+            for nombre, efecto in [["mover", "portal"], ["atacar", "golpe"], ["abrir", "puerta"], ["recoger", "recoger"],
+                                   ["usar", "usar"], ["retroceder", "retroceso"]]:
+                if accion == nombre:
+                    self.sonidos.tocar(efecto)
+                    break
+        if self.cambio_vida < 0:
+            self.sonidos.tocar("herido")
+
     def abrir_panel(self, accion):
-        """Muestra información, ayuda o confirmación sin consumir tiempo virtual."""
+        """Muestra información, ayuda, menú o confirmación sin consumir tiempo virtual."""
         from .panel import Panel
         p = self.controlador.estado_partida()
         if accion == "informacion":
             sala = next((s for s in p.salas_conocidas if s.id == p.sala_actual_id), None)
-            lineas = [sala.descripcion if sala else p.sala_actual_nombre,
+            lineas = [f"{p.sala_actual_nombre}" + (f": {sala.descripcion}" if sala and sala.descripcion else ""),
                       f"Ataque {p.jugador_ataque} · Defensa {p.jugador_defensa} · Velocidad {p.jugador_velocidad}"]
-            lineas += [f"{v.direccion}: {v.nombre} · {'cerrada' if v.cerrada else 'abierta'} · llave {v.llave}" for v in p.vecindad]
+            lineas += [f"{v.direccion}: {v.nombre} · {'cerrada' if v.cerrada else 'abierta'}"
+                       + (f" · llave {v.llave}" if v.llave else "") for v in p.vecindad]
             lineas += [f"Trampa {t.tipo}: {'activa' if t.activa else 'inactiva'} · daño {t.dano}" for t in p.trampas]
             lineas += p.efectos or ["Sin efectos activos."]
             item = self.controlador.inventario().buscar_por_id(self.item)
             if item:
-                lineas.append(f"{item.nombre} · peso {item.peso} · valor {item.valor} · {'equipado' if item.equipado else 'sin equipar'}")
-            self.show_view(Panel(self, "SALA " + str(p.sala_actual_id), texto="\n".join(lineas)))
+                lineas.append(f"{item.nombre} · peso {item.peso} · valor {item.valor} · "
+                              f"{'equipado' if item.equipado else 'sin equipar'}")
+            self.show_view(Panel(self, f"SALA {p.sala_actual_id}", texto="\n".join(lineas)))
             return
         if accion == "ayuda":
-            texto = ("Clic en puerta: abrir/mover | Clic en suelo: recoger\nFlechas o clic en minimapa: mover\n"
-                     "M/O/R: mover/abrir/recoger donde apunta el cursor\n"
-                     "Doble clic en enemigo o A: atacar | .: esperar\nP: pergamino | U: usar | E: equipar | S/D: soltar\n"
-                     "Tab: siguiente objeto | Alt+P/V/N/R: ordenar\nQ: terminar | Esc: volver al menú\n"
-                     "Minimapa: dorado = actual/salida, rojo/K = cerrada\n"
-                     "Guardar/cargar: pendientes de integración.\n"
-                     f"Ataque {p.jugador_ataque} · Defensa {p.jugador_defensa} · Velocidad {p.jugador_velocidad}")
+            texto = ("Clic en una puerta: abrir o moverse · Flechas: moverse\n"
+                     "Clic en un enemigo: seleccionar · Doble clic o A: atacar\n"
+                     "Clic en un objeto del suelo: recoger · M/O/R: mover/abrir/recoger bajo el cursor\n"
+                     ". : esperar · P: pergamino de retroceso\n"
+                     "Tab: siguiente objeto · U: usar · E: equipar · S/D: soltar\n"
+                     "Alt+P/V/N/R: ordenar el inventario por peso/valor/nombre/real\n"
+                     "I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido\n"
+                     "Minimapa: dorado = salida, rojo = cerrada.")
             self.show_view(Panel(self, "AYUDA", texto=texto))
             return
         if accion == "terminar":
-            self.show_view(Panel(self, "¿TERMINAR LA PARTIDA?", [["Confirmar", self.controlador.terminar]]))
+            self.show_view(Panel(self, "¿TERMINAR LA PARTIDA?", [["Sí, terminar la partida", self.controlador.terminar]]))
             return
+        if accion == "menu":
+            self.show_view(Panel(self, "MENÚ", [
+                ["Continuar", lambda: None],
+                ["Información de la sala (I)", lambda: self.abrir_panel("informacion")],
+                ["Ayuda y controles", lambda: self.abrir_panel("ayuda")],
+                ["Pantalla completa (F11)", self.alternar_pantalla_completa],
+                ["Terminar la partida", lambda: self.abrir_panel("terminar")],
+                ["Volver al menú principal", self.volver_menu],
+            ]))
+
+    def alternar_pantalla_completa(self):
+        self.set_fullscreen(not self.fullscreen)
 
     def on_update(self, delta_time):
         """Avanza solo las animaciones y muestra el resultado cuando terminan."""
@@ -248,9 +320,10 @@ class VentanaCripta(arcade.Window):
         self.ultimo_click = None
         if self.current_view is not None or self.pausa_visual:
             return
+        self.raton = self.lienzo.a_virtual(x, y)
         if button == arcade.MOUSE_BUTTON_LEFT:
-            for zona in self.zonas:
-                if zona.contiene(x, y):
+            for zona in reversed(self.zonas):     # lo dibujado al final queda encima
+                if zona.contiene(*self.raton):
                     self.ejecutar(zona.accion, zona.argumento)
                     if zona.accion == "seleccionar":
                         ahora = monotonic()
@@ -261,25 +334,33 @@ class VentanaCripta(arcade.Window):
                     break
 
     def on_mouse_motion(self, x, y, dx, dy):
-        """Guarda el cursor para resaltados y acciones sobre la entidad apuntada."""
-        self.raton = [x, y]
+        """Guarda el cursor (virtual) para resaltados y acciones bajo el cursor."""
+        self.raton = self.lienzo.a_virtual(x, y)
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        """Recorre la bitácora cuando el cursor está fuera del inventario."""
+        """Recorre la bitácora cuando el cursor está sobre el panel lateral."""
         if self.current_view is not None:
             return
-        if x >= self.width - max(185, self.width * 0.23) and y > self.height - 245:
-            return
-        else:
-            self.bitacora_desplazamiento = max(0, min(self.bitacora_limite, self.bitacora_desplazamiento + int(scroll_y)))
+        vx, _ = self.lienzo.a_virtual(x, y)
+        if vx >= PANEL_X:
+            self.bitacora_desplazamiento = max(0, min(self.bitacora_limite,
+                                                      self.bitacora_desplazamiento + int(scroll_y)))
 
     def on_key_press(self, symbol, modifiers):
         """Resuelve atajos, orden visual, navegación y confirmación de salida."""
+        if symbol == arcade.key.F11:
+            self.alternar_pantalla_completa()
+            return
+        if symbol == arcade.key.F2:
+            self.mensaje = "Sonido activado." if self.sonidos.alternar() else "Sonido silenciado."
+            return
         if self.current_view is not None:
             return
         if symbol == arcade.key.ESCAPE:
-            from .panel import Panel
-            self.show_view(Panel(self, "¿VOLVER AL MENÚ?", [["Confirmar: terminar esta partida y volver", self.volver_menu]]))
+            if self.modo_mover:
+                self.ejecutar("modo_mover")
+            else:
+                self.abrir_panel("menu")
         elif modifiers & arcade.key.MOD_ALT:
             for tecla, criterio in [[arcade.key.P, "peso"], [arcade.key.V, "valor"],
                                     [arcade.key.N, "nombre"], [arcade.key.R, "real"]]:
@@ -288,8 +369,8 @@ class VentanaCripta(arcade.Window):
                     break
         elif symbol in [arcade.key.M, arcade.key.O, arcade.key.R, arcade.key.Q, arcade.key.F1, arcade.key.SLASH]:
             for tecla, accion in [[arcade.key.M, "mover"], [arcade.key.O, "abrir"],
-                                   [arcade.key.R, "recoger"], [arcade.key.Q, "terminar"],
-                                   [arcade.key.F1, "ayuda"], [arcade.key.SLASH, "ayuda"]]:
+                                  [arcade.key.R, "recoger"], [arcade.key.Q, "terminar"],
+                                  [arcade.key.F1, "ayuda"], [arcade.key.SLASH, "ayuda"]]:
                 if symbol == tecla:
                     self.ejecutar(accion)
                     break

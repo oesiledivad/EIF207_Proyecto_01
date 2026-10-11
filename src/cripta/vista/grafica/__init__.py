@@ -1,10 +1,9 @@
-"""Entrada del prototipo Arcade; las animaciones no avanzan el reloj virtual."""
+"""Vista gráfica con Arcade; las animaciones no avanzan el reloj virtual.
+
+arcade se importa solo al abrir la ventana: así los módulos puros (medidas,
+fuente_pixel, distribucion) se pueden probar sin abrir ninguna ventana.
+"""
 import sys
-
-import arcade
-
-from .ventana import VentanaCripta
-from .menu import MenuPrincipal
 
 
 def iniciar(controlador, cripta_id, nombre, semilla, offline=True):
@@ -20,6 +19,9 @@ def iniciar(controlador, cripta_id, nombre, semilla, offline=True):
     Returns:
         int: Código de salida; 2 si falla la preparación.
     """
+    import arcade
+    from .ventana import VentanaCripta
+    from .menu import MenuPrincipal
     try:
         ventana = VentanaCripta(controlador, offline=offline)
         menu = MenuPrincipal(ventana, cripta_id, nombre, semilla)
@@ -29,3 +31,11 @@ def iniciar(controlador, cripta_id, nombre, semilla, offline=True):
         return 2
     arcade.run()
     return 0
+
+
+def __getattr__(nombre):
+    """Importación diferida de VentanaCripta (requiere arcade)."""
+    if nombre == "VentanaCripta":
+        from .ventana import VentanaCripta
+        return VentanaCripta
+    raise AttributeError(nombre)
