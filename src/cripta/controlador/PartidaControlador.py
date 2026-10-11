@@ -35,7 +35,7 @@ class PartidaControlador:
         self._gestor.historial.limpiar()
 
     @staticmethod
-    def validar_inicio(nombre: str, semilla: str, cripta_id: str) -> tuple[str, int]:
+    def validar_inicio(nombre: str, semilla: str, cripta_id: str) -> list:
         nombre = nombre.strip()
         if not nombre:
             raise ValueError("El nombre del jugador no puede estar vacío.")
@@ -43,11 +43,11 @@ class PartidaControlador:
             raise ValueError("Debes seleccionar una cripta.")
         semilla = semilla.strip()
         if not semilla:
-            return nombre, random.SystemRandom().randint(1, 2**31 - 1)
+            return [nombre, random.SystemRandom().randint(1, 2**31 - 1)]
         if not semilla.isdecimal():
             raise ValueError("La semilla debe ser un número entero o quedar vacía.")
         try:
-            return nombre, int(semilla)
+            return [nombre, int(semilla)]
         except ValueError as error:
             raise ValueError("La semilla debe ser un número entero válido.") from error
 
@@ -63,7 +63,7 @@ class PartidaControlador:
         evento_inicial = simulacion.agenda.insertar(0, jugador, "accion_actor")
         jugador._proximo_evento = evento_inicial
 
-        return jugador, simulacion
+        return [jugador, simulacion]
 
     def sincronizar_jugador(self, jugador, simulacion):
         estado = self._gestor.estado

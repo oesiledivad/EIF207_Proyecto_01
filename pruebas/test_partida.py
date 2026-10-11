@@ -29,7 +29,7 @@ class FuentePuertas(FuenteReplay):
 class PruebasPartida(unittest.TestCase):
     def test_validar_inicio(self):
         self.assertEqual(PartidaControlador.validar_inicio(" Jugador ", " 0 ", "cripta"),
-                         ("Jugador", 0))
+                         ["Jugador", 0])
         for nombre, semilla, cripta in ((" ", "1", "c"), ("J", "1", ""),
                                        ("J", "-1", "c"), ("J", "²", "c"),
                                        ("J", "abc", "c")):

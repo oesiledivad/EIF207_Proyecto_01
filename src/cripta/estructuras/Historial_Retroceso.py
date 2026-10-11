@@ -79,16 +79,16 @@ class Historial_Retroceso:
     def cambiar(self, objeto, atributo: str, valor) -> None:
         anterior = getattr(objeto, atributo)
         if anterior != valor:
-            self.registrar_si_abierto("atributo", (objeto, atributo, anterior))
+            self.registrar_si_abierto("atributo", [objeto, atributo, anterior])
             setattr(objeto, atributo, valor)
 
     def agregar(self, lista: list, objeto) -> None:
-        self.registrar_si_abierto("lista_agregada", (lista, objeto))
+        self.registrar_si_abierto("lista_agregada", [lista, objeto])
         lista.append(objeto)
 
     def quitar(self, lista: list, objeto) -> None:
         posicion = lista.index(objeto)
-        self.registrar_si_abierto("lista_quitada", (lista, posicion, objeto))
+        self.registrar_si_abierto("lista_quitada", [lista, posicion, objeto])
         lista.pop(posicion)
 
     def revertir_abierto(self, aplicar) -> None:

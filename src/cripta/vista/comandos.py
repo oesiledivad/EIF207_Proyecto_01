@@ -1,6 +1,6 @@
 """Comandos válidos de la interfaz (10.2)"""
 
-COMANDOS_VALIDOS = (
+COMANDOS_VALIDOS = [
     "mover",      # N, S, E, O
     "abrir",
     "atacar",
@@ -15,4 +15,4 @@ COMANDOS_VALIDOS = (
     "cargar",
     "salir",
     "ayuda",
-)
+]

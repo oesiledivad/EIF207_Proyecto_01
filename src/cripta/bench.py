@@ -22,7 +22,7 @@ class _ActorFalso:
 
 # --- 1. Agenda: heap propio vs. lista ordenada por inserción (§4.1) --------
 
-def _bench_agenda_heap(n: int) -> tuple[float, float]:
+def _bench_agenda_heap(n: int) -> list[float]:
     agenda = HeapAgendaEventos()
     azar = random.Random(42)
     tiempos = [azar.randint(0, 100_000) for _ in range(n)]
@@ -36,25 +36,25 @@ def _bench_agenda_heap(n: int) -> tuple[float, float]:
     while agenda.extraer_siguiente() is not None:
         pass
     t_extraer = time.perf_counter() - inicio
-    return t_insertar, t_extraer
+    return [t_insertar, t_extraer]
 
 
 class _ListaOrdenada:
     """Alternativa descartada: mantener la lista ordenada al insertar (O(n))."""
     def __init__(self) -> None:
-        self._datos: list[tuple[int, int]] = []
+        self._datos: list[list[int]] = []
 
     def insertar(self, tiempo: int, secuencia: int) -> None:
         i = 0
         while i < len(self._datos) and self._datos[i][0] < tiempo:
             i += 1
-        self._datos.insert(i, (tiempo, secuencia))
+        self._datos.insert(i, [tiempo, secuencia])
 
     def extraer_siguiente(self):
         return self._datos.pop(0) if self._datos else None
 
 
-def _bench_lista_ordenada(n: int) -> tuple[float, float]:
+def _bench_lista_ordenada(n: int) -> list[float]:
     lista = _ListaOrdenada()
     azar = random.Random(42)
     tiempos = [azar.randint(0, 100_000) for _ in range(n)]
@@ -68,7 +68,7 @@ def _bench_lista_ordenada(n: int) -> tuple[float, float]:
     while lista.extraer_siguiente() is not None:
         pass
     t_extraer = time.perf_counter() - inicio
-    return t_insertar, t_extraer
+    return [t_insertar, t_extraer]
 
 
 # --- 2. decidir_accion vs. tamaño de la cripta (§4.7) -----------------------
@@ -105,7 +105,7 @@ def _bench_decidir_accion(n_salas: int, repeticiones: int) -> float:
 
 # --- 3. Cache_Fichas: acierto vs. fallo (§4.4) ------------------------------
 
-def _bench_cache(n_consultas: int) -> tuple[float, float]:
+def _bench_cache(n_consultas: int) -> list[float]:
     cache = Cache_Fichas(capacidad=25)
     for i in range(cache.capacidad):
         cache.insertar(f"ficha-{i}", object())
@@ -119,19 +119,19 @@ def _bench_cache(n_consultas: int) -> tuple[float, float]:
     for _ in range(n_consultas):
         cache.obtener("id_que_no_existe")
     t_fallo = time.perf_counter() - inicio
-    return t_acierto, t_fallo
+    return [t_acierto, t_fallo]
 
 
 def _bench_simulacion() -> None:
     print("=== Agenda: heap propio vs. lista ordenada (§4.1) ===")
-    for n in (100, 500, 2000):
+    for n in [100, 500, 2000]:
         ih, eh = _bench_agenda_heap(n)
         il, el = _bench_lista_ordenada(n)
         print(f"n={n:5d}  heap: insertar={ih*1000:.2f}ms extraer={eh*1000:.2f}ms"
               f"   |   lista: insertar={il*1000:.2f}ms extraer={el*1000:.2f}ms")
 
     print("\n=== Rastreador.decidir_accion vs. tamaño de la cripta (§4.7) ===")
-    for n_salas in (20, 200, 2000):
+    for n_salas in [20, 200, 2000]:
         t = _bench_decidir_accion(n_salas, repeticiones=10_000)
         print(f"cripta de {n_salas:5d} salas -> 10000 llamadas en {t*1000:.2f}ms "
               f"({t*1_000_000/10_000:.3f}µs por llamada)")
@@ -174,7 +174,7 @@ def _bench_estructuras_y_persistencia(carpeta):
     for i in range(100):
         inventario.agregar(ItemInventario(str(i), "tipo", "Objeto", "pocion", 1, i))
     _medir("inventario recorrido bidireccional",
-           lambda: (inventario.siguiente(), inventario.anterior()), 10000)
+           lambda: [inventario.siguiente(), inventario.anterior()], 10000)
     _medir("inventario vista ordenada (100 objetos)", lambda: inventario.vista_ordenada(lambda item: item.valor))
 
     historial = Historial_Retroceso()
@@ -192,13 +192,13 @@ def _bench_estructuras_y_persistencia(carpeta):
 
     print("\n=== Ordenamientos: mismo conjunto para cada algoritmo ===")
     azar = random.Random(42)
-    for n in (16, 128, 512):
+    for n in [16, 128, 512]:
         aleatorios = [azar.randrange(n) for _ in range(n)]
         casi = list(range(n))
-        casi[n//2], casi[n//2+1] = casi[n//2+1], casi[n//2]
-        for escenario, datos in (("aleatorio", aleatorios), ("casi ordenado", casi)):
-            for algoritmo in (insertion_sort, merge_sort, ordenar):
-                for costosa in (False, True):
+        casi[n//2], casi[n//2+1] = [casi[n//2+1], casi[n//2]]
+        for escenario, datos in [["aleatorio", aleatorios], ["casi ordenado", casi]]:
+            for algoritmo in [insertion_sort, merge_sort, ordenar]:
+                for costosa in [False, True]:
                     def clave(valor):
                         if costosa:
                             for _ in range(30):

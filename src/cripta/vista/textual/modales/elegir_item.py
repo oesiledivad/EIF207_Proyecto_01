@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import DataTable, Footer, Static
@@ -20,7 +21,7 @@ class ElegirItemModal(ModalScreen):
         filtro_clase: Si no es None, solo muestra items de esa clase.
     """
 
-    BINDINGS = [("escape", "cancelar", "Cancelar")]
+    BINDINGS = [Binding("escape", "cancelar", "Cancelar")]
 
     def __init__(
         self,

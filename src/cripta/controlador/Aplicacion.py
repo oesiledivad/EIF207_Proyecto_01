@@ -203,10 +203,10 @@ class Aplicacion:
             self._gestor.descartar_intervalo()
         self._gestor.abrir_intervalo()
         historial = self._gestor.historial
-        historial.registrar("azar", (self._simulacion.azar, self._simulacion.azar.getstate()))
-        for atributo in ("activa", "derrota", "victoria", "terminada"):
+        historial.registrar("azar", [self._simulacion.azar, self._simulacion.azar.getstate()])
+        for atributo in ["activa", "derrota", "victoria", "terminada"]:
             historial.registrar("atributo",
-                               (self._gestor.estado, atributo, getattr(self._gestor.estado, atributo)))
+                               [self._gestor.estado, atributo, getattr(self._gestor.estado, atributo)])
         actual = self._gestor.inventario.item_actual()
         historial.registrar("seleccion_inventario", actual.instancia_id if actual else None)
         try:

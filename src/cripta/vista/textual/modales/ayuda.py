@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Static
@@ -29,7 +30,7 @@ SELECCIÓN
 
 
 class AyudaModal(ModalScreen):
-    BINDINGS = [("escape", "cerrar", "Cerrar")]
+    BINDINGS = [Binding("escape", "cerrar", "Cerrar")]
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-root"):

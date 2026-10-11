@@ -13,22 +13,22 @@ from textual.widgets import Button
 
 
 _FILA_1 = [
-    ("Mover [M]", "btn-mover"),
-    ("Atacar [A]", "btn-atacar"),
-    ("Esperar [.]", "btn-esperar"),
-    ("Abrir [O]", "btn-abrir"),
-    ("Recoger [R]", "btn-recoger"),
+    ["Mover [M]", "btn-mover"],
+    ["Atacar [A]", "btn-atacar"],
+    ["Esperar [.]", "btn-esperar"],
+    ["Abrir [O]", "btn-abrir"],
+    ["Recoger [R]", "btn-recoger"],
 ]
 
 _FILA_2 = [
-    ("Usar [U]", "btn-usar"),
-    ("Equipar [E]", "btn-equipar"),
-    ("Soltar [S]", "btn-soltar"),
-    ("Pergamino [P]", "btn-pergamino"),
-    ("Guardar [G]", "btn-guardar"),
-    ("Cargar [C]", "btn-cargar"),
-    ("Ayuda [?]", "btn-ayuda"),
-    ("Terminar [Q]", "btn-terminar"),
+    ["Usar [U]", "btn-usar"],
+    ["Equipar [E]", "btn-equipar"],
+    ["Soltar [S]", "btn-soltar"],
+    ["Pergamino [P]", "btn-pergamino"],
+    ["Guardar [G]", "btn-guardar"],
+    ["Cargar [C]", "btn-cargar"],
+    ["Ayuda [?]", "btn-ayuda"],
+    ["Terminar [Q]", "btn-terminar"],
 ]
 
 
