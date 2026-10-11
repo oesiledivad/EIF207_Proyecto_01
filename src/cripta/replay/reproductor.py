@@ -18,13 +18,13 @@ class Cabecera:
 
 
 def _validar_accion(nombre, argumento):
-    if nombre in ("esperar", "retroceder", "siguiente_item", "anterior_item", "terminar"):
+    if nombre in ["esperar", "retroceder", "siguiente_item", "anterior_item", "terminar"]:
         if argumento is not None:
             raise ValueError("La accion no admite argumento.")
-    elif nombre in ("mover", "recoger", "soltar", "equipar_objeto", "usar_objeto", "atacar", "abrir_puerta"):
+    elif nombre in ["mover", "recoger", "soltar", "equipar_objeto", "usar_objeto", "atacar", "abrir_puerta"]:
         if not isinstance(argumento, str) or not argumento.strip():
             raise ValueError("La accion requiere un argumento de texto.")
-        if nombre in ("mover", "abrir_puerta") and argumento not in ("N", "S", "E", "O"):
+        if nombre in ["mover", "abrir_puerta"] and argumento not in ["N", "S", "E", "O"]:
             raise ValueError("Direccion invalida.")
     else:
         raise ValueError(f"Accion desconocida: {nombre!r}.")
@@ -77,8 +77,8 @@ def leer_partida(ruta):
                 or type(cabecera.semilla) is not int or cabecera.semilla < 0
                 or type(cabecera.capacidad_cache) is not int or cabecera.capacidad_cache <= 0
                 or any(not isinstance(valor, str) or not valor.strip() for valor in
-                       (cabecera.cripta_id, cabecera.version_cripta,
-                        cabecera.version_catalogo, cabecera.nombre_jugador))):
+                       [cabecera.cripta_id, cabecera.version_cripta,
+                        cabecera.version_catalogo, cabecera.nombre_jugador])):
             raise ValueError("Encabezado de replay incompatible o incompleto.")
         acciones = []
         for linea, texto in enumerate(archivo, 2):
@@ -90,7 +90,7 @@ def leer_partida(ruta):
             except (ValueError, TypeError) as error:
                 raise ValueError(f"Replay invalido en linea {linea}: {error}") from error
             acciones.append(accion)
-    return cabecera, acciones
+    return [cabecera, acciones]
 
 
 def reproducir(ruta, fuentes):

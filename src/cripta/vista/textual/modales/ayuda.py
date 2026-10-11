@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Static
@@ -14,11 +15,13 @@ ATAJOS
   O  abrir puerta     R  recoger        U  usar
   E  equipar          S  soltar         P  pergamino
   G  guardar          C  cargar         ?  ayuda
-  Q  terminar
+  Q  terminar        Esc  volver a selección
+  Guardar/cargar: pendientes de integración.
 
 INVENTARIO
-  P  vista por peso   V  vista por valor
-  N  vista por nombre R  orden real
+  ← / →  objeto anterior / siguiente (sin consumir tiempo)
+  Alt+P  por peso     Alt+V  por valor
+  Alt+N  por nombre   Alt+R  orden real
 
 SELECCIÓN
   Flechas  navegar    Enter  seleccionar
@@ -27,7 +30,7 @@ SELECCIÓN
 
 
 class AyudaModal(ModalScreen):
-    BINDINGS = [("escape", "cerrar", "Cerrar")]
+    BINDINGS = [Binding("escape", "cerrar", "Cerrar")]
 
     def compose(self) -> ComposeResult:
         with Vertical(id="modal-root"):

@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-import random
-
 from cripta.replay.reproductor import ErrorRegistro
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
@@ -36,9 +34,6 @@ from cripta.util.Costo_Acciones import costo_accion, calcular_intervalo
 # esto me arregla el problema de no poder utilizar dict ni sorted
 from cripta.estructuras.Indice_Salas import IndiceSalas
 from cripta.estructuras.Salidas import Salidas
-
-def _generar_semilla() -> int:
-    return random.SystemRandom().randint(1, 2**31 - 1)
 
 class Aplicacion:
     """Controlador de Aplicación.
@@ -79,28 +74,10 @@ class Aplicacion:
         semilla: str,
         cripta_id: str,
     ) -> ResultadoInicio:
-        nombre = nombre_jugador.strip()
-        if not nombre:
-            return ResultadoInicio(
-                ok=False,
-                motivo="El nombre del jugador no puede estar vacío.",
-            )
-        if not cripta_id:
-            return ResultadoInicio(
-                ok=False,
-                motivo="Debes seleccionar una cripta.",
-            )
-
-        semilla_txt = semilla.strip()
-        if semilla_txt:
-            if not semilla_txt.isdigit():
-                return ResultadoInicio(
-                    ok=False,
-                    motivo="La semilla debe ser un número entero o quedar vacía.",
-                )
-            semilla_efectiva = int(semilla_txt)
-        else:
-            semilla_efectiva = _generar_semilla()
+        try:
+            nombre, semilla_efectiva = self._partida.validar_inicio(nombre_jugador, semilla, cripta_id)
+        except ValueError as error:
+            return ResultadoInicio(ok=False, motivo=str(error))
 
         if self._jugador is not None:
             self._cripta_service.reiniciar_partida()
@@ -127,16 +104,7 @@ class Aplicacion:
         # §4.4: validar lo persistido ANTES de cargar esqueleto, contenido o fichas.
         self._bitacora.append(Mensaje("sistema", self._cripta_service.preparar_persistencia(detalles)))
 
-        self._simulacion = Simulacion(semilla_efectiva, self._gestor.historial)
-        self._jugador = Jugador(
-            identificador="jugador", vida=detalles.jugador_vida_max, vida_max=detalles.jugador_vida_max,
-            ataque=detalles.jugador_ataque, defensa=detalles.jugador_defensa,
-            velocidad=detalles.jugador_velocidad, sala=detalles.sala_inicial,
-            tiempo_siguiente=0, inventario_max=detalles.inventario_max,
-        )
-        # §2.4: la primera acción del jugador está programada en t=0.
-        evento_inicial = self._simulacion.agenda.insertar(0, self._jugador, "accion_actor")
-        self._jugador._proximo_evento = evento_inicial
+        self._jugador, self._simulacion = self._partida.preparar_actores(detalles, semilla_efectiva)
 
         try:
             esqueleto = self._cripta_service.cargar_esqueleto_salas(cripta_id, detalles.sala_salida)
@@ -235,10 +203,10 @@ class Aplicacion:
             self._gestor.descartar_intervalo()
         self._gestor.abrir_intervalo()
         historial = self._gestor.historial
-        historial.registrar("azar", (self._simulacion.azar, self._simulacion.azar.getstate()))
-        for atributo in ("activa", "derrota", "victoria", "terminada"):
+        historial.registrar("azar", [self._simulacion.azar, self._simulacion.azar.getstate()])
+        for atributo in ["activa", "derrota", "victoria", "terminada"]:
             historial.registrar("atributo",
-                               (self._gestor.estado, atributo, getattr(self._gestor.estado, atributo)))
+                               [self._gestor.estado, atributo, getattr(self._gestor.estado, atributo)])
         actual = self._gestor.inventario.item_actual()
         historial.registrar("seleccion_inventario", actual.instancia_id if actual else None)
         try:
@@ -313,11 +281,7 @@ class Aplicacion:
     def _sincronizar_estado(self) -> None:
         estado = self._gestor.estado
         self._actualizar_vecindad()          # <- NUEVO
-        estado.reloj_virtual = self._simulacion.reloj.tiempo_actual
-        estado.jugador_vida = self._jugador.vida
-        estado.jugador_ataque = self._jugador.ataque
-        estado.jugador_defensa = self._jugador.defensa
-        estado.jugador_velocidad = self._jugador.velocidad
+        self._partida.sincronizar_jugador(self._jugador, self._simulacion)
         sala_actual = self._salas.obtener(self._jugador.sala)
         if sala_actual is not None:
             estado.enemigos = [
@@ -372,8 +336,8 @@ class Aplicacion:
     def usar(self, instancia_id: str) -> ResultadoAccion:
         return self._accion_jugador(
             "usar_objeto",
-            lambda: self._efectos.usar(instancia_id, self._jugador, self._simulacion,
-                                       self._inventario.consumir),
+            lambda: self._inventario.usar(instancia_id, self._jugador, self._simulacion,
+                                          self._efectos),
             instancia_id,
         )
 
@@ -389,15 +353,23 @@ class Aplicacion:
         return resultado
 
     def siguiente_item(self) -> ResultadoAccion:
-        resultado = self._inventario.siguiente()
-        if resultado.ok:
-            self._partida.registrar_accion("siguiente_item")
-        return resultado
+        return self._recorrer_inventario(self._inventario.siguiente, "siguiente_item")
 
     def anterior_item(self) -> ResultadoAccion:
-        resultado = self._inventario.anterior()
+        return self._recorrer_inventario(self._inventario.anterior, "anterior_item")
+
+    def _recorrer_inventario(self, recorrer, nombre: str) -> ResultadoAccion:
+        if not self._partida_en_curso():
+            return ResultadoAccion.fallo("La partida no está activa.")
+        anterior = self._gestor.inventario.item_actual()
+        resultado = recorrer()
         if resultado.ok:
-            self._partida.registrar_accion("anterior_item")
+            try:
+                self._partida.registrar_accion(nombre)
+            except ErrorRegistro:
+                if anterior is not None:
+                    self._gestor.inventario.seleccionar(anterior.instancia_id)
+                raise
         return resultado
 
     def vista_inventario(self, criterio: str) -> list:

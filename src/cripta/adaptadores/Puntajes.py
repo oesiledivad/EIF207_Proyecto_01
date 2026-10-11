@@ -21,10 +21,10 @@ class Puntaje:
 
     def __post_init__(self):
         if (any(not isinstance(valor, str) or not valor.strip() for valor in
-                (self.partida_id, self.nombre_jugador, self.cripta_id, self.version_cripta))
+                [self.partida_id, self.nombre_jugador, self.cripta_id, self.version_cripta])
                 or any(type(valor) is not int or valor < 0 for valor in
-                       (self.acciones, self.enemigos_derrotados, self.tiempo_final))
-                or self.resultado not in ("victoria", "derrota", "abandono")):
+                       [self.acciones, self.enemigos_derrotados, self.tiempo_final])
+                or self.resultado not in ["victoria", "derrota", "abandono"]):
             raise ValueError("Registro de puntaje invalido.")
 
 
@@ -65,6 +65,6 @@ class TablaPuntajes:
                 temporal.unlink(missing_ok=True)
 
     def ordenados(self):
-        return ordenar(self.leer(), key=lambda p: (
+        return ordenar(self.leer(), key=lambda p: [
             p.resultado != "victoria", -p.enemigos_derrotados,
-            p.acciones, p.tiempo_final, p.nombre_jugador, p.partida_id))
+            p.acciones, p.tiempo_final, p.nombre_jugador, p.partida_id])

@@ -121,6 +121,39 @@ class PruebasReplay(unittest.TestCase):
         self.assertEqual(firma(app), antes)
         self.assertFalse(app.estado_partida().activa)
 
+    def test_error_disco_revierte_recorrido_y_detiene_sesion(self):
+        for direccion in ("siguiente_item", "anterior_item"):
+            with self.subTest(direccion=direccion):
+                app = self.iniciar()
+                for objeto in list(app.estado_partida().objetos_suelo)[:2]:
+                    self.assertTrue(app.recoger(objeto.id).ok)
+                inv = app.inventario()
+                items = inv.items()
+                inv.seleccionar(items[0 if direccion == "siguiente_item" else -1].instancia_id)
+                antes = firma(app)
+                log = app._partida.registro.ruta.read_bytes()
+                with patch.object(app._partida.registro, "anexar", side_effect=OSError("disco lleno")):
+                    with self.assertRaisesRegex(ErrorRegistro, "disco lleno"):
+                        getattr(app, direccion)()
+                self.assertEqual(firma(app), antes)
+                self.assertEqual(app._partida.registro.ruta.read_bytes(), log)
+                self.assertFalse(app.estado_partida().activa)
+
+    def test_recorrido_rechazado_antes_de_inicio_y_tras_terminar(self):
+        app = Aplicacion(FuenteReplay())
+        self.assertFalse(app.siguiente_item().ok)
+        self.assertFalse(app.anterior_item().ok)
+        app = self.iniciar()
+        for objeto in list(app.estado_partida().objetos_suelo)[:2]:
+            self.assertTrue(app.recoger(objeto.id).ok)
+        app.terminar()
+        antes = firma(app)
+        log = app._partida.registro.ruta.read_bytes()
+        self.assertFalse(app.siguiente_item().ok)
+        self.assertFalse(app.anterior_item().ok)
+        self.assertEqual(firma(app), antes)
+        self.assertEqual(app._partida.registro.ruta.read_bytes(), log)
+
     def test_log_invalido_o_truncado_rechazado_antes_de_iniciar(self):
         registro = RegistroPartida(self.carpeta)
         registro.iniciar(Cabecera("cripta-01", "1", "cat", 42, "Jugador", 25))

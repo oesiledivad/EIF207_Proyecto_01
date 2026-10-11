@@ -8,6 +8,7 @@ ordenables no alteran el orden real
 from __future__ import annotations
 
 from textual.widgets import Static
+from rich.markup import escape
 
 from cripta.estructuras.Inventario import Inventario, ItemInventario
 
@@ -50,14 +51,15 @@ class PanelInventario(Static):
                 "[D]" if item.clase == "armadura" and item.equipado else "   "
             )
             color = "#e8a33d" if marca_actual == ">" else "#d6cfc4"
-            lineas.append(f"[{color}]{marca_actual} {marca_equipo} {item.nombre}[/]")
+            lineas.append(f"[{color}]{marca_actual} {marca_equipo} {escape(item.nombre)}[/]")
 
         encabezado = "orden real" if self._criterio == "real" else f"por {self._criterio}"
 
         lineas.append("")
+        lineas.append("[#8a7f72]← anterior | → siguiente[/]")
         lineas.append(
             f"[#8a7f72]{inventario.tamano}/{inventario.capacidad}  "
-            f"({encabezado})  [P]eso [V]alor [N]ombre [R]eal[/]"
+            f"({encabezado})  Alt+P peso | Alt+V valor | Alt+N nombre | Alt+R real[/]"
         )
         self.update("\n".join(lineas))
 

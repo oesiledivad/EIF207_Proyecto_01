@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import DataTable, Footer, Static
+from rich.text import Text
 
 from cripta.estructuras.Inventario import Inventario, ItemInventario
 
@@ -19,7 +21,7 @@ class ElegirItemModal(ModalScreen):
         filtro_clase: Si no es None, solo muestra items de esa clase.
     """
 
-    BINDINGS = [("escape", "cancelar", "Cancelar")]
+    BINDINGS = [Binding("escape", "cancelar", "Cancelar")]
 
     def __init__(
         self,
@@ -44,6 +46,7 @@ class ElegirItemModal(ModalScreen):
         tabla.add_columns("Nombre", "Clase", "Peso", "Valor", "Equip.")
         tabla.cursor_type = "row"
         tabla.zebra_stripes = True
+        tabla.focus()
 
         items = self._inventario.items() if isinstance(self._inventario, Inventario) else self._inventario
         for item in items:
@@ -52,8 +55,8 @@ class ElegirItemModal(ModalScreen):
             self._items.append(item)
             equipo = "sí" if item.equipado else ""
             tabla.add_row(
-                item.nombre,
-                item.clase,
+                Text(item.nombre),
+                Text(item.clase),
                 str(item.peso),
                 str(item.valor),
                 equipo,

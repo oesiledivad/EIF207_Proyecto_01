@@ -1,5 +1,6 @@
 """Resultado de la partida y tabla local de puntajes."""
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Button, DataTable, Static
@@ -8,7 +9,7 @@ from textual.widgets import Button, DataTable, Static
 class FinModal(ModalScreen):
     titulo = "SESIÓN TERMINADA"
     estilo = "abandono"
-    BINDINGS = [("escape", "otra_partida", "Otra partida")]
+    BINDINGS = [Binding("escape", "otra_partida", "Otra partida")]
 
     def __init__(self, controlador):
         super().__init__()
@@ -29,7 +30,7 @@ class FinModal(ModalScreen):
                             causa = mensajes[i].texto
                             break
                     yield Static(f"Causa de muerte: {causa}", id="fin-causa", markup=False)
-                    recientes = [m.texto for m in mensajes if m.tipo in ("jugador", "combate", "efecto")]
+                    recientes = [m.texto for m in mensajes if m.tipo in ["jugador", "combate", "efecto"]]
                     yield Static("Últimos acontecimientos:\n" + "\n".join(recientes[-4:]),
                                  id="fin-acontecimientos", markup=False)
                 yield Static(f"{estado.nombre_jugador} | {estado.cripta_id} ({estado.version_cripta})\n"

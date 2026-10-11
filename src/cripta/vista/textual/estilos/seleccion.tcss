@@ -8,8 +8,9 @@ SeleccionCriptaScreen {
 }
 
 #seleccion-root {
-    width: 110;
-    height: auto;
+    width: 100%;
+    max-width: 110;
+    height: 1fr;
     padding: 1 2;
 }
 
@@ -95,4 +96,38 @@ SeleccionCriptaScreen {
 
 #acciones Button {
     margin: 0 2;
+}
+SeleccionCriptaScreen.-estrecha #seleccion-cuerpo {
+    layout: vertical;
+    height: auto;
+}
+
+SeleccionCriptaScreen.-estrecha #seleccion-izq {
+    width: 100%;
+    height: 8;
+}
+
+SeleccionCriptaScreen.-estrecha #seleccion-der {
+    width: 100%;
+    height: auto;
+}
+
+SeleccionCriptaScreen.-estrecha .form-row {
+    layout: vertical;
+    height: 4;
+}
+
+SeleccionCriptaScreen.-estrecha .form-label {
+    width: 100%;
+    height: 1;
+}
+
+SeleccionCriptaScreen.-estrecha .form-input {
+    width: 100%;
+}
+
+#acciones Button {
+    min-width: 0;
+    width: 1fr;
+    margin: 0 1;
 }

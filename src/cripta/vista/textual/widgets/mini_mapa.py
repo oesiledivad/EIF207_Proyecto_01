@@ -3,13 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 from textual.app import ComposeResult
 from textual.containers import Grid
-from textual.widgets import Static
+from textual.message import Message
+from textual.widgets import Button
+from rich.markup import escape
 
-from cripta.dto.Partida_dto import EstadoPartida, SalidaVecina
+from cripta.dto.Partida_dto import EstadoPartida
 
 
-class CeldaMapa(Static):
+class CeldaMapa(Button):
     """Representa una celda individual dentro del Grid del minimapa."""
+    direccion: str | None = None
 
 
 class MiniMapa(Grid):
@@ -17,10 +20,21 @@ class MiniMapa(Grid):
 
     CSS_PATH = Path(__file__).parent.parent / "estilos" / "mini_mapa.tcss"
 
+    class Mover(Message):
+        def __init__(self, direccion: str):
+            super().__init__()
+            self.direccion = direccion
+
+    def on_button_pressed(self, evento: Button.Pressed) -> None:
+        evento.stop()
+        celda = evento.button
+        if not celda.disabled and celda.direccion:
+            self.post_message(self.Mover(celda.direccion))
+
     def compose(self) -> ComposeResult:
         # Generamos las 9 celdas fijas de la matriz 3x3
         for i in range(9):
-            yield CeldaMapa("", id=f"celda-{i}")
+            yield CeldaMapa("", id=f"celda-{i}", disabled=True)
 
     def _obtener_indice_direccion(self, direccion: str) -> int | None:
         """Mapea la dirección a un índice de la matriz 3x3 sin usar dicts."""
@@ -38,7 +52,9 @@ class MiniMapa(Grid):
         # Resetear todas las celdas a estado vacío
         for i in range(9):
             celda = self.query_one(f"#celda-{i}", CeldaMapa)
-            celda.update("")
+            celda.label = ""
+            celda.disabled = True
+            celda.direccion = None
             celda.remove_class("-actual", "-cerrada", "-salida", "-vacia")
             celda.add_class("-vacia")
 
@@ -46,7 +62,7 @@ class MiniMapa(Grid):
         c_actual = self.query_one("#celda-4", CeldaMapa)
         c_actual.remove_class("-vacia")
         c_actual.add_class("-actual")
-        c_actual.update(f"[bold #e8a33d]* {p.sala_actual_id} *[/]\n{p.sala_actual_nombre}")
+        c_actual.label = f"[bold #e8a33d]* {p.sala_actual_id} *[/]\n{escape(p.sala_actual_nombre)}"
 
         # 2. Asignar vecinas en la matriz (N:1, O:3, E:5, S:7)
         for v in p.vecindad:
@@ -54,6 +70,8 @@ class MiniMapa(Grid):
             if idx is not None:
                 celda = self.query_one(f"#celda-{idx}", CeldaMapa)
                 celda.remove_class("-vacia")
+                celda.direccion = v.direccion
+                celda.disabled = v.cerrada or not p.activa
 
                 if v.cerrada:
                     celda.add_class("-cerrada")
@@ -71,8 +89,8 @@ class MiniMapa(Grid):
                     marcas.append("[#8b7fb8]X[/]")
 
                 str_marcas = " ".join(marcas)
-                texto_celda = f"[{v.direccion}] {v.nombre}"
+                texto_celda = f"{v.direccion}: {escape(v.nombre)}"
                 if str_marcas:
                     texto_celda += f"\n{str_marcas}"
 
-                celda.update(texto_celda)
+                celda.label = texto_celda

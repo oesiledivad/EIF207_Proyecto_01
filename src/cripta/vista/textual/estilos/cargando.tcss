@@ -10,7 +10,8 @@ CargandoScreen.-pantalla {
 }
 
 CargandoScreen.-pantalla #cargando-caja {
-    width: 50;
+    width: 95%;
+    max-width: 50;
     height: 5;
     background: #15110f;
     border: round #e8a33d;
@@ -26,7 +27,8 @@ CargandoScreen.-modal {
 }
 
 CargandoScreen.-modal #cargando-caja {
-    width: 40;
+    width: 95%;
+    max-width: 40;
     height: 5;
     background: #15110f;
     border: round #e8a33d;

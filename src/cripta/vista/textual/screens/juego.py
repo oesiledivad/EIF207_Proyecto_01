@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.binding import Binding
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Static
 
@@ -28,14 +29,26 @@ from cripta.vista.textual.modales.elegir_direccion import ElegirDireccionModal
 
 class JuegoScreen(Screen):
     BINDINGS = [
-        ("escape", "volver", "Volver"),
-        ("q", "terminar", "Terminar"),
-        ("r", "refrescar", "Refrescar"),
-        ("p", "vista_peso", "Peso"),
-        ("v", "vista_valor", "Valor"),
-        ("n", "vista_nombre", "Nombre"),
-        ("o", "vista_real", "Real"),
-        ("?", "ayuda", "Ayuda"),
+        Binding("escape", "volver", "Volver"),
+        Binding("q", "terminar", "Terminar"),
+        Binding("m", "pulsar('btn-mover')", "Mover"),
+        Binding("a", "pulsar('btn-atacar')", "Atacar"),
+        Binding("full_stop", "pulsar('btn-esperar')", "Esperar"),
+        Binding("o", "pulsar('btn-abrir')", "Abrir"),
+        Binding("r", "pulsar('btn-recoger')", "Recoger"),
+        Binding("u", "pulsar('btn-usar')", "Usar"),
+        Binding("e", "pulsar('btn-equipar')", "Equipar"),
+        Binding("s", "pulsar('btn-soltar')", "Soltar"),
+        Binding("p", "pulsar('btn-pergamino')", "Pergamino"),
+        Binding("g", "pulsar('btn-guardar')", "Guardar"),
+        Binding("c", "pulsar('btn-cargar')", "Cargar"),
+        Binding("alt+p", "vista_peso", "Peso"),
+        Binding("alt+v", "vista_valor", "Valor"),
+        Binding("alt+n", "vista_nombre", "Nombre"),
+        Binding("alt+r", "vista_real", "Real"),
+        Binding("left", "item_anterior", "Item anterior", priority=True),
+        Binding("right", "item_siguiente", "Item siguiente", priority=True),
+        Binding("?", "ayuda", "Ayuda"),
     ]
 
     def __init__(self, controlador: Aplicacion) -> None:
@@ -50,19 +63,19 @@ class JuegoScreen(Screen):
         with Vertical(id="juego-root"):
             yield BarraSuperior(id="barra-superior")
 
-            with Horizontal(id="juego-columnas"):
-                with Vertical(id="col-izq", classes="panel-col"):
+            with VerticalScroll(id="juego-columnas"):
+                with VerticalScroll(id="col-izq", classes="panel-col"):
                     yield Static("JUGADOR", classes="section-title")
                     yield PanelJugador(id="panel-jugador")
                     yield Static("EFECTOS", classes="section-title")
                     yield Static("", id="efectos")
 
-                with Vertical(id="col-centro", classes="panel-col"):
+                with VerticalScroll(id="col-centro", classes="panel-col"):
                     yield Static("SALA", classes="section-title")
                     yield MiniMapa(id="mini-mapa")
                     yield PanelSala(id="panel-sala")                    # <- NUEVO (reemplaza las 6 líneas de SALIDAS, ENEMIGOS y SUELO)
 
-                with Vertical(id="col-der", classes="panel-col"):
+                with VerticalScroll(id="col-der", classes="panel-col"):
                     yield Static("INVENTARIO", classes="section-title")
                     yield PanelInventario(id="panel-inventario")
                     yield Static("BITÁCORA", classes="section-title")
@@ -75,6 +88,14 @@ class JuegoScreen(Screen):
     def on_mount(self) -> None:
         self._refrescar()
         self._timer = self.set_interval(0.4, self._tick_cargando)
+
+    def on_resize(self, evento) -> None:
+        self.set_class(evento.size.width < 100, "-estrecha")
+        self.set_class(evento.size.width < 60, "-muy-estrecha")
+        self.set_class(evento.size.height < 30, "-baja")
+
+    def on_mini_mapa_mover(self, evento: MiniMapa.Mover) -> None:
+        self._ejecutar(self._controlador.mover(evento.direccion))
 
     #  Refresco
 
@@ -300,8 +321,14 @@ class JuegoScreen(Screen):
         self._controlador.terminar()
         self._mostrar_fin()
 
-    def action_refrescar(self) -> None:
-        self._refrescar()
+    def action_pulsar(self, boton_id: str) -> None:
+        self.query_one("#" + boton_id, Button).press()
+
+    def action_item_anterior(self) -> None:
+        self._ejecutar(self._controlador.anterior_item())
+
+    def action_item_siguiente(self) -> None:
+        self._ejecutar(self._controlador.siguiente_item())
 
     def action_vista_peso(self) -> None:
         self.query_one("#panel-inventario", PanelInventario).set_criterio("peso")

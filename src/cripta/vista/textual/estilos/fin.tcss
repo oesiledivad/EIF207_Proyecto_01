@@ -70,7 +70,8 @@ FinModal #fin-acciones {
 }
 
 FinModal #fin-acciones Button {
-    min-width: 20;
+    min-width: 0;
+    width: 1fr;
     margin: 0 1;
     background: #171311;
     color: #c9b8a0;
