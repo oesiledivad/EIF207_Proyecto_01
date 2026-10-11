@@ -167,13 +167,14 @@ class PruebasReplay(unittest.TestCase):
             leer_partida(registro.ruta)
 
     def test_cli_replay_sin_vista(self):
+        vista_antes = sys.modules.get("cripta.vista.grafica.ventana")
         app = self.iniciar()
         app.esperar()
         with patch("cripta.bootstrap._construir_data_source", return_value=FuenteReplay()):
             with patch("cripta.bootstrap.AlmacenDisco") as almacen:
                 self.assertEqual(main(["--offline", "--replay", str(app._partida.registro.ruta)]), 0)
                 almacen.assert_not_called()
-        self.assertNotIn("cripta.vista.textual.app", sys.modules)
+        self.assertIs(sys.modules.get("cripta.vista.grafica.ventana"), vista_antes)
 
     def test_cli_con_archivos_offline_reales(self):
         import subprocess
