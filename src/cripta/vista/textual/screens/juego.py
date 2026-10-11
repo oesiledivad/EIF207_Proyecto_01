@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Static
 
@@ -63,19 +63,19 @@ class JuegoScreen(Screen):
         with Vertical(id="juego-root"):
             yield BarraSuperior(id="barra-superior")
 
-            with Horizontal(id="juego-columnas"):
-                with Vertical(id="col-izq", classes="panel-col"):
+            with VerticalScroll(id="juego-columnas"):
+                with VerticalScroll(id="col-izq", classes="panel-col"):
                     yield Static("JUGADOR", classes="section-title")
                     yield PanelJugador(id="panel-jugador")
                     yield Static("EFECTOS", classes="section-title")
                     yield Static("", id="efectos")
 
-                with Vertical(id="col-centro", classes="panel-col"):
+                with VerticalScroll(id="col-centro", classes="panel-col"):
                     yield Static("SALA", classes="section-title")
                     yield MiniMapa(id="mini-mapa")
                     yield PanelSala(id="panel-sala")                    # <- NUEVO (reemplaza las 6 líneas de SALIDAS, ENEMIGOS y SUELO)
 
-                with Vertical(id="col-der", classes="panel-col"):
+                with VerticalScroll(id="col-der", classes="panel-col"):
                     yield Static("INVENTARIO", classes="section-title")
                     yield PanelInventario(id="panel-inventario")
                     yield Static("BITÁCORA", classes="section-title")
@@ -88,6 +88,14 @@ class JuegoScreen(Screen):
     def on_mount(self) -> None:
         self._refrescar()
         self._timer = self.set_interval(0.4, self._tick_cargando)
+
+    def on_resize(self, evento) -> None:
+        self.set_class(evento.size.width < 100, "-estrecha")
+        self.set_class(evento.size.width < 60, "-muy-estrecha")
+        self.set_class(evento.size.height < 30, "-baja")
+
+    def on_mini_mapa_mover(self, evento: MiniMapa.Mover) -> None:
+        self._ejecutar(self._controlador.mover(evento.direccion))
 
     #  Refresco
 

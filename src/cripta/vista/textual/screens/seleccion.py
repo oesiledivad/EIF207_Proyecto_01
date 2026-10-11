@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, DataTable, Footer, Input, Label, Static
 
@@ -32,7 +32,7 @@ class SeleccionCriptaScreen(Screen):
         self._cargado = criptas is not None
 
     def compose(self) -> ComposeResult:
-        with Vertical(id="seleccion-root"):
+        with VerticalScroll(id="seleccion-root"):
             yield Static("CRIPTA · Selección de mazmorra", id="titulo")
             yield Static(
                 "Elige una cripta para comenzar la incursión.",
@@ -70,6 +70,9 @@ class SeleccionCriptaScreen(Screen):
                 yield Button("Salir", id="btn-salir", classes="-danger")
 
         yield Footer()
+
+    def on_resize(self, evento) -> None:
+        self.set_class(evento.size.width < 80, "-estrecha")
 
     def on_mount(self) -> None:
         tabla = self.query_one("#tabla-criptas", DataTable)

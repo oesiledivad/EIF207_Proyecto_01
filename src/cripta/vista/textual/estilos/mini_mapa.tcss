@@ -4,8 +4,8 @@ MiniMapa {
     grid-columns: 1fr 1fr 1fr;
     grid-rows: 1fr 1fr 1fr;
     width: 100%;
-    height: 11;
-    min-height: 11;
+    height: 15;
+    min-height: 15;
     background: #15110f;
     border: solid #2a221e;
     margin: 0 0 1 0;
@@ -41,4 +41,17 @@ CeldaMapa.-cerrada {
 CeldaMapa.-salida {
     border: solid #8b7fb8;
     color: #8b7fb8;
+}
+CeldaMapa {
+    min-width: 0;
+    padding: 0;
+}
+
+CeldaMapa:disabled {
+    opacity: 100%;
+}
+
+CeldaMapa:hover, CeldaMapa:focus {
+    background: #2a221d;
+    color: #e8a33d;
 }

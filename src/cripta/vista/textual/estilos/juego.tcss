@@ -12,7 +12,7 @@ JuegoScreen {
 }
 
 #barra-superior {
-    height: 1;
+    height: auto;
     background: #15110f;
     color: #e8a33d;
     text-style: bold;
@@ -21,6 +21,7 @@ JuegoScreen {
 }
 
 #juego-columnas {
+    layout: horizontal;
     height: 1fr;
 }
 
@@ -43,7 +44,7 @@ JuegoScreen {
 #col-der { width: 30%; }
 
 #mini-mapa {
-    height: auto;
+    height: 15;
     margin-bottom: 1;
 }
 
@@ -57,18 +58,61 @@ JuegoScreen {
 }
 
 #barra-acciones {
-    height: auto;
+    grid-size: 7;
+    grid-columns: 1fr;
+    grid-rows: 3;
+    height: 6;
+    max-height: 40%;
+    overflow-y: auto;
     margin-top: 1;
 }
 
-.fila-acciones {
-    height: 3;
-    align: left middle;
+#barra-acciones Button {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
 }
 
-.fila-acciones Button {
-    margin: 0 1;
-    min-width: 0;
-    width: auto;
-    padding: 0 1;
+JuegoScreen.-estrecha #juego-columnas {
+    layout: vertical;
+}
+
+JuegoScreen.-estrecha .panel-col {
+    width: 100%;
+    height: auto;
+    margin: 0 0 1 0;
+}
+
+JuegoScreen.-estrecha #col-izq,
+JuegoScreen.-estrecha #col-centro,
+JuegoScreen.-estrecha #col-der {
+    width: 100%;
+}
+
+JuegoScreen.-estrecha #barra-acciones {
+    grid-size: 3;
+    height: 15;
+}
+
+JuegoScreen.-muy-estrecha #barra-acciones {
+    grid-size: 2;
+    height: 21;
+}
+
+JuegoScreen.-baja .panel-col {
+    padding: 0;
+}
+
+JuegoScreen.-baja #barra-superior {
+    max-height: 2;
+    margin-bottom: 0;
+}
+
+JuegoScreen.-baja #barra-acciones {
+    margin-top: 0;
+}
+
+.panel-col Static {
+    height: auto;
 }
