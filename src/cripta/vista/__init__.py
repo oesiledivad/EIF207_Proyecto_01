@@ -1,1 +1,1 @@
-"""Presentación en consola (rich) y captura de comandos del usuario."""
+"""Presentación del juego: vista gráfica con Arcade (paquete grafica)."""

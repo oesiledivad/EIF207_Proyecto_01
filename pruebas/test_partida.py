@@ -27,6 +27,37 @@ class FuentePuertas(FuenteReplay):
 
 
 class PruebasPartida(unittest.TestCase):
+    def test_victoria_requiere_abrir_y_entrar_y_se_reproduce(self):
+        class FuenteVictoria(FuentePuertas):
+            def crypta_details(self, cid):
+                datos = super().crypta_details(cid)
+                datos["sala_salida"] = 2
+                datos["llave_salida"] = "itm_llave_bronce"
+                return datos
+
+        with tempfile.TemporaryDirectory() as carpeta:
+            app = Aplicacion(FuenteVictoria(), carpeta_logs=carpeta)
+            self.assertTrue(app.iniciar_partida("Jugador", "42", "cripta-01").ok)
+            self.assertFalse(app.abrir("N").ok)
+            for objeto in list(app.estado_partida().objetos_suelo):
+                self.assertTrue(app.recoger(objeto.id).ok)
+            self.assertTrue(app.abrir("N").ok)
+            self.assertFalse(app.estado_partida().victoria)
+            self.assertTrue(app.usar_pergamino().ok)
+            self.assertEqual(app._partida._salidas_abiertas, [])
+            self.assertTrue(app.abrir("N").ok)
+            self.assertTrue(app.mover("N").ok)
+            self.assertTrue(app.estado_partida().victoria)
+            self.assertTrue(app.estado_partida().terminada)
+            self.assertFalse(app.estado_partida().activa)
+            self.assertFalse(app.esperar().ok)
+            self.assertEqual(len(app.puntajes()), 1)
+            app.terminar()
+            self.assertEqual(len(app.puntajes()), 1)
+            replay = reproducir(app._partida.registro.ruta, [FuenteVictoria()])
+            self.assertTrue(replay.estado_partida().victoria)
+            self.assertEqual(firma(replay), firma(app))
+
     def test_validar_inicio(self):
         self.assertEqual(PartidaControlador.validar_inicio(" Jugador ", " 0 ", "cripta"),
                          ["Jugador", 0])

@@ -23,6 +23,7 @@ class PartidaControlador:
         self._partida_id = None
         self._puntaje_guardado = False
         self.error_puntaje = ""
+        self._salidas_abiertas = []
 
     @property
     def registro(self):
@@ -32,6 +33,7 @@ class PartidaControlador:
         self._partida_id = uuid4().hex
         self._puntaje_guardado = False
         self.error_puntaje = ""
+        self._salidas_abiertas = []
         self._gestor.historial.limpiar()
 
     @staticmethod
@@ -104,6 +106,23 @@ class PartidaControlador:
             self._gestor.estado.terminada = True
             self._gestor.estado.activa = False
             self._bitacora.append(Mensaje("sistema", "Has muerto."))
+            self._bitacora.append(Mensaje("sistema", resumen_red))
+
+    def registrar_apertura_salida(self, sala, salida):
+        estado = self._gestor.estado
+        if salida.sala_destino == estado.sala_salida_id and salida.llave == estado.llave_salida:
+            puerta = [sala, salida.direccion]
+            if puerta not in self._salidas_abiertas:
+                self._gestor.historial.cambiar(self, "_salidas_abiertas", self._salidas_abiertas + [puerta])
+
+    def comprobar_victoria(self, sala_origen, direccion, resumen_red):
+        estado = self._gestor.estado
+        if (estado.activa and estado.sala_actual_id == estado.sala_salida_id
+                and [sala_origen, direccion] in self._salidas_abiertas):
+            estado.victoria = True
+            estado.terminada = True
+            estado.activa = False
+            self._bitacora.append(Mensaje("sistema", "Has escapado de la cripta. ¡Victoria!"))
             self._bitacora.append(Mensaje("sistema", resumen_red))
 
     def iniciar_registro(self, detalles, version_catalogo, semilla, nombre, capacidad_cache):

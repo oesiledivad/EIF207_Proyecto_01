@@ -1,7 +1,7 @@
 """Arranque de la aplicación.
 
 Lee flags, elige adaptador (red u offline), construye el controlador
-y lanza la vista Textual. No es controlador MVC: solo prepara el arranque.
+y lanza la vista gráfica (Arcade). No es controlador MVC: solo prepara el arranque.
 
 El modo --bench ejecuta mediciones sin red ni vista interactiva.
 """
@@ -55,6 +55,11 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--offline-dir", default="datos_prueba", help="Carpeta de respuestas offline.")
     modos.add_argument("--bench", action="store_true",
                         help="Ejecuta cargas sinteticas sin red ni interfaz.")
+    modos.add_argument("--grafica", action="store_true",
+                       help="Vista Arcade (ya es la predeterminada; se acepta por compatibilidad).")
+    parser.add_argument("--cripta", help="Id de cripta preseleccionada en el menú.")
+    parser.add_argument("--nombre", default="Jugador", help="Nombre inicial del jugador.")
+    parser.add_argument("--semilla", default="", help="Semilla inicial (vacía = aleatoria).")
     return parser.parse_args(argv)
 
 
@@ -113,12 +118,15 @@ def main(argv: list[str] | None = None) -> int:
     controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen,
                              carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes)
 
-    # Import diferido: la vista Textual solo se construye si vamos a usarla.
-    from cripta.vista.textual.app import CriptaApp
-
-    app = CriptaApp(controlador)
-    app.run()
-    return 0
+    # Import diferido: arcade solo se carga si de verdad se abre la ventana.
+    from cripta.vista.grafica import iniciar
+    try:
+        return iniciar(controlador, args.cripta, args.nombre, args.semilla, args.offline)
+    except ModuleNotFoundError as error:
+        if error.name != "arcade":
+            raise
+        print("Falta arcade. Instala las dependencias con: uv sync", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
