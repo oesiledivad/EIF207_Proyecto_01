@@ -11,10 +11,12 @@ class PruebasTeclado(unittest.TestCase):
 import asyncio
 from textual.app import App
 from textual.widgets import Button, DataTable
+from rich.text import Text
 from cripta.controlador.Aplicacion import Aplicacion
 from cripta.vista.textual.app import CriptaApp
 from cripta.vista.textual.screens.juego import JuegoScreen
 from cripta.vista.textual.modales.elegir_item import ElegirItemModal
+from cripta.vista.textual.widgets.panel_inventario import PanelInventario
 from pruebas.test_inventario import FuentePrueba
 
 async def main():
@@ -26,6 +28,7 @@ async def main():
     orden = [item.instancia_id for item in inv.items()]
     inv.ir_al_frente()
     inicial = inv.item_actual()
+    inicial.nombre = '[red]Espada[/red] \\ [sin_cerrar'
     tiempo = controlador.estado_partida().reloj_virtual
     acciones = controlador.estado_partida().acciones_ejecutadas
     historial = len(controlador._gestor.historial)
@@ -37,6 +40,8 @@ async def main():
     async with vista.run_test(size=(130, 50)) as pilot:
         await pilot.pause()
         juego = vista.screen
+        panel = juego.query_one(PanelInventario)
+        assert inicial.nombre in panel.render().plain
         juego.query_one('#btn-esperar', Button).focus()
         await pilot.press('right')
         assert inv.item_actual() is not inicial
@@ -53,6 +58,8 @@ async def main():
         assert isinstance(vista.screen, ElegirItemModal)
         tabla = vista.screen.query_one(DataTable)
         assert vista.focused is tabla
+        nombre = tabla.get_cell(inicial.instancia_id, tabla.ordered_columns[0].key)
+        assert isinstance(nombre, Text) and nombre.plain == inicial.nombre
         await pilot.press('down', 'right', 'escape')
         await pilot.pause()
         assert vista.screen is juego
