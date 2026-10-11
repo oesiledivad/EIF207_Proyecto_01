@@ -30,11 +30,21 @@ class JuegoScreen(Screen):
     BINDINGS = [
         ("escape", "volver", "Volver"),
         ("q", "terminar", "Terminar"),
-        ("r", "refrescar", "Refrescar"),
-        ("p", "vista_peso", "Peso"),
-        ("v", "vista_valor", "Valor"),
-        ("n", "vista_nombre", "Nombre"),
-        ("o", "vista_real", "Real"),
+        ("m", "pulsar('btn-mover')", "Mover"),
+        ("a", "pulsar('btn-atacar')", "Atacar"),
+        ("full_stop", "pulsar('btn-esperar')", "Esperar"),
+        ("o", "pulsar('btn-abrir')", "Abrir"),
+        ("r", "pulsar('btn-recoger')", "Recoger"),
+        ("u", "pulsar('btn-usar')", "Usar"),
+        ("e", "pulsar('btn-equipar')", "Equipar"),
+        ("s", "pulsar('btn-soltar')", "Soltar"),
+        ("p", "pulsar('btn-pergamino')", "Pergamino"),
+        ("g", "pulsar('btn-guardar')", "Guardar"),
+        ("c", "pulsar('btn-cargar')", "Cargar"),
+        ("alt+p", "vista_peso", "Peso"),
+        ("alt+v", "vista_valor", "Valor"),
+        ("alt+n", "vista_nombre", "Nombre"),
+        ("alt+r", "vista_real", "Real"),
         ("?", "ayuda", "Ayuda"),
     ]
 
@@ -300,8 +310,8 @@ class JuegoScreen(Screen):
         self._controlador.terminar()
         self._mostrar_fin()
 
-    def action_refrescar(self) -> None:
-        self._refrescar()
+    def action_pulsar(self, boton_id: str) -> None:
+        self.query_one("#" + boton_id, Button).press()
 
     def action_vista_peso(self) -> None:
         self.query_one("#panel-inventario", PanelInventario).set_criterio("peso")

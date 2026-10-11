@@ -14,11 +14,12 @@ ATAJOS
   O  abrir puerta     R  recoger        U  usar
   E  equipar          S  soltar         P  pergamino
   G  guardar          C  cargar         ?  ayuda
-  Q  terminar
+  Q  terminar        Esc  volver a selección
+  Guardar/cargar: pendientes de integración.
 
 INVENTARIO
-  P  vista por peso   V  vista por valor
-  N  vista por nombre R  orden real
+  Alt+P  por peso     Alt+V  por valor
+  Alt+N  por nombre   Alt+R  orden real
 
 SELECCIÓN
   Flechas  navegar    Enter  seleccionar

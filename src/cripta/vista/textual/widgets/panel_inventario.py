@@ -57,7 +57,7 @@ class PanelInventario(Static):
         lineas.append("")
         lineas.append(
             f"[#8a7f72]{inventario.tamano}/{inventario.capacidad}  "
-            f"({encabezado})  [P]eso [V]alor [N]ombre [R]eal[/]"
+            f"({encabezado})  Alt+P peso | Alt+V valor | Alt+N nombre | Alt+R real[/]"
         )
         self.update("\n".join(lineas))
 
