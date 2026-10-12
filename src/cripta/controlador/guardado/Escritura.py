@@ -38,6 +38,7 @@ def _escribir_actor(w: EscritorBinario, a) -> None:
 
 def _escribir_enemigo(w: EscritorBinario, e) -> None:
     _escribir_actor(w, e)
+    w.texto(e.nombre) 
     w.texto(e.comportamiento)
     w.texto(e.tipo or "")
     w.entero(len(e.suelta))
@@ -112,6 +113,12 @@ def _cuerpo_global(app) -> bytes:
     w.entero(estado.enemigos_derrotados)
     w.entero(estado.sala_actual_id)
     w.entero(sim.reloj.tiempo_actual)
+    abiertas = app._partida._salidas_abiertas      
+    w.entero(len(abiertas))
+    for sala_id, direccion in abiertas:
+        w.entero(sala_id)
+        w.texto(direccion)
+
 
     version, interno, gauss = sim.azar.getstate()
     w.entero(version)

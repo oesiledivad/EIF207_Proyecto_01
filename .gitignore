@@ -21,3 +21,5 @@ wheels/
 # Registros generados al jugar
 partidas/
 puntajes.json
+
+partida_guardada.bin

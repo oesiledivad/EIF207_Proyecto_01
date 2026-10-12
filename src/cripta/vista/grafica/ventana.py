@@ -297,11 +297,33 @@ class VentanaCripta(arcade.Window):
             self.show_view(Panel(self, "MENÚ", [
                 ["Continuar", lambda: None],
                 ["Información de la sala (I)", lambda: self.abrir_panel("informacion")],
+                ["Guardar partida", self.guardar_partida],                 # <- NUEVA
+                ["Cargar partida guardada", self.cargar_partida],
                 ["Ayuda y controles", lambda: self.abrir_panel("ayuda")],
                 ["Pantalla completa (F11)", self.alternar_pantalla_completa],
                 ["Terminar la partida", lambda: self.abrir_panel("terminar")],
                 ["Volver al menú principal", self.volver_menu],
             ]))
+
+    def guardar_partida(self):
+        """Guarda la partida activa; no consume tiempo virtual."""
+        resultado = self.controlador.guardar()
+        self.mensaje = resultado.motivo or "Partida guardada."
+        self.sonidos.tocar("recoger" if resultado.ok else "error")
+
+    def cargar_partida(self):
+        """Reemplaza la partida por la guardada, con pantalla de carga (reconstruye desde la red o la caché)."""
+        def terminado(resultado):
+            """Aplica el resultado en el hilo gráfico y vuelve a la partida."""
+            self.hide_view()
+            if resultado.ok:
+                self.preparar_partida()
+                self.mensaje = "Partida cargada."
+            else:
+                self.mensaje = resultado.motivo
+                self.sonidos.tocar("error")
+        self.cargar("Cargando partida", self.controlador.cargar, terminado)
+
 
     def alternar_pantalla_completa(self):
         self.set_fullscreen(not self.fullscreen)

@@ -87,8 +87,8 @@ def restaurar_partida(app, datos: DatosGuardado) -> None:
         sala.trampas = []
         for eg in sala_g.enemigos:
             a = eg.actor
-            enemigo = app._crear_enemigo(EnemigoPartida(
-                id=a.identificador, nombre=a.identificador, vida=a.vida, ataque=a.ataque,
+            enemigo = app._combate.crear_enemigo(EnemigoPartida(
+                id=a.identificador, nombre=eg.nombre, vida=a.vida, ataque=a.ataque,
                 defensa=a.defensa, vida_max=a.vida_max, velocidad=a.velocidad,
                 comportamiento=eg.comportamiento, regeneracion=eg.regeneracion_objetivo,
                 tipo=eg.tipo, suelta=list(eg.suelta),
@@ -139,7 +139,8 @@ def restaurar_partida(app, datos: DatosGuardado) -> None:
     estado.derrota = False
     estado.victoria = False
     estado.contenido_cargado = [s.sala_id for s in datos.salas if s.contenido_cargado]
+    app._partida._salidas_abiertas = [list(p) for p in datos.salidas_abiertas]
     app._gestor.historial.limpiar()
     app._gestor.refrescar_sala_actual()
     app._sincronizar_estado()
-    app._fijar_seguro(app._tipos_activos())
+    app._avisar(app._cripta_service.fijar_seguro(app._tipos_activos()))

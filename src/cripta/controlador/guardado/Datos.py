@@ -36,6 +36,7 @@ class ActorG:
 @dataclass
 class EnemigoG:
     actor: ActorG
+    nombre: str
     comportamiento: str
     tipo: str
     suelta: list[str]
@@ -74,6 +75,7 @@ class DatosGuardado:
     enemigos_derrotados: int = 0
     sala_actual_id: int = 0
     tiempo_actual: int = 0
+    salidas_abiertas: list[list] = field(default_factory=list)
     azar_version: int = 3
     azar_interno: list[int] = field(default_factory=list)
     azar_gauss: float | None = None

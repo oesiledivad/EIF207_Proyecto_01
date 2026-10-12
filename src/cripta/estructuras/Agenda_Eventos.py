@@ -29,13 +29,22 @@ class HeapAgendaEventos:
             setattr(objeto, atributo, valor)
         else:
             self.historial.cambiar(objeto, atributo, valor)
-
+            
+    def eventos_validos(self) -> list[Evento]:
+        """Eventos pendientes no cancelados (para guardar la partida). O(n), sin orden."""
+        return [evento for evento in self._heap if evento.valido]
+    
     def peek(self) -> Evento | None:
         """O(1) si la raíz es válida; cada raíz cancelada se extrae en O(log n)."""
         while self._heap and not self._heap[0].valido:
             self._extraer_raiz()
         return self._heap[0] if self._heap else None
 
+
+    
+    
+
+        return [evento for evento in self._heap if evento.valido]
     def insertar(self, tiempo_siguiente: int, actor, tipo: str) -> Evento:
         self.cambiar(self, "_secuencia_actual", self._secuencia_actual + 1)
         evento = Evento(tiempo_siguiente, self._secuencia_actual, actor, tipo)

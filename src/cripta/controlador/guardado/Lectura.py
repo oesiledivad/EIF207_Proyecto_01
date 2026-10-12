@@ -20,11 +20,11 @@ def _leer_actor(r: LectorBinario) -> ActorG:
 
 def _leer_enemigo(r: LectorBinario) -> EnemigoG:
     actor = _leer_actor(r)
+    nombre = r.texto()                 
     comportamiento = r.texto()
     tipo = r.texto()
     suelta = [r.texto() for _ in range(r.entero())]
-    return EnemigoG(actor, comportamiento, tipo, suelta, r.entero_opcional())
-
+    return EnemigoG(actor, nombre, comportamiento, tipo, suelta, r.entero_opcional())  
 
 def _leer_sala(datos: bytes) -> SalaG:
     r = LectorBinario(datos)
@@ -58,6 +58,9 @@ def _leer_global(datos: bytes, version_cripta: str) -> DatosGuardado:
     g.enemigos_derrotados = r.entero()
     g.sala_actual_id = r.entero()
     g.tiempo_actual = r.entero()
+
+    for _ in range(r.entero()):
+        g.salidas_abiertas.append([r.entero(), r.texto()])
     g.azar_version = r.entero()
     g.azar_interno = [r.sin_signo() for _ in range(r.entero())]
     g.azar_gauss = r.decimal_opcional()
