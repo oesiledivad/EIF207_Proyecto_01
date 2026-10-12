@@ -8,9 +8,8 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "arcade>=3.3,<4",
     "requests>=2.34.2",
-    "rich>=15.0.0",
-    "textual>=8.2.8",
 ]
 
 [project.scripts]

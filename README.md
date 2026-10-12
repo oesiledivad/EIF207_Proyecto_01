@@ -53,6 +53,22 @@ En desarrollo. Por ahora solo está disponible el arranque del programa
 (vista de bienvenida). Los comandos de juego, `--offline`, `--replay` y
 `--bench` todavía no están implementados.
 
+## Vista gráfica (Arcade)
+
+El juego se juega en una ventana hecha con Arcade (ya no hay vista de consola Textual).
+
+```bash
+uv sync
+uv run cripta            # en red
+uv run cripta --offline  # con datos_prueba
+```
+
+- La interfaz se dibuja en un lienzo virtual de 800x450 y se escala a la
+  ventana, así se ve con las mismas proporciones en cualquier computadora
+  (laptop con escalado de Windows, monitor 1080p, 4K...). La ventana inicial
+  se calcula según el tamaño de la pantalla y se puede redimensionar.
+- **F11**: pantalla completa. **Esc**: menú. **F1** o **/**: ayuda con todos los controles.
+
 ## Documentación adicional
 
 - [`docs/api.md`](docs/api.md): documentación del API de Cripta.
