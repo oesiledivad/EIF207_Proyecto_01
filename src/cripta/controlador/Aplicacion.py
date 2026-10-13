@@ -3,6 +3,11 @@
 
 from __future__ import annotations
 
+
+import struct
+from pathlib import Path
+from cripta.controlador.ExploracionControlador import ExploracionControlador
+
 from cripta.replay.reproductor import ErrorRegistro
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
@@ -11,6 +16,9 @@ from cripta.controlador.PartidaControlador import PartidaControlador
 from cripta.controlador.InventarioControlador import InventarioControlador
 from cripta.controlador.CombateControlador import CombateControlador
 from cripta.controlador.EfectosControlador import EfectosControlador
+
+from cripta.controlador.guardado import escribir_partida, leer_partida, restaurar_partida
+
 from cripta.dto.Partida_dto import (
     CriptaResumen,
     DetallesCripta,
@@ -45,7 +53,7 @@ class Aplicacion:
     """
 
     def __init__(self, data_source: CryptDataSource, capacidad_cache: int = 25,
-                 almacen: AlmacenDisco | None = None, carpeta_logs=None, ruta_puntajes=None) -> None:
+                almacen: AlmacenDisco | None = None, carpeta_logs=None, ruta_puntajes=None, ruta_guardado=None) -> None:
         self._cripta_service = CriptaService(
             data_source, Cache_Fichas(capacidad=capacidad_cache), almacen
         )
@@ -56,9 +64,11 @@ class Aplicacion:
         self._combate = CombateControlador(self._gestor, self._bitacora, self._cripta_service, self._efectos)
         self._simulacion: Simulacion | None = None
         self._jugador: Jugador | None = None
-        self._salas: IndiceSalas = IndiceSalas()  # antes: dict[int, SalaJuego]
-        self._max_id_sala = 0
+        self._exploracion = ExploracionControlador(self)  # Cambio(kyara)
+
         self._partida = PartidaControlador(self._gestor, self._bitacora, carpeta_logs, ruta_puntajes)
+        self.ruta_guardado = Path(ruta_guardado) if ruta_guardado is not None else Path("partida_guardada.bin")
+        self._registro_original = None  # registro de replay apartado mientras hay una partida cargada
 
     #  Selección
 
@@ -78,6 +88,9 @@ class Aplicacion:
             nombre, semilla_efectiva = self._partida.validar_inicio(nombre_jugador, semilla, cripta_id)
         except ValueError as error:
             return ResultadoInicio(ok=False, motivo=str(error))
+        if self._registro_original is not None:  # una partida nueva vuelve a grabarse
+            self._partida._registro = self._registro_original
+            self._registro_original = None
 
         if self._jugador is not None:
             self._cripta_service.reiniciar_partida()
@@ -135,44 +148,33 @@ class Aplicacion:
                 return ResultadoInicio(ok=False, motivo=f"No se pudo crear el registro: {error}")
         return ResultadoInicio(ok=True, semilla_efectiva=semilla_efectiva)
 
-    #  Salas y red (§4.2)
+    
+
+     #  Salas y exploración (delegado a ExploracionControlador)
+    @property
+    def _salas(self) -> IndiceSalas:
+        return self._exploracion.salas
+
+    @_salas.setter
+    def _salas(self, valor: IndiceSalas) -> None:
+        self._exploracion.salas = valor
+
+    @property
+    def _max_id_sala(self) -> int:
+        return self._exploracion.max_id_sala
+
+    @_max_id_sala.setter
+    def _max_id_sala(self, valor: int) -> None:
+        self._exploracion.max_id_sala = valor
 
     def _crear_salas_desde_esqueleto(self, esqueleto: list[SalaModelo]) -> None:
-        """Crea TODAS las salas (vacías) apenas llega el esqueleto.
-
-        Así un enemigo activo puede moverse a una sala cuyo contenido aún no
-        se pidió, y el rastreador puede consultar el rastro de cualquier vecina.
-        """
-        self._salas = IndiceSalas()
-        self._max_id_sala = 0
-        for sala_modelo in esqueleto:
-            salidas = Salidas()
-            for v in sala_modelo.salidas:
-                salidas.agregar(v.direccion, v.sala_id, v.cerrada, v.llave or None, v.cierre_automatico)
-            self._salas.insertar(sala_modelo.id, SalaJuego(
-                id=sala_modelo.id, nombre=sala_modelo.nombre, salidas=salidas,
-                enemigos=[], objetos=[], trampas=[],
-            ))
-            if sala_modelo.id > self._max_id_sala:
-                self._max_id_sala = sala_modelo.id
+        self._exploracion.ensamblar_salas(esqueleto)
 
     def _cargar_lote(self, origen_id: int) -> None:
-        """Lote de hasta 10 salas alrededor de `origen_id` (precarga en CriptaService)."""
-        self._cripta_service.cargar_lote(self._gestor.estado.cripta_id, self._salas,
-                                         self._max_id_sala, origen_id, self._incorporar_contenido)
+        self._exploracion.cargar_lote(origen_id)
 
     def _incorporar_contenido(self, sala: SalaJuego | None, contenido: ContenidoSala) -> None:
-        """Incorporar NO activa enemigos (§2.4): quedan dormidos hasta que el jugador entre."""
-        if sala is None or sala.contenido_cargado:
-            return  # una sala ya cargada no se vuelve a incorporar
-        for dto in contenido.enemigos:
-            # agregar (no reemplazar): puede haber enemigos activos que ya llegaron caminando
-            sala.agregar_enemigo(self._combate.crear_enemigo(dto, sala.id))
-        sala.objetos.extend(contenido.objetos)
-        for t in contenido.trampas:
-            sala.trampas.append(self._efectos.crear_trampa(t))
-        sala.contenido_cargado = True
-        self._gestor.estado.contenido_cargado.append(sala.id)
+        self._exploracion.incorporar_contenido(sala, contenido)
 
     def _avisar(self, mensaje: str | None) -> None:
         if mensaje is not None:
@@ -240,7 +242,7 @@ class Aplicacion:
         sim = self._simulacion
         tiempo_actual = sim.reloj.tiempo_actual
         # Apéndice B: el rastro de la sala actual se refresca en cada acción del jugador.
-        sim.agenda.cambiar(self._salas.obtener(self._jugador.sala), "ultimo_tiempo_visita", tiempo_actual)
+        self._exploracion.marcar_rastro(tiempo_actual)
 
         intervalo = calcular_intervalo(costo_accion(nombre_costo), self._jugador.velocidad)
         sim.agenda.reprogramar(self._jugador, tiempo_actual + intervalo, "accion_actor")
@@ -255,35 +257,13 @@ class Aplicacion:
         self._partida.comprobar_derrota(esta_vivo(self._jugador), self.resumen_red())
             
     def _actualizar_vecindad(self) -> None:
-        """Pone al día la vecindad que lee la Vista a partir del Modelo (fuente de verdad).
+        self._exploracion.actualizar_vecindad()
 
-        Copia el estado vivo de cada puerta (SalaJuego.salidas) y marca si la sala
-        vecina tiene enemigos vivos u objetos. O(k * e), k = salidas (máx. 4).
-        """
-        sala = self._salas.obtener(self._jugador.sala)
-        if sala is None:
-            return
-        for v in self._gestor.estado.vecindad:
-            salida = sala.salidas.obtener(v.direccion)
-            if salida is not None:
-                v.cerrada = salida.cerrada
-                v.transitable = not salida.cerrada
-                v.llave = salida.llave or ""
-                v.cierre_automatico = salida.cierre_automatico
-            vecina = self._salas.obtener(v.sala_id)
-            if vecina is None:
-                continue
-            hay_enemigos = False
-            for e in vecina.enemigos:
-                if esta_vivo(e):
-                    hay_enemigos = True
-                    break
-            v.tiene_enemigos = hay_enemigos
-            v.tiene_objetos = len(vecina.objetos) > 0
+
 
     def _sincronizar_estado(self) -> None:
         estado = self._gestor.estado
-        self._actualizar_vecindad()          # <- NUEVO
+        self._actualizar_vecindad()
         self._partida.sincronizar_jugador(self._jugador, self._simulacion)
         sala_actual = self._salas.obtener(self._jugador.sala)
         if sala_actual is not None:
@@ -325,6 +305,49 @@ class Aplicacion:
                 f"caché: {s.aciertos_cache} aciertos, {s.fallos_cache} fallos, "
                 f"{s.lecturas_disco} lecturas de disco")
 
+
+        #  Guardado binario (extra de P1)
+    def guardar(self, ruta=None) -> ResultadoAccion:
+        """Guarda la partida activa. No es una acción del jugador: no consume tiempo."""
+        if not self._partida_en_curso():
+            return ResultadoAccion.fallo("No hay una partida activa para guardar.")
+        destino = Path(ruta) if ruta is not None else self.ruta_guardado
+        try:
+            escribir_partida(self, destino)
+        except (OSError, ValueError) as error:
+            return ResultadoAccion.fallo(f"No se pudo guardar: {error}")
+        self._bitacora.append(Mensaje("sistema", f"Partida guardada en {destino}."))
+        return ResultadoAccion.exito()
+
+    def cargar(self, ruta=None) -> ResultadoAccion:
+        """Reemplaza la partida actual por la guardada (misma versión de cripta)."""
+        origen = Path(ruta) if ruta is not None else self.ruta_guardado
+        try:
+            datos = leer_partida(origen)
+        except (OSError, ValueError, struct.error) as error:
+            return ResultadoAccion.fallo(f"No se pudo leer el guardado: {error}")
+        try:
+            detalles = self._cripta_service.obtener_detalles(datos.cripta_id)
+        except (PresupuestoAgotado, RuntimeError) as error:
+            return ResultadoAccion.fallo(f"No se pudo validar la cripta del guardado: {error}")
+        if detalles.version != datos.version_cripta:
+            return ResultadoAccion.fallo("La cripta cambió de versión desde que se guardó.")
+
+        # Una partida cargada no parte de t=0, así que no se graba en el registro de replay.
+        original = self._partida._registro if self._partida._registro is not None else self._registro_original
+        self._registro_original = None
+        self._partida._registro = None
+        resultado = self.iniciar_partida(datos.nombre_jugador, str(datos.semilla), datos.cripta_id)
+        self._registro_original = original
+        if not resultado.ok:
+            return ResultadoAccion.fallo(resultado.motivo)
+        try:
+            restaurar_partida(self, datos)
+        except (ValueError, KeyError) as error:
+            return ResultadoAccion.fallo(f"El guardado no coincide con la cripta: {error}")
+        self._bitacora.append(Mensaje("sistema", f"Partida cargada de {origen}."))
+        return ResultadoAccion.exito()
+    
     #  Inventario (delegado a InventarioController; aquí se les da costo de tiempo)
 
     def recoger(self, instancia_id: str) -> ResultadoAccion:
@@ -385,83 +408,13 @@ class Aplicacion:
     #  Acciones de partida
 
     def mover(self, direccion: str) -> ResultadoAccion:
-        if not self._partida_en_curso():
-            return ResultadoAccion.fallo("La partida no está activa.")
+        return self._exploracion.mover(direccion)
 
-        direccion = direccion.strip().upper()
-        sala_actual = self._salas.obtener(self._jugador.sala)
-        if sala_actual is None:
-            return ResultadoAccion.fallo("Sala actual no cargada.")
-
-        salida = sala_actual.salidas.obtener(direccion)
-        if salida is None:
-            return ResultadoAccion.fallo("No hay salida en esa dirección.")
-        if salida.cerrada:
-            return ResultadoAccion.fallo("La puerta está cerrada.")
-
-        destino_id = salida.sala_destino
-        # §4.2: el contenido debe estar ANTES de confirmar el movimiento.
-        error = self._cripta_service.asegurar_sala_cargada(
-            self._gestor.estado.cripta_id, self._salas, self._max_id_sala, destino_id,
-            self._incorporar_contenido)
-        if error is not None:
-            return ResultadoAccion.fallo(f"No se pudo cargar la sala destino: {error}")
-
-        resultado = self._accion_jugador("mover", lambda: self._ejecutar_movimiento(destino_id, direccion), direccion)
-        if resultado.ok and self._partida_en_curso():
-            self._avisar(self._cripta_service.precargar_alrededor(   # lista para la próxima puerta
-                self._gestor.estado.cripta_id, self._salas, self._max_id_sala,
-                self._jugador.sala, self._incorporar_contenido))
-        return resultado
-
-    def _ejecutar_movimiento(self, destino_id: int, direccion: str) -> ResultadoAccion:
-        sala_origen = self._salas.obtener(self._jugador.sala)
-        sala_destino = self._salas.obtener(destino_id)
-        tiempo_actual = self._simulacion.reloj.tiempo_actual
-
-        self._cripta_service.liberar_contenido_visible(sala_origen)   # deja de ser la sala actual
-        self._simulacion.agenda.cambiar(self._jugador, "sala", destino_id)
-        self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # §2.9
-        self._combate.activar_sala(sala_destino, self._simulacion)   # §2.4
-        self._avisar(self._cripta_service.fijar_contenido_visible(sala_destino))
-        self._gestor.estado.objetos_suelo = sala_destino.objetos
-        self._bitacora.append(Mensaje("jugador", f"Te mueves al {direccion}: {sala_destino.nombre}."))
-
-        # §2.10: cada trampa armada se activa al entrar, antes del siguiente evento.
-        self._efectos.disparar_trampas(sala_destino, self._jugador, self._simulacion)
-        return ResultadoAccion.exito()
-
-    
-    #kyara
-    def abrir(self, direccion: str) -> ResultadoAccion:                                     #NUEVO
+    def abrir(self, direccion: str) -> ResultadoAccion:
         """Abre la puerta de la sala actual en `direccion` (§2.5). Costo 50."""
-        direccion = direccion.strip().upper()
-        return self._accion_jugador("abrir_puerta", lambda: self._ejecutar_apertura(direccion), direccion)
+        return self._exploracion.abrir(direccion)
+
     abrir_puerta = abrir
-
-    def _ejecutar_apertura(self, direccion: str) -> ResultadoAccion:
-        sala = self._salas.obtener(self._jugador.sala)
-        if sala is None:
-            return ResultadoAccion.fallo("Sala actual no cargada.")
-        salida = sala.salidas.obtener(direccion)
-        if salida is None:
-            return ResultadoAccion.fallo("No hay salida en esa dirección.")
-        if not salida.cerrada:
-            return ResultadoAccion.fallo("Esa puerta ya está abierta.")
-        if not salida.llave:
-            return ResultadoAccion.fallo("Esa puerta no se abre con llave.")
-        inv = self._gestor.inventario
-        llave = buscar_llave(inv.items(), salida.llave) if inv is not None else None
-        if llave is None:
-            return ResultadoAccion.fallo("No tienes la llave correcta.")
-
-        tiempo = self._simulacion.reloj.tiempo_actual
-        abrir_salida(salida, tiempo, self._simulacion.agenda)
-        self._partida.registrar_apertura_salida(self._jugador.sala, salida)
-        self._bitacora.append(Mensaje("jugador", f"Abres la puerta {direccion} con {llave.nombre}."))
-        return ResultadoAccion.exito()
-
-
 
     def atacar(self, instancia_id: str) -> ResultadoAccion:
         return self._accion_jugador(
