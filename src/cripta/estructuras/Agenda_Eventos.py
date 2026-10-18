@@ -2,6 +2,8 @@
 
 
 class Evento:
+    __slots__ = ["tiempo_siguiente", "secuencias", "actor", "tipo", "valido", "indice"]
+
     def __init__(self, tiempo_siguiente: int, secuencias: int, actor, tipo: str):
         self.tiempo_siguiente = tiempo_siguiente
         self.secuencias = secuencias
@@ -126,9 +128,16 @@ class HeapAgendaEventos:
         evento.indice = i
 
     def reprogramar(self, actor, nuevo_tiempo: int, tipo: str) -> Evento:
-        if actor._proximo_evento is not None:
-            self.cancelar(actor._proximo_evento)
-        evento = self.insertar(nuevo_tiempo, actor, tipo)
-        self.cambiar(actor, "_proximo_evento", evento)
-        self.cambiar(actor, "tiempo_siguiente", nuevo_tiempo)
+        """Reemplaza el evento del actor con un único delta reversible."""
+        anterior = actor._proximo_evento
+        evento = Evento(nuevo_tiempo, self._secuencia_actual + 1, actor, tipo)
+        self.registrar("actor_reprogramado", [self, evento, anterior,
+                       anterior.valido if anterior is not None else False,
+                       actor.tiempo_siguiente, self._secuencia_actual])
+        if anterior is not None:
+            anterior.valido = False
+        self._secuencia_actual += 1
+        self._agregar(evento)
+        actor._proximo_evento = evento
+        actor.tiempo_siguiente = nuevo_tiempo
         return evento

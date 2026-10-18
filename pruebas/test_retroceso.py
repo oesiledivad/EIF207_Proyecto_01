@@ -56,6 +56,71 @@ def estado(app):
     ]
 
 
+class AgendaReprogramacionPruebas(unittest.TestCase):
+    def test_retroceso_restaura_cientos_de_eventos_con_empates(self):
+        from types import SimpleNamespace
+
+        gestor = GestorPartida()
+        agenda = HeapAgendaEventos(gestor.historial)
+        actores = [SimpleNamespace(_proximo_evento=None, tiempo_siguiente=0) for _ in range(200)]
+        for actor in actores:
+            agenda.reprogramar(actor, 0, "accion_actor")
+        antes = eventos(agenda)
+        referencias = [actor._proximo_evento for actor in actores]
+        secuencia = agenda._secuencia_actual
+
+        gestor.abrir_intervalo()
+        for _ in range(600):
+            evento = agenda.extraer_siguiente()
+            agenda.reprogramar(evento.actor, evento.tiempo_siguiente + 100, "accion_actor")
+        gestor.cerrar_intervalo()
+        self.assertTrue(gestor.deshacer())
+
+        self.assertEqual(eventos(agenda), antes)
+        self.assertEqual(agenda._secuencia_actual, secuencia)
+        for actor, referencia in zip(actores, referencias):
+            self.assertIs(actor._proximo_evento, referencia)
+            self.assertEqual(actor.tiempo_siguiente, 0)
+        for i, evento in enumerate(agenda._heap):
+            self.assertEqual(evento.indice, i)
+
+    def test_reprogramar_y_deshacer_con_evento_pendiente_extraido_o_cancelado(self):
+        from types import SimpleNamespace
+
+        for situacion in ["sin_evento", "pendiente", "extraido", "cancelado"]:
+            with self.subTest(situacion=situacion):
+                gestor = GestorPartida()
+                agenda = HeapAgendaEventos(gestor.historial)
+                actor = SimpleNamespace(_proximo_evento=None, tiempo_siguiente=17)
+                anterior = None
+                if situacion != "sin_evento":
+                    anterior = agenda.reprogramar(actor, 30, "accion_actor")
+                    if situacion == "extraido":
+                        self.assertIs(agenda.extraer_siguiente(), anterior)
+                    elif situacion == "cancelado":
+                        agenda.cancelar(anterior)
+                antes = eventos(agenda)
+                secuencia = agenda._secuencia_actual
+                tiempo = actor.tiempo_siguiente
+                valido = anterior.valido if anterior is not None else None
+
+                gestor.abrir_intervalo()
+                nuevo = agenda.reprogramar(actor, 100, "accion_actor")
+                self.assertIs(agenda.extraer_siguiente(), nuevo)
+                agenda.reprogramar(actor, 200, "accion_actor")
+                gestor.cerrar_intervalo()
+                self.assertTrue(gestor.deshacer())
+
+                self.assertIs(actor._proximo_evento, anterior)
+                self.assertEqual(actor.tiempo_siguiente, tiempo)
+                self.assertEqual(agenda._secuencia_actual, secuencia)
+                self.assertEqual(eventos(agenda), antes)
+                if anterior is not None:
+                    self.assertEqual(anterior.valido, valido)
+                for i, evento in enumerate(agenda._heap):
+                    self.assertEqual(evento.indice, i)
+
+
 class RetrocesoPruebas(unittest.TestCase):
     def setUp(self):
         self.app = Aplicacion(FuenteRetroceso())
