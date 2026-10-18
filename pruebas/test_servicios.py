@@ -6,7 +6,9 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
+from cripta.adaptadores.Crypt_Data_Source import PresupuestoAgotado
 from cripta.estructuras.Cache_Fichas import Cache_Fichas
+from cripta.estructuras.Indice_Salas import IndiceSalas
 from cripta.servicio.CriptaService import CriptaService
 
 
@@ -23,6 +25,46 @@ def fuente_catalogo():
 
 
 class PruebasServicios(unittest.TestCase):
+    def salas(self):
+        """Construye dos salas conectadas sin contenido."""
+        salas = IndiceSalas()
+        salas.insertar(1, SimpleNamespace(id=1, contenido_cargado=False,
+                                         salidas=[SimpleNamespace(sala_destino=2)]))
+        salas.insertar(2, SimpleNamespace(id=2, contenido_cargado=False,
+                                         salidas=[SimpleNamespace(sala_destino=1)]))
+        return salas
+
+    def test_precarga_respeta_orden_y_no_repite_salas_cargadas(self):
+        fuente = fuente_catalogo()
+        fuente.room_content = Mock(return_value={"contenido": [{"sala": 2}, {"sala": 1}]})
+        servicio = CriptaService(fuente)
+        salas = self.salas()
+        incorporadas = []
+
+        def incorporar(sala, contenido):
+            incorporadas.append(sala.id)
+            sala.contenido_cargado = True
+
+        servicio.cargar_lote("cripta", salas, 2, 1, incorporar)
+        self.assertEqual(incorporadas, [1, 2])
+        fuente.room_content.assert_called_once_with("cripta", [1, 2])
+        servicio.cargar_lote("cripta", salas, 2, 1, incorporar)
+        self.assertEqual(fuente.room_content.call_count, 1)
+        self.assertEqual(incorporadas, [1, 2])
+
+    def test_precarga_distingue_fallo_necesario_y_opcional(self):
+        fuente = fuente_catalogo()
+        fuente.room_content = Mock(side_effect=PresupuestoAgotado("Sin presupuesto"))
+        servicio = CriptaService(fuente)
+        salas = self.salas()
+        incorporar = Mock()
+        self.assertEqual(servicio.asegurar_sala_cargada("cripta", salas, 2, 1, incorporar),
+                         "Sin presupuesto")
+        self.assertEqual(servicio.precargar_alrededor("cripta", salas, 2, 1, incorporar),
+                         "Precarga omitida: Sin presupuesto")
+        self.assertFalse(salas.obtener(1).contenido_cargado)
+        incorporar.assert_not_called()
+
     def test_catalogo_lotes_referencias_y_cache_nueva_al_reiniciar(self):
         fuente = fuente_catalogo()
         servicio = CriptaService(fuente, Cache_Fichas(capacidad=15))
