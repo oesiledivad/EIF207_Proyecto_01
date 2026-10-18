@@ -3,7 +3,13 @@
 arcade se importa solo al abrir la ventana: así los módulos puros (medidas,
 fuente_pixel, distribucion) se pueden probar sin abrir ninguna ventana.
 """
+import os
 import sys
+
+# Configurar antes de importar Arcade: XAudio2 puede fallar en un callback nativo.
+if sys.platform == "win32" and "PYGLET_AUDIO" not in os.environ:
+    import pyglet
+    pyglet.options["audio"] = ["directsound", "openal", "silent"]
 
 
 def iniciar(controlador, cripta_id, nombre, semilla, offline=True):
