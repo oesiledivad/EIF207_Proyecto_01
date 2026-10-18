@@ -23,7 +23,6 @@ from cripta.dto.Partida_dto import (
     DetallesCripta,
     EstadoPartida,
     ResultadoInicio,
-    ContenidoSala,
     SalaModelo,
 )
 from cripta.dto.ResultadoAccion import ResultadoAccion
@@ -32,7 +31,6 @@ from cripta.estructuras.Cache_Fichas import Cache_Fichas
 from cripta.servicio.CriptaService import CriptaService
 from cripta.modelo.Simulacion import Simulacion
 from cripta.modelo.Jugador import Jugador
-from cripta.modelo.Sala import SalaJuego
 
 from cripta.estructuras.Indice_Salas import IndiceSalas
 
@@ -94,22 +92,11 @@ class Aplicacion:
     def _salas(self, valor: IndiceSalas) -> None:
         self._exploracion.salas = valor
 
-    @property
-    def _max_id_sala(self) -> int:
-        return self._exploracion.max_id_sala
-
-    @_max_id_sala.setter
-    def _max_id_sala(self, valor: int) -> None:
-        self._exploracion.max_id_sala = valor
-
     def _crear_salas_desde_esqueleto(self, esqueleto: list[SalaModelo]) -> None:
         self._exploracion.ensamblar_salas(esqueleto)
 
     def _cargar_lote(self, origen_id: int) -> None:
         self._exploracion.cargar_lote(origen_id)
-
-    def _incorporar_contenido(self, sala: SalaJuego | None, contenido: ContenidoSala) -> None:
-        self._exploracion.incorporar_contenido(sala, contenido)
 
     def _avisar(self, mensaje: str | None) -> None:
         if mensaje is not None:
@@ -133,9 +120,6 @@ class Aplicacion:
     def activar_precarga_en_segundo_plano(self) -> None:
         """Solo la vista interactiva: replay, bench y pruebas quedan sincrónicos."""
         self._cripta_service.activar_precarga_en_segundo_plano()
-
-    def _consumir_tiempo_jugador(self, nombre_costo: str) -> None:
-        self._ciclo.consumir_tiempo(nombre_costo)
 
     def _despues_del_ciclo(self) -> None:
         self._ciclo.finalizar()
@@ -253,9 +237,6 @@ class Aplicacion:
         if not self._partida_en_curso():
             return ResultadoAccion.fallo("La partida no está activa.")
         return self._inventario.recorrer(recorrer, nombre, self._partida.registrar_accion)
-
-    def vista_inventario(self, criterio: str) -> list:
-        return self._inventario.vista_ordenada(criterio)
 
     def inventario(self):
         """Devuelve el inventario activo o None."""

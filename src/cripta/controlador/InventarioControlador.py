@@ -1,7 +1,7 @@
 """Controlador de inventario.
 
 Coordina las operaciones sobre el inventario del jugador: recoger,
-soltar, equipar, usar, recorrer y ordenar vistas. Registra en el
+soltar, equipar, usar y recorrer. Registra en el
 historial los cambios invertibles.
 """
 
@@ -14,7 +14,7 @@ from cripta.servicio.CriptaService import CriptaService
 from cripta.dto.Partida_dto import ObjetoSuelo
 from cripta.dto.ResultadoAccion import ResultadoAccion
 from cripta.estructuras.Bitacora import Bitacora, Mensaje
-from cripta.estructuras.Inventario import Inventario, ItemInventario
+from cripta.estructuras.Inventario import ItemInventario
 
 
 class InventarioControlador:
@@ -188,20 +188,6 @@ class InventarioControlador:
         if item is None:
             return ResultadoAccion.fallo("Inventario vacío.")
         return ResultadoAccion.exito(datos=item)
-
-    #  Vistas
-
-    def vista_ordenada(self, criterio: str) -> list[ItemInventario]:
-        inv = self._gestor.inventario
-        if inv is None:
-            return []
-        if criterio == "peso":
-            return inv.vista_por_peso()
-        if criterio == "valor":
-            return inv.vista_por_valor()
-        if criterio == "nombre":
-            return inv.vista_por_nombre()
-        return inv.items()
 
     #  Internos
 

@@ -342,12 +342,6 @@ class CriptaService:
                 fichas.append(bruto)
         return [entradas, fichas]
 
-    def cargar_contenido_sala(self, cripta_id: str, sala_id: int) -> ContenidoSala:
-        """Compatibilidad: una sola sala (gasta un lote entero, preferir la versión por lotes)."""
-        for _, contenido in self.cargar_contenido_salas(cripta_id, [sala_id]):
-            return contenido
-        return ContenidoSala()
-
     #  Presupuesto y estadísticas (§5.1)
 
     def fijar_presupuesto(self, presupuesto: int) -> None:
