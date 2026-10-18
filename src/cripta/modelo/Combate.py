@@ -10,6 +10,10 @@ def calcular_danio(atacante, defensor, azar):
         ``azar`` se recibe como una instancia de random.Random para
         mantener el azar controlado desde la simulación.
         """
+    if getattr(defensor, "invulnerable", False):
+        return 0
+    if getattr(atacante, "insta_kill", False):
+        return max(0, defensor.vida)
     dano = max(
         1,
         atacante.ataque + azar.randint(0, 4) - defensor.defensa
@@ -20,6 +24,9 @@ def aplicar_danio(defensor, dano, agenda=None):
     """
     Aplica el daño a un defensor.
     """
+    # Punto común para ataques, trampas y veneno; God Mode protege todas las fuentes.
+    if getattr(defensor, "invulnerable", False):
+        return
     vida = max(0, defensor.vida - dano)
     if agenda is None:
         defensor.vida = vida

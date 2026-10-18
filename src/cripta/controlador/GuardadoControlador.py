@@ -64,10 +64,12 @@ class GuardadoControlador:
         return guardados
 
     def guardar(self, ruta=None):
-        """Guarda la sesión activa sin consumir tiempo."""
+        """Guarda la sesión activa sin consumir tiempo; rechaza sesiones con cheats."""
         app = self._app
         if not app._partida_en_curso():
             return ResultadoAccion.fallo("No hay una partida activa para guardar.")
+        if app.trucos_activos:
+            return ResultadoAccion.fallo("Las partidas con cheats no se guardan.")
         destino = Path(ruta) if ruta is not None else self.actual
         if destino is None:
             destino = self.ruta if self.ruta_fija else self.ruta_para_guardar()

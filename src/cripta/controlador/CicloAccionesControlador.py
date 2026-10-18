@@ -108,3 +108,7 @@ class CicloAccionesControlador:
             # Misma lista (alias): recoger/soltar modifican directamente el suelo de la sala.
             estado.objetos_suelo = sala_actual.objetos
         estado.efectos = app._efectos.describir(app._jugador)
+        if app.truco_activo("god_mode"):
+            estado.efectos.append("GOD MODE")
+        if app.truco_activo("insta_kill"):
+            estado.efectos.append("INSTA KILL")

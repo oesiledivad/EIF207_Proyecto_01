@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 from cripta.controlador.ExploracionControlador import ExploracionControlador
 from cripta.controlador.GuardadoControlador import GuardadoControlador
+from cripta.controlador.CheatsControlador import CheatsControlador
 from cripta.controlador.InicioPartidaControlador import InicioPartidaControlador
 from cripta.controlador.CicloAccionesControlador import CicloAccionesControlador
 
@@ -63,6 +64,7 @@ class Aplicacion:
         self._guardado = GuardadoControlador(self, capacidad_cache, almacen, carpeta_logs, ruta_puntajes,
                                              ruta_guardado, offline_dir if offline_dir is not None
                                              else getattr(data_source, "carpeta", "datos_prueba"))
+        self._cheats = CheatsControlador(self)
         self._inicio = InicioPartidaControlador(self)
         self._ciclo = CicloAccionesControlador(self)
 
@@ -192,8 +194,18 @@ class Aplicacion:
         """Delega la carga con selección de fuente según el guardado."""
         return self._guardado.cargar_compatible(ruta)
 
+    @property
+    def trucos_activos(self):
+        """Indica si la sesión está marcada como prueba."""
+        return self._partida.trucos_activos
 
+    def truco_activo(self, nombre):
+        """Consulta un interruptor de cheats."""
+        return self._cheats.activo(nombre)
 
+    def aplicar_truco(self, nombre):
+        """Delega una ayuda sin consumir tiempo virtual."""
+        return self._cheats.aplicar(nombre)
 
     #  Inventario (delegado a InventarioController; aquí se les da costo de tiempo)
 

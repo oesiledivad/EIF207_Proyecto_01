@@ -25,6 +25,7 @@ class PartidaControlador:
         self._puntaje_guardado = False
         self.error_puntaje = ""
         self._salidas_abiertas = []
+        self.trucos_activos = False
 
     @property
     def identificador(self):
@@ -48,6 +49,7 @@ class PartidaControlador:
         return self._registro
 
     def reiniciar(self):
+        self.trucos_activos = False
         self._partida_id = uuid4().hex
         self._puntaje_guardado = False
         self.error_puntaje = ""
@@ -178,7 +180,7 @@ class PartidaControlador:
         return ResultadoAccion.exito()
 
     def guardar_puntaje(self):
-        if self._puntajes is None or self._puntaje_guardado or self._partida_id is None:
+        if self.trucos_activos or self._puntajes is None or self._puntaje_guardado or self._partida_id is None:
             return
         estado = self._gestor.estado
         resultado = "victoria" if estado.victoria else "derrota" if estado.derrota else "abandono"
