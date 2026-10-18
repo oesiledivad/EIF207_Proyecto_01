@@ -6,36 +6,22 @@ from cripta.dto.Partida_dto import (
     CriptaResumen,
     DetallesCripta,
     SalaModelo,
-    SalidaVecina,
-    EnemigoPartida,
-    ObjetoSuelo,
-    TrampaPartida,
     ContenidoSala
 )
 from cripta.estructuras.Cache_Fichas import Cache_Fichas
 from cripta.estructuras.Catalogo_Lista import Catalogo_Lista
-from cripta.dto.FactoryDto_Ficha import parsear_ficha
+from cripta.servicio.CatalogoService import CatalogoService
+from cripta.servicio.PrecargaService import PrecargaService
+from cripta.dto.FactoryDto_Partida import (
+    parsear_detalles, parsear_sala, parsear_contenido,
+)
 
 MAX_POR_LOTE = 10  # §3.4: contenido y catálogo aceptan hasta 10 por solicitud
 
 
-def _sin_repetidos(ids: list) -> list:
-    """Quita repetidos y vacíos conservando el orden de aparición (determinista)."""
-    unicos: list = []
-    for id_ in ids:
-        if id_ and id_ not in unicos:
-            unicos.append(id_)
-    return unicos
-
-
-def _buscar_ficha(catalogo: Catalogo_Lista, id_tipo):
-    try:
-        return catalogo.obtener(id_tipo)
-    except KeyError:
-        return None
-
-
 class CriptaService:
+    """Coordina solicitudes, caché y precarga sin avanzar el reloj del juego."""
+
     def __init__(self, data_source: CryptDataSource, cache_fichas: Cache_Fichas | None = None,
                  almacen: AlmacenDisco | None = None) -> None:
         self._data_source = data_source
@@ -47,6 +33,8 @@ class CriptaService:
         self._cripta_en_disco = False
         self._lecturas_disco = 0
         self._version_catalogo = None
+        self._catalogo = CatalogoService(self)
+        self._precarga = PrecargaService(self)
 
     def reiniciar_partida(self) -> None:
         self._data_source.reiniciar_partida()
@@ -101,198 +89,60 @@ class CriptaService:
     def lecturas_disco(self) -> int:
         return self._lecturas_disco
 
-    #  Catálogo (§4.3, §4.4)
+    #  Catálogo (delegado)
 
     def asegurar_fichas(self, ids: list[str], fijar: bool = False) -> Catalogo_Lista:
-        """Resuelve los ids a fichas pidiendo a la red solo lo que falta, en lotes de 10.
-
-        Devuelve las fichas resueltas en una lista propia, así quien llama
-        puede leerlas aunque la caché desaloje alguna al insertar otras.
-
-        Si `fijar` es True, suma una referencia por cada aparición del id en
-        `ids` (dos ratas = 2 referencias) en el mismo momento en que la ficha
-        está en memoria, para que un lote posterior no la desaloje.
-        """
-        resueltas = Catalogo_Lista()
-        faltantes: list[str] = []
-        for id_ in _sin_repetidos(ids):
-            ficha = self._cache_fichas.obtener(id_)  # cuenta acierto/fallo
-            if ficha is None:
-                faltantes.append(id_)
-            else:
-                resueltas.agregar(ficha)
-                if fijar:
-                    self._fijar_apariciones(id_, ids)
-
-        # 1) Disco: una ficha liberada de memoria cuesta una lectura, no una solicitud.
-        para_red: list[str] = []
-        for id_ in faltantes:
-            bruto = self._almacen.leer_ficha(id_) if self._catalogo_en_disco else None
-            if bruto is None:
-                para_red.append(id_)
-                continue
-            self._lecturas_disco += 1
-            self._incorporar_ficha(bruto, resueltas, ids, fijar)
-
-        # 2) Red: solo lo que nunca se persistió (o cuya versión cambió), en lotes de 10.
-        for i in range(0, len(para_red), MAX_POR_LOTE):
-            lote = para_red[i:i + MAX_POR_LOTE]
-            resp = self._data_source.catalog(lote)
-            for bruto in resp.get("entidades", []):
-                if self._catalogo_en_disco:
-                    self._almacen.guardar_ficha(bruto)
-                self._incorporar_ficha(bruto, resueltas, ids, fijar)
-        return resueltas
-
-    def _incorporar_ficha(self, bruto: dict, resueltas: Catalogo_Lista, ids: list[str], fijar: bool) -> None:
-        ficha = parsear_ficha(bruto)
-        self._cache_fichas.insertar(ficha.id, ficha)
-        resueltas.agregar(ficha)
-        if fijar:
-            self._fijar_apariciones(ficha.id, ids)
-
-    def _fijar_apariciones(self, id_: str, ids: list[str]) -> None:
-        for otro in ids:
-            if otro == id_:
-                self._cache_fichas.marcar_en_uso(id_)
+        return self._catalogo.asegurar_fichas(ids, fijar)
 
     def fijar_fichas(self, ids: list[str]) -> None:
-        """Marca fichas como en uso (una referencia por aparición). Trae las que falten."""
-        self.asegurar_fichas(ids, fijar=True)
+        self._catalogo.fijar_fichas(ids)
 
     def liberar_fichas(self, ids: list[str]) -> None:
-        """Quita una referencia por aparición; con 0 vuelven a ser desalojables."""
-        for id_ in ids:
-            if id_:
-                self._cache_fichas.liberar(id_)
+        self._catalogo.liberar_fichas(ids)
 
     def obtener_ficha_garantizada(self, id_: str):
-        """Ficha desde caché; si fue desalojada, la vuelve a resolver."""
-        ficha = self._cache_fichas.obtener(id_)
-        if ficha is not None:
-            return ficha
-        return _buscar_ficha(self.asegurar_fichas([id_]), id_)
-
-    #  Protección de fichas en uso (§4.4)
-    #  En uso = enemigo activo, objeto en inventario, objeto en el suelo o
-    #  trampa de la sala actual. Cada aparición suma una referencia.
+        return self._catalogo.obtener_ficha_garantizada(id_)
 
     def fijar_seguro(self, tipos: list[str]) -> str | None:
-        """Protege fichas; si hubiera que traerlas y no se puede, devuelve el error."""
-        try:
-            self.fijar_fichas(tipos)
-        except (PresupuestoAgotado, RuntimeError) as e:
-            return f"No se pudo proteger fichas: {e}"
-        return None
+        return self._catalogo.fijar_seguro(tipos)
 
     @staticmethod
     def tipos_visibles(sala) -> list[str]:
-        """Fichas que usa la sala actual: objetos del suelo y trampas."""
-        tipos = [o.tipo_id or o.id for o in sala.objetos]
-        for t in sala.trampas:
-            tipos.append(t.tipo)
-        return tipos
+        return CatalogoService.tipos_visibles(sala)
 
     def fijar_contenido_visible(self, sala) -> str | None:
-        return self.fijar_seguro(self.tipos_visibles(sala))
+        return self._catalogo.fijar_contenido_visible(sala)
 
     def liberar_contenido_visible(self, sala) -> None:
-        self.liberar_fichas(self.tipos_visibles(sala))
+        self._catalogo.liberar_contenido_visible(sala)
 
     @classmethod
     def tipos_activos(cls, inventario, salas, sala_actual) -> list[str]:
-        """Todas las referencias en uso; sirve para re-sincronizar tras un retroceso."""
-        tipos = [item.tipo_id for item in inventario.items()]
-        for sala in salas._datos:
-            if sala is not None:
-                tipos.extend(e.tipo for e in sala.enemigos
-                             if e.vida > 0 and e._proximo_evento is not None)
-        tipos.extend(cls.tipos_visibles(sala_actual))
-        return tipos
+        return CatalogoService.tipos_activos(inventario, salas, sala_actual)
 
     def reproteger(self, anteriores: list[str], actuales: list[str]) -> str | None:
-        """Cambia las referencias de `anteriores` por las de `actuales` (retroceso)."""
-        self.liberar_fichas(anteriores)
-        return self.fijar_seguro(actuales)
+        return self._catalogo.reproteger(anteriores, actuales)
 
-    #  Precarga por lotes (§4.2)
+    #  Precarga (delegada)
 
     @staticmethod
     def planificar_precarga(salas, max_id: int, origen_id: int) -> list[int]:
-        """BFS desde `origen_id` por el esqueleto: las 10 salas sin contenido más cercanas.
-
-        El origen va primero si falta. Cuesta O(salas visitadas) y se corta al
-        juntar 10. Usa una lista de bool indexada por id (no set/dict).
-        """
-        visitado = [False] * (max_id + 1)
-        cola = [origen_id]
-        visitado[origen_id] = True
-        i = 0
-        elegidas: list[int] = []
-        while i < len(cola) and len(elegidas) < MAX_POR_LOTE:
-            sala = salas.obtener(cola[i])
-            i += 1
-            if sala is None:
-                continue
-            if not sala.contenido_cargado:
-                elegidas.append(sala.id)
-            for salida in sala.salidas:
-                destino = salida.sala_destino
-                if 0 <= destino <= max_id and not visitado[destino]:
-                    visitado[destino] = True
-                    cola.append(destino)
-        return elegidas
+        return PrecargaService.planificar_precarga(salas, max_id, origen_id)
 
     @staticmethod
     def necesita_precarga(salas, sala_id: int) -> bool:
-        """True si la sala o alguna vecina directa todavía no tiene contenido. O(4)."""
-        sala = salas.obtener(sala_id)
-        if sala is None:
-            return False
-        if not sala.contenido_cargado:
-            return True
-        for salida in sala.salidas:
-            vecina = salas.obtener(salida.sala_destino)
-            if vecina is not None and not vecina.contenido_cargado:
-                return True
-        return False
+        return PrecargaService.necesita_precarga(salas, sala_id)
 
     def cargar_lote(self, cripta_id: str, salas, max_id: int, origen_id: int, incorporar) -> None:
-        """Pide el lote alrededor de `origen_id` y lo entrega a `incorporar(sala, contenido)`
-        en el orden pedido (determinista). Esperar la red nunca mueve el reloj virtual.
-        """
-        ids = self.planificar_precarga(salas, max_id, origen_id)
-        if not ids:
-            return
-        for sala_id, contenido in self.cargar_contenido_salas(cripta_id, ids):
-            incorporar(salas.obtener(sala_id), contenido)
+        self._precarga.cargar_lote(cripta_id, salas, max_id, origen_id, incorporar)
 
     def asegurar_sala_cargada(self, cripta_id: str, salas, max_id: int, sala_id: int,
                               incorporar) -> str | None:
-        """Garantiza el contenido antes de confirmar un movimiento. Devuelve error o None."""
-        sala = salas.obtener(sala_id)
-        if sala is None:
-            return f"La sala {sala_id} no existe en el esqueleto."
-        if sala.contenido_cargado:
-            return None
-        try:
-            self.cargar_lote(cripta_id, salas, max_id, sala_id, incorporar)  # sala_id va primero
-        except (PresupuestoAgotado, RuntimeError) as e:
-            return str(e)
-        return None
+        return self._precarga.asegurar_sala_cargada(cripta_id, salas, max_id, sala_id, incorporar)
 
     def precargar_alrededor(self, cripta_id: str, salas, max_id: int, sala_id: int,
                             incorporar) -> str | None:
-        """Precarga opcional: si falta alguna vecina, pide un lote. Devuelve aviso o None."""
-        if not self.necesita_precarga(salas, sala_id):
-            return None
-        try:
-            self.cargar_lote(cripta_id, salas, max_id, sala_id, incorporar)
-        except PresupuestoAgotado as e:
-            return f"Precarga omitida: {e}"
-        except RuntimeError as e:
-            return f"Precarga fallida: {e}"
-        return None
+        return self._precarga.precargar_alrededor(cripta_id, salas, max_id, sala_id, incorporar)
 
     def listar_criptas(self) -> list[CriptaResumen]:
         try:
@@ -318,27 +168,7 @@ class CriptaService:
             return self._detalles  # ya pedidos (p.ej. al previsualizar): no gastar otra solicitud
         try:
             detalles = self._data_source.crypta_details(cripta_id)
-            if not isinstance(detalles, dict):
-                detalles = {}
-
-            jugador = detalles.get("jugador", {})
-            if not isinstance(jugador, dict):
-                jugador = {}
-
-            self._detalles = DetallesCripta(
-                id=str(detalles.get("id", cripta_id)),
-                version=str(detalles.get("version", "offline")),
-                salas_total=int(detalles.get("salas_total", 0)),
-                sala_inicial=int(detalles.get("sala_inicial", 1)),
-                sala_salida=int(detalles.get("sala_salida", 1)),
-                llave_salida=str(detalles.get("llave_salida", "—")),
-                inventario_max=int(detalles.get("inventario_max", 10)),
-                presupuesto_solicitudes=int(detalles.get("presupuesto_solicitudes", 0)),
-                jugador_vida_max=int(jugador.get("vida_max", 0)),
-                jugador_ataque=int(jugador.get("ataque", 0)),
-                jugador_defensa=int(jugador.get("defensa", 0)),
-                jugador_velocidad=int(jugador.get("velocidad", 0)),
-            )
+            self._detalles = parsear_detalles(detalles, cripta_id)
             return self._detalles
         except NotImplementedError:
             return DetallesCripta(
@@ -362,38 +192,8 @@ class CriptaService:
 
             salas_brutas = resp.get("salas", [])
             for item_sala in salas_brutas:
-                s_id = int(item_sala.get("id", 0))
-                s_nombre = str(item_sala.get("nombre", ""))
-                s_desc = str(item_sala.get("descripcion", ""))
-
-                lista_salidas: list[SalidaVecina] = []
-                salidas_brutas = item_sala.get("salidas", {})
-
-                if isinstance(salidas_brutas, dict):
-                    for direccion, info_salida in salidas_brutas.items():
-                        vecina_id = int(info_salida.get("sala", 0))
-                        cerrada = bool(info_salida.get("cerrada", False))
-                        llave = info_salida.get("llave")
-                        llave_str = str(llave) if llave is not None else ""
-                        cierre = info_salida.get("cierre_automatico")
-
-                        lista_salidas.append(
-                            SalidaVecina(
-                                direccion=str(direccion),
-                                sala_id=vecina_id,
-                                nombre=f"Sala {vecina_id}",
-                                cerrada=cerrada,
-                                llave=llave_str,
-                                transitable=not cerrada,
-                                es_salida_final=(vecina_id == sala_salida_id),
-                                tiene_enemigos=False,
-                                tiene_objetos=False,
-                                cierre_automatico=int(cierre) if cierre is not None else None,
-                            )
-                        )
-
-                nueva_sala = SalaModelo(id=s_id, nombre=s_nombre, descripcion=s_desc, salidas=lista_salidas)
-                if not any(s.id == s_id for s in salas_conocidas):
+                nueva_sala = parsear_sala(item_sala, sala_salida_id)
+                if not any(s.id == nueva_sala.id for s in salas_conocidas):
                     salas_conocidas.append(nueva_sala)
 
             total_paginas = int(resp.get("total_paginas", 1))
@@ -403,14 +203,14 @@ class CriptaService:
 
         return salas_conocidas
 
-    def cargar_contenido_salas(self, cripta_id: str, sala_ids: list[int]) -> list[tuple[int, ContenidoSala]]:
+    def cargar_contenido_salas(self, cripta_id: str, sala_ids: list[int]) -> list[list]:
         """Pide el contenido de varias salas en lotes de hasta 10 (§4.2).
 
         Por cada lote: 1 solicitud de contenido + las de catálogo que falten
         (también en lotes de 10). El resultado sigue el orden de `sala_ids`,
         no el de la respuesta, para que la incorporación sea determinista.
         """
-        resultado: list[tuple[int, ContenidoSala]] = []
+        resultado: list[list] = []
         for i in range(0, len(sala_ids), MAX_POR_LOTE):
             lote = sala_ids[i:i + MAX_POR_LOTE]
 
@@ -451,58 +251,14 @@ class CriptaService:
                         entrada = candidata
                         break
                 if entrada is None:
-                    resultado.append((sala_id, ContenidoSala()))
+                    resultado.append([sala_id, ContenidoSala()])
                 else:
-                    resultado.append((sala_id, self._parsear_contenido(entrada, catalogo)))
+                    resultado.append([sala_id, parsear_contenido(entrada, catalogo)])
         return resultado
 
     def cargar_contenido_sala(self, cripta_id: str, sala_id: int) -> ContenidoSala:
         """Compatibilidad: una sola sala (gasta un lote entero, preferir la versión por lotes)."""
         return self.cargar_contenido_salas(cripta_id, [sala_id])[0][1]
-
-    @staticmethod
-    def _parsear_contenido(entrada: dict, catalogo: Catalogo_Lista) -> ContenidoSala:
-        enemigos: list[EnemigoPartida] = []
-        for e in entrada.get("enemigos", []):
-            tipo = str(e.get("tipo", ""))
-            ficha = _buscar_ficha(catalogo, tipo)
-            vida_max = ficha.vida_max if ficha else 0
-            vida = e.get("vida")  # puede venir null: entonces empieza con vida_max
-            enemigos.append(EnemigoPartida(
-                id=str(e.get("instancia", "")),
-                nombre=ficha.nombre if ficha else tipo,
-                vida=int(vida) if vida is not None else vida_max,
-                ataque=ficha.ataque if ficha else 0,
-                defensa=ficha.defensa if ficha else 0,
-                vida_max=vida_max,
-                velocidad=ficha.velocidad if ficha else 100,
-                comportamiento=ficha.comportamiento if ficha else "errante",
-                regeneracion=getattr(ficha, "regeneracion", None),
-                tipo=tipo,
-                suelta=list(ficha.suelta or []) if ficha else [],
-            ))
-
-        objetos: list[ObjetoSuelo] = []
-        for posicion, o in enumerate(entrada.get("objetos", [])):
-            ficha = _buscar_ficha(catalogo, str(o))
-            objetos.append(ObjetoSuelo(
-                id=f"sala-{entrada['sala']}-objeto-{posicion}",
-                nombre=ficha.nombre if ficha else str(o), tipo_id=str(o),
-            ))
-
-        trampas: list[TrampaPartida] = []
-        for t in entrada.get("trampas", []):
-            tipo = str(t.get("tipo", ""))
-            ficha = _buscar_ficha(catalogo, tipo)
-            trampas.append(TrampaPartida(
-                id=str(t.get("instancia", "")),
-                tipo=tipo,
-                activa=True,
-                dano=ficha.daño if ficha else 0,
-                rearme=ficha.rearme if ficha else None,
-                efecto=getattr(ficha, "efecto", "daño"),
-            ))
-        return ContenidoSala(enemigos=enemigos, objetos=objetos, trampas=trampas)
 
     #  Presupuesto y estadísticas (§5.1)
 

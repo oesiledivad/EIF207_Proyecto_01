@@ -29,6 +29,7 @@ from cripta.estructuras.Salidas import Salidas
 from cripta.modelo.Combate import esta_vivo
 from cripta.modelo.Puertas import abrir_salida, buscar_llave
 from cripta.modelo.Sala import SalaJuego
+from cripta.modelo.enemigos.Rastreador import DURACION_RASTRO
 
 
 class ExploracionControlador:
@@ -109,6 +110,20 @@ class ExploracionControlador:
         sala = self.salas.obtener(self._jugador.sala)
         self._simulacion.agenda.cambiar(sala, "ultimo_tiempo_visita", tiempo_actual)
 
+    def describir_rastro(self, tiempo_actual: int) -> list[str]:
+        """Describe únicamente las huellas propias, sin consultar enemigos ocultos."""
+        lineas = [f"RASTRO: cada acción renueva la marca de tu sala durante {DURACION_RASTRO} u.t.",
+                  "El tiempo es virtual: leer este panel no consume rastro."]
+        for sala in self.salas._datos:
+            if sala is None or sala.ultimo_tiempo_visita is None:
+                continue
+            antiguedad = tiempo_actual - sala.ultimo_tiempo_visita
+            restante = max(0, DURACION_RASTRO - antiguedad)
+            estado = f"rastreable {restante} u.t. más" if restante else "rastro vencido"
+            lineas.append(f"Sala {sala.id}: marca t={sala.ultimo_tiempo_visita} · "
+                          f"antigüedad {antiguedad} u.t. · {estado}.")
+        return lineas
+
     #  Vecindad
 
     def actualizar_vecindad(self) -> None:
@@ -181,6 +196,11 @@ class ExploracionControlador:
         app._avisar(self._servicio.fijar_contenido_visible(sala_destino))
         self._estado.objetos_suelo = sala_destino.objetos
         self._bitacora.append(Mensaje("jugador", f"Te mueves al {direccion}: {sala_destino.nombre}."))
+        marca = sala_origen.ultimo_tiempo_visita
+        if marca is not None:
+            restante = max(0, DURACION_RASTRO - (tiempo_actual - marca))
+            self._bitacora.append(Mensaje("rastro", f"Dejaste una marca en sala {sala_origen.id} "
+                                          f"en t={marca}: rastreable {restante} u.t. más."))
 
         # §2.10: cada trampa armada se activa al entrar, antes del siguiente evento.
         app._efectos.disparar_trampas(sala_destino, self._jugador, self._simulacion)

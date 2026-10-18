@@ -98,6 +98,7 @@ class EstadoPartida:
     trampas: list[TrampaPartida] = field(default_factory=list)
     inventario: list[ObjetoInventario] = field(default_factory=list)
     efectos: list[str] = field(default_factory=list)
+    rastro: list[str] = field(default_factory=list)
 
     salas_conocidas: list[SalaModelo] = field(default_factory=list)
     contenido_cargado: list[int] = field(default_factory=list)

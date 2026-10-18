@@ -127,8 +127,10 @@ class MenuPrincipal(arcade.View):
         l.boton(x1, 80, ANCHO - x1 - 40, 30, "INICIAR PARTIDA", "iniciar", tam=2, activo=bool(self.detalles),
                 ayuda="Enter")
         l.boton(40, 26, 140, 30, "SALIR", "salir", tam=2)
-        l.texto("Clic en una cripta para elegirla · Tab cambia de campo · Enter inicia · F11 pantalla completa",
-                ANCHO / 2 + 90, 36, 1, TEXTO_SUAVE, ancla="centro")
+        l.boton(200, 26, 220, 30, "CONTINUAR PARTIDA", "continuar",
+                ayuda="Elige el jugador y la cripta que quieres continuar")
+        l.texto("Tab: campos · Enter: iniciar · F11: pantalla completa",
+                440, 36, 1, TEXTO_SUAVE)
         l.globo_ayuda()
         l.bandas(v)
 
@@ -155,6 +157,8 @@ class MenuPrincipal(arcade.View):
                     self.foco = [self.nombre, self.semilla][int(zona.argumento)]
                 elif zona.accion == "iniciar":
                     self.comenzar()
+                elif zona.accion == "continuar":
+                    self.window.elegir_guardado()
                 elif zona.accion == "salir":
                     self.window.on_close()
                 return True

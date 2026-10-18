@@ -17,6 +17,7 @@ class PartidaControlador:
         self._gestor = gestor
         self._bitacora = bitacora
         self._registro = RegistroPartida(carpeta_logs) if carpeta_logs is not None else None
+        self._registro_suspendido = None
         if ruta_puntajes is None and self._registro is not None:
             ruta_puntajes = self._registro.carpeta / "puntajes.json"
         self._puntajes = TablaPuntajes(ruta_puntajes) if ruta_puntajes is not None else None
@@ -24,12 +25,31 @@ class PartidaControlador:
         self._puntaje_guardado = False
         self.error_puntaje = ""
         self._salidas_abiertas = []
+        self.trucos_activos = False
+
+    @property
+    def identificador(self):
+        """Devuelve la identidad estable de la partida para sus archivos."""
+        return self._partida_id
+
+    def suspender_registro(self):
+        """Aparta el replay para cargas o cheats hasta una nueva partida normal."""
+        if self._registro is not None:
+            self._registro_suspendido = self._registro
+            self._registro = None
+
+    def reanudar_registro(self):
+        """Recupera el registro configurado para comenzar una partida normal."""
+        if self._registro_suspendido is not None:
+            self._registro = self._registro_suspendido
+            self._registro_suspendido = None
 
     @property
     def registro(self):
         return self._registro
 
     def reiniciar(self):
+        self.trucos_activos = False
         self._partida_id = uuid4().hex
         self._puntaje_guardado = False
         self.error_puntaje = ""
@@ -160,7 +180,7 @@ class PartidaControlador:
         return ResultadoAccion.exito()
 
     def guardar_puntaje(self):
-        if self._puntajes is None or self._puntaje_guardado or self._partida_id is None:
+        if self.trucos_activos or self._puntajes is None or self._puntaje_guardado or self._partida_id is None:
             return
         estado = self._gestor.estado
         resultado = "victoria" if estado.victoria else "derrota" if estado.derrota else "abandono"
