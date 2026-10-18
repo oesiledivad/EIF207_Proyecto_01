@@ -106,17 +106,24 @@ class HeapAgendaEventos:
             i = padre
 
     def _descender(self, i):
+        heap = self._heap
+        cantidad = len(heap)
+        evento = heap[i]
         while True:
-            menor = i
             izq, der = 2 * i + 1, 2 * i + 2
-            if izq < len(self._heap) and self._menor(self._heap[izq], self._heap[menor]):
-                menor = izq
-            if der < len(self._heap) and self._menor(self._heap[der], self._heap[menor]):
+            if izq >= cantidad:
+                break
+            menor = izq
+            if der < cantidad and self._menor(heap[der], heap[izq]):
                 menor = der
-            if menor == i:
-                return
-            self._intercambiar(i, menor)
+            if not self._menor(heap[menor], evento):
+                break
+            # Sube el hijo y deja un hueco: evita intercambiar dos nodos por nivel.
+            heap[i] = heap[menor]
+            heap[i].indice = i
             i = menor
+        heap[i] = evento
+        evento.indice = i
 
     def reprogramar(self, actor, nuevo_tiempo: int, tipo: str) -> Evento:
         if actor._proximo_evento is not None:
