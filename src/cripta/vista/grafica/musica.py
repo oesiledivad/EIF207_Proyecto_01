@@ -58,6 +58,12 @@ class Musica:
                 pass
         self._reproductor = None
 
+    def cambiar_volumen(self, volumen):
+        """Limita el volumen y lo aplica a la pista que ya está sonando."""
+        self.volumen = max(0, min(1, round(volumen, 2)))
+        if self._reproductor is not None:
+            self._reproductor.volume = self.volumen
+
     def alternar(self):
         """Silencia o reanuda la música (tecla F3)."""
         self.activo = not self.activo

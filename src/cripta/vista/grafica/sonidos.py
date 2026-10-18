@@ -54,3 +54,7 @@ class Sonidos:
     def alternar(self):
         self.activo = not self.activo
         return self.activo
+
+    def cambiar_volumen(self, volumen):
+        """Limita el volumen de los próximos efectos al rango de 0 a 1."""
+        self.volumen = max(0, min(1, round(volumen, 2)))

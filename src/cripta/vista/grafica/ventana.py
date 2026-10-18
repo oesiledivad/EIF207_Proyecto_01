@@ -348,10 +348,15 @@ class VentanaCripta(arcade.Window):
                 ["Cargar partida guardada", self.elegir_guardado],
                 ["Cheats (sin puntajes, guardado ni replay)", lambda: self.abrir_panel("cheats")],
                 ["Ayuda y controles", lambda: self.abrir_panel("ayuda")],
-                ["Pantalla completa (F11)", self.alternar_pantalla_completa],
+                ["Configuración: audio y pantalla", self.abrir_configuracion],
                 ["Terminar la partida", lambda: self.abrir_panel("terminar")],
                 ["Volver al menú principal", self.volver_menu],
             ]))
+
+    def abrir_configuracion(self, retorno=None):
+        """Abre los ajustes de vista sin modificar la partida."""
+        from .configuracion import Configuracion
+        self.show_view(Configuracion(self, retorno=retorno))
 
     def guardar_partida(self):
         """Guarda la partida activa; no consume tiempo virtual."""
