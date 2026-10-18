@@ -53,7 +53,6 @@ class VentanaCripta(arcade.Window):
         self.bitacora_limite = 0
         self.inventario_fondo = 0
         self.atacantes = []
-        self.dano_visual = 0
         self.cambio_vida = 0
         self.cambios_enemigos = []
         self.set_minimum_size(640, 360)
@@ -136,7 +135,6 @@ class VentanaCripta(arcade.Window):
         self.ultimo_click = None
         self.enemigo = self.item = self.accion_visual = ""
         self.atacantes = self.cambios_enemigos = []
-        self.dano_visual = self.cambio_vida = self.pausa_visual = 0
         self.duracion_visual = 0.65
         self.enemigos_muertos = []
         self.bitacora_desplazamiento = 0
@@ -252,7 +250,6 @@ class VentanaCripta(arcade.Window):
             if resultado.ok:
                 self.accion_visual = accion
                 despues = self.controlador.estado_partida()
-                self.dano_visual = max(0, vida_antes - despues.jugador_vida)
                 self.cambio_vida = despues.jugador_vida - vida_antes
                 self.cambios_enemigos = [[id_, next((e.vida for e in despues.enemigos if e.id == id_), 0) - vida]
                                          for id_, vida in vidas_enemigos] if sala_antes == despues.sala_actual_id else []

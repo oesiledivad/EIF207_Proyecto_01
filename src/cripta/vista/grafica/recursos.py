@@ -39,7 +39,6 @@ class Recursos:
         self.img_decoracion = [pa.dibujo(d) for d in [pa.BARRIL, pa.VASIJA, pa.ROCAS, pa.CALAVERA]]
         # Tres intensidades del halo: el parpadeo alterna texturas (sin transparencia variable).
         self.resplandores = [_tex(pa.resplandor(48, fuerza=f)) for f in [0.7, 0.85, 1.0]]
-        self.resplandor = self.resplandores[-1]
         self.resplandor_oro = _tex(pa.resplandor(32, (255, 210, 110)))
         carpeta = RECURSOS / "catacombs"
         self.antorchas = [arcade.load_texture(carpeta / f"torch_{i}.png") for i in range(1, 5)]
@@ -65,7 +64,6 @@ class Recursos:
         self.icono_atacar = _tex(pa.dibujo(pa.ESPADA))
         self.icono_esperar = _tex(pa.dibujo(pa.RELOJ))
         self.icono_pergamino = _tex(pa.dibujo(pa.PERGAMINO))
-        self.icono_sala = _tex(pa.dibujo(pa.LUPA))
         self.icono_salir = _tex(pa.dibujo(pa.PUERTA_SALIR))
         # Trampas: [desarmada, armada]
         self.lanzadardos = [_tex(pa.lanzadardos(False)), _tex(pa.lanzadardos(True))]
@@ -109,7 +107,6 @@ class Recursos:
             [["baston", "bastón"], self.baston],
             [["coraza", "armadura", "manto", "escudo", "cota"], self.armadura],
             [["espada", "hoja"], self.espada],
-            [["pocion", "poción"], self.pocion_roja],
         ]:
             if any(p in texto for p in palabras):
                 return textura
@@ -121,18 +118,9 @@ class Recursos:
                 return textura
         return self.cofre
 
-    #  Personajes (packs de Zerie; si faltan se usa una estatua)
+    #  Personajes: héroe propio y enemigos con respaldo si faltan packs.
 
     def _personajes(self):
-        respaldo = [_tex(pa.dibujo(pa.CALAVERA))]
-        self.soldado_idle = animacion("Soldier", "Idle") or respaldo
-        self.soldado_correr = animacion("Soldier", "Walk") or self.soldado_idle
-        self.soldado_atacar = animacion("Soldier", "Attack01") or self.soldado_idle
-        self.soldado_herido = animacion("Soldier", "Hurt") or self.soldado_idle
-        self.soldado_morir = animacion("Soldier", "Death") or self.soldado_idle
-        self.soldado_izquierda = [[t.flip_left_right() for t in cuadros]
-                                  for cuadros in [self.soldado_idle, self.soldado_correr, self.soldado_atacar,
-                                                  self.soldado_herido, self.soldado_morir]]
         self._heroes = []
         self.heroe()                    # el jugador sin equipo queda listo desde el inicio
         # Personajes de los packs (solo los que estén instalados en recursos/local).

@@ -140,20 +140,6 @@ PERGAMINO = [
     "KcCCCCCCCcK.",
     ".KKKKKKKKK..",
 ]
-LUPA = [
-    "..KKKK......",
-    ".KwWWwK.....",
-    "KwW..wwK....",
-    "KW....wK....",
-    "Kw....wK....",
-    "Kww..wwK....",
-    ".KwwwwKK....",
-    "..KKKKKmK...",
-    "......KmmK..",
-    ".......KmmK.",
-    "........KmK.",
-    ".........K..",
-]
 PUERTA_SALIR = [
     "..KKKKKK....",
     "..KMMMMK....",
@@ -546,18 +532,6 @@ def sombra_ovalada(base: Image.Image, cx: int, cy: int, ancho: int, alto: int, a
     capa = Image.new("RGBA", base.size, (0, 0, 0, 0))
     ImageDraw.Draw(capa).ellipse([cx - ancho // 2, cy - alto // 2, cx + ancho // 2, cy + alto // 2], fill=(0, 0, 0, alfa))
     base.alpha_composite(capa)
-
-
-def tenir(imagen: Image.Image, oscuro, claro) -> Image.Image:
-    """Mapea la luminancia de una imagen a un degradado (recolorear assets grises)."""
-    resultado = imagen.convert("RGBA").copy()
-    datos = []
-    for r, g, b, a in resultado.getdata():
-        t = (0.3 * r + 0.59 * g + 0.11 * b) / 255
-        t = min(1, t * 1.35)
-        datos.append(tuple(int(oscuro[i] + (claro[i] - oscuro[i]) * t) for i in range(3)) + (a,))
-    resultado.putdata(datos)
-    return resultado
 
 
 #  Trampas

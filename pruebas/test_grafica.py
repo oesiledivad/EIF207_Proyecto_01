@@ -404,7 +404,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         from cripta.vista.grafica.recursos import Recursos
         with patch('cripta.vista.grafica.packs.LOCAL', Path(carpeta) / 'sin_packs'):
             alternativa = Recursos()                                   # sin packs: no falla
-            assert alternativa.soldado_idle and alternativa.espada
+            assert alternativa.heroe() and alternativa.espada
             # Sin packs, los tipos de los packs caen al espectro según su comportamiento.
             assert alternativa.nombre_enemigo(SimpleNamespace(tipo='sl_acechador_grietas', nombre='Acechador', comportamiento='rastreador')) == 'Espectro rastreador'
             assert alternativa.enemigo(SimpleNamespace(tipo='ent_rata_gigante', nombre='Rata gigante'))
@@ -485,7 +485,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         clic(vista, puerta)
         assert app.estado_partida().sala_actual_id == 2
         assert 'rata' in vista.atacantes
-        assert vista.dano_visual > 0
+        assert vista.cambio_vida < 0
         assert vista.pausa_visual == 0.65
         antes_orientacion = firma(app)
         escena = vista.escena
