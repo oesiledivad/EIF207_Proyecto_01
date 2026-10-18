@@ -47,6 +47,16 @@ def firma(app):
 
 
 class PruebasReplay(unittest.TestCase):
+    def test_seleccion_directa_y_soltar_se_reproducen_sin_busquedas(self):
+        app = self.iniciar()
+        self.assertTrue(app.recoger("sala-1-objeto-9").ok)
+        tiempo = app.estado_partida().reloj_virtual
+        self.assertTrue(app.seleccionar_item("sala-1-objeto-9").ok)
+        self.assertEqual(app.estado_partida().reloj_virtual, tiempo)
+        with patch.object(app.inventario(), "_buscar_nodo", side_effect=AssertionError("Búsqueda al soltar")):
+            self.assertTrue(app.soltar("sala-1-objeto-9").ok)
+        self.assertEqual(firma(reproducir(app._partida.registro.ruta, [FuenteReplay()])), firma(app))
+
     def setUp(self):
         self.temporal = tempfile.TemporaryDirectory(prefix="cripta-replay-test-")
         self.addCleanup(self.temporal.cleanup)

@@ -159,13 +159,19 @@ class InventarioControlador:
 
     #  Recorrido
 
-    def recorrer(self, recorrer, nombre: str, registrar) -> ResultadoAccion:
+    def seleccionar(self, instancia_id: str) -> ResultadoAccion:
+        """Selecciona antes de ejecutar una acción; buscar por ID es navegación."""
+        inv = self._gestor.inventario
+        item = inv.seleccionar(instancia_id) if inv is not None else None
+        return ResultadoAccion.exito(datos=item) if item else ResultadoAccion.fallo("No tienes ese objeto.")
+
+    def recorrer(self, recorrer, nombre: str, registrar, argumento=None) -> ResultadoAccion:
         """Cambia la selección y la restaura si falla el registro de replay."""
         anterior = self._gestor.inventario.item_actual()
         resultado = recorrer()
         if resultado.ok:
             try:
-                registrar(nombre)
+                registrar(nombre, argumento)
             except ErrorRegistro:
                 if anterior is not None:
                     self._gestor.inventario.seleccionar(anterior.instancia_id)

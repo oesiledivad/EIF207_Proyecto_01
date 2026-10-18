@@ -243,10 +243,12 @@ class Inventario:
         self._actual = anterior
         return item
 
-    def seleccionar(self, instancia_id: str) -> None:
+    def seleccionar(self, instancia_id: str) -> ItemInventario | None:
         nodo = self._buscar_nodo(instancia_id)
         if nodo is not None:
             self._actual = nodo
+            return nodo.item
+        return None
 
     def desequipar_clase(self, clase: str) -> None:
         """Desmarca como equipado cualquier item de la clase dada.

@@ -16,7 +16,7 @@ def _tamano_inicial():
     try:
         ancho, alto = arcade.get_display_size()
     except Exception:   # sin pantalla detectable (pruebas, escritorio remoto)
-        ancho, alto = 1280, 720
+        ancho, alto = [1280, 720]
     return tamano_ventana_inicial(ancho, alto)
 
 
@@ -202,7 +202,11 @@ class VentanaCripta(arcade.Window):
             self.abrir_panel(accion)
             return
         if accion == "seleccionar_item":
-            self.item = argumento
+            resultado = self.controlador.seleccionar_item(argumento)
+            if resultado.ok:
+                self.item = argumento
+            else:
+                self.mensaje = resultado.motivo
             return
         if accion == "seleccionar":
             self.enemigo = argumento
@@ -240,7 +244,9 @@ class VentanaCripta(arcade.Window):
             elif accion == "recoger":
                 resultado = self.controlador.recoger(argumento)
             elif accion in ["usar", "equipar", "soltar"]:
-                if not self.controlador.inventario().buscar_por_id(self.item):
+                inv = self.controlador.inventario()
+                actual = inv.item_actual()
+                if not (actual and actual.instancia_id == self.item) and not inv.buscar_por_id(self.item):
                     self.mensaje = "Selecciona un objeto del inventario con un clic o Tab."
                     return
                 resultado = getattr(self.controlador, accion)(self.item)

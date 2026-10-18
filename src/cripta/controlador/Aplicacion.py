@@ -233,10 +233,15 @@ class Aplicacion:
     def anterior_item(self) -> ResultadoAccion:
         return self._recorrer_inventario(self._inventario.anterior, "anterior_item")
 
-    def _recorrer_inventario(self, recorrer, nombre: str) -> ResultadoAccion:
+    def seleccionar_item(self, instancia_id: str) -> ResultadoAccion:
+        """Registra una selección directa sin consumir tiempo virtual."""
+        return self._recorrer_inventario(lambda: self._inventario.seleccionar(instancia_id),
+                                        "seleccionar_item", instancia_id)
+
+    def _recorrer_inventario(self, recorrer, nombre: str, argumento=None) -> ResultadoAccion:
         if not self._partida_en_curso():
             return ResultadoAccion.fallo("La partida no está activa.")
-        return self._inventario.recorrer(recorrer, nombre, self._partida.registrar_accion)
+        return self._inventario.recorrer(recorrer, nombre, self._partida.registrar_accion, argumento)
 
     def inventario(self):
         """Devuelve el inventario activo o None."""

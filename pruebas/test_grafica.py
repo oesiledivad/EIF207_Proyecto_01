@@ -467,6 +467,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         item = next(z for z in vista.zonas if z.accion == 'seleccionar_item')
         antes = firma(app)
         clic(vista, item)
+        antes[11] = item.argumento                            # solo cambia la selección, no el tiempo
         assert firma(app) == antes and vista.item == item.argumento
         vista.on_key_press(arcade.key.E, 0)
         assert app.inventario().buscar_por_id(vista.item).equipado
