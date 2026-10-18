@@ -104,6 +104,7 @@ class Escena:
         self.accion_activa = vista.accion_visual if vista.pausa_visual else ""
         self.distribucion.preparar(p)
         self._preparar_sala(p)
+        self._inventario = inventario
         cuadro = int(vista.animacion * 6)
 
         l.texto(f"CRIPTA — SALA {p.sala_actual_id}", SALA_X + 2, ALTO - 22, 2, (196, 186, 160), negrita=True)
@@ -358,8 +359,10 @@ class Escena:
             else:
                 progreso = (transcurrido - 0.325) / 0.325 if accion == 2 else transcurrido / 0.65
                 accion = 3
-        animacion = (r.soldado_izquierda[accion] if izquierda else
-                     [r.soldado_idle, r.soldado_correr, r.soldado_atacar, r.soldado_herido, r.soldado_morir][accion])
+        arma, armadura, antorcha = self.equipo_jugador(p)
+        animaciones = r.heroe(arma, armadura, antorcha, izquierda)
+        referencia = r.heroe(arma, armadura, antorcha)[0][0]
+        animacion = animaciones[accion]
         indice = cuadro % len(animacion)
         if accion in [2, 3, 4]:
             indice = min(len(animacion) - 1, int(max(0, progreso) * len(animacion)))
@@ -367,11 +370,31 @@ class Escena:
         envenenado = any(str(e).startswith("Envenenado") for e in (p.efectos or []))
         if envenenado:
             self.burbujas_veneno(vista, px, py, detras=True)
-        alto = self.personaje(animacion[indice], r.soldado_idle[0], px, py, izquierda=izquierda)
+        if antorcha:                                   # la antorcha ilumina alrededor
+            mano_x = px + (14 if izquierda else -14)
+            halo = r.resplandores[int(vista.animacion * 3) % 3]
+            self.lienzo.imagen(halo, mano_x - 70, py - 10, 140, 140)
+            self.lienzo.imagen(halo, mano_x - 40, py + 20, 80, 80)
+        alto = self.personaje(animacion[indice], referencia, px, py, izquierda=izquierda)
         if envenenado:
             self.burbujas_veneno(vista, px, py, detras=False)
         if vista.pausa_visual and vista.cambio_vida:
             self.numero(vista.cambio_vida, px, py + alto + 4, vista.pausa_visual, vista.duracion_visual)
+
+    def equipo_jugador(self, p):
+        """[arma, armadura, antorcha] visibles: lo equipado en el inventario y la antorcha encendida."""
+        arma = ""
+        armadura = ""
+        inventario = getattr(self, "_inventario", None)
+        for item in (inventario.items() if inventario is not None else []):
+            if getattr(item, "equipado", False):
+                texto = f"{getattr(item, 'tipo_id', '')} {getattr(item, 'nombre', '')}"
+                if item.clase == "arma":
+                    arma = texto
+                elif item.clase == "armadura":
+                    armadura = texto
+        antorcha = any(str(e).startswith("Antorcha encendida") for e in (p.efectos or []))
+        return [arma, armadura, antorcha]
 
     def burbujas_veneno(self, vista, px, py, detras):
         """Aura y burbujas verdes que suben y revientan alrededor del jugador envenenado."""

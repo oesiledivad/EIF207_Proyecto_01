@@ -296,7 +296,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert vista.current_view is None    # primero se anima la muerte
         with patch.object(vista.escena, 'personaje', wraps=vista.escena.personaje) as dibujar:
             vista.on_draw()
-            cuadros = vista.escena.recursos.soldado_morir
+            cuadros = vista.escena.recursos.heroe(*vista.escena.equipo_jugador(p))[4]
             assert dibujar.call_args.args[0] is cuadros[min(len(cuadros) - 1, int(0.25 * len(cuadros)))]
         vista.on_update(0.4)
         assert vista.current_view is None
@@ -391,6 +391,10 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert firma(app) == antes
         recursos = vista.escena.recursos
         assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_guardian_oseo', nombre='Guardián óseo')) == 'Esqueleto'
+        assert vista.pista_actual() in ['cripta', 'combate']            # música de la partida
+        equipado = recursos.heroe('itm_daga_oxidada Daga oxidada', 'itm_coraza_cuero Coraza de cuero', True)
+        assert len(equipado) == 5 and equipado is recursos.heroe('daga', 'cuero', True)
+        assert equipado is not recursos.heroe()                         # sin equipo es otro sprite
         assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_rata_gigante', nombre='Rata gigante')) == 'Rata'
         assert recursos.nombre_enemigo(SimpleNamespace(tipo='sl_acechador_grietas', nombre='Acechador')) == 'Orc'
         # Respaldo: un tipo desconocido usa el espectro de su comportamiento.
