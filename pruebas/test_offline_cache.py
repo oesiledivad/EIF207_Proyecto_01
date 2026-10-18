@@ -91,6 +91,24 @@ class PruebasOfflineDesdeCache(unittest.TestCase):
         self.assertEqual(ids[0], CRIPTA)
         self.assertEqual(len(ids), len(set(ids)))
 
+    def test_catalogo_no_completa_fichas_con_otra_version(self):
+        almacen = AlmacenDisco(self.cache)
+        almacen.validar_catalogo("otra-version")
+        fuente = AdaptadorOffline(DATOS, almacen=almacen)
+        with self.assertRaisesRegex(RuntimeError, "otra versión"):
+            fuente.catalog(["itm_daga_oxidada"])
+        almacen.validar_catalogo(AdaptadorOffline(DATOS).get_catalog_version()["version"])
+        self.assertEqual(fuente.catalog(["itm_daga_oxidada"])["entidades"][0]["id"],
+                         "itm_daga_oxidada")
+
+    def test_ficha_en_cache_compatible_no_necesita_paquete(self):
+        almacen = AlmacenDisco(self.cache)
+        almacen.validar_catalogo("version-descargada")
+        ficha = AdaptadorOffline(DATOS).catalog(["itm_daga_oxidada"])["entidades"][0]
+        almacen.guardar_ficha(ficha)
+        fuente = AdaptadorOffline(self.vacio, almacen=almacen)
+        self.assertEqual(fuente.catalog([ficha["id"]])["entidades"], [ficha])
+
 
 if __name__ == "__main__":
     unittest.main()

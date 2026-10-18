@@ -104,10 +104,14 @@ class AdaptadorOffline(CryptDataSource):
             raise ValueError(f"Máximo {MAX_POR_LOTE} ids por llamada")
         paquete = None
         elegidas = []
+        version_cache = self.almacen.leer_version_catalogo() if self.almacen is not None else None
         for id_pedido in ids:
-            ficha = self.almacen.leer_ficha(id_pedido) if self.almacen is not None else None
+            ficha = self.almacen.leer_ficha(id_pedido) if version_cache else None
             if ficha is None and self._hay("catalogo.json"):
                 if paquete is None:
+                    if version_cache and self._version_catalogo_paquete().get("version") != version_cache:
+                        raise RuntimeError(f"Ficha no descargada: {id_pedido}; el catálogo del paquete "
+                                           "tiene otra versión.")
                     paquete = self._leer("catalogo.json")["entidades"]
                 for candidata in paquete:
                     if candidata["id"] == id_pedido:
@@ -127,6 +131,10 @@ class AdaptadorOffline(CryptDataSource):
         version = self.almacen.leer_version_catalogo() if self.almacen is not None else None
         if version:
             return {"version": version}
+        return self._version_catalogo_paquete()
+
+    def _version_catalogo_paquete(self) -> dict:
+        """Obtiene la versión del paquete sin sustituirla por la de la caché."""
         try:
             return self._leer("catalogo_version.json")
         except FileNotFoundError:
