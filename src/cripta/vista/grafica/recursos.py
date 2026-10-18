@@ -3,11 +3,14 @@ from pathlib import Path
 
 import arcade
 
+from . import heroe
 from . import monstruos
 from . import pixelart as pa
 from .packs import animacion, armas
 
 RECURSOS = Path(__file__).resolve().parents[1] / "recursos"
+heroe_TIPOS = ["ninguna", "daga", "espada", "hacha", "lanza", "baston", "maza",
+               "cuero", "placas", "manto", "malla"]   # tipos ya clasificados
 
 
 def _tex(imagen):
@@ -130,6 +133,8 @@ class Recursos:
         self.soldado_izquierda = [[t.flip_left_right() for t in cuadros]
                                   for cuadros in [self.soldado_idle, self.soldado_correr, self.soldado_atacar,
                                                   self.soldado_herido, self.soldado_morir]]
+        self._heroes = []
+        self.heroe()                    # el jugador sin equipo queda listo desde el inicio
         # Personajes de los packs (solo los que estén instalados en recursos/local).
         self.personajes = []
         self.ataques = []
@@ -153,6 +158,22 @@ class Recursos:
         self.ataques_izquierda = reflejar(self.ataques)
         self.heridos_izquierda = reflejar(self.heridos)
         self.muertes_izquierda = reflejar(self.muertes)
+
+    def heroe(self, arma="ninguna", armadura="ninguna", antorcha=False, izquierda=False):
+        """Animaciones del jugador con ese equipo: [reposo, caminar, atacar, herido, muerte].
+
+        Se generan la primera vez que aparece cada combinación y se reutilizan
+        (lista de [clave, derecha, izquierda]; sin dict).
+        """
+        clave = [heroe.tipo_arma(arma) if arma not in heroe_TIPOS else arma,
+                 heroe.tipo_armadura(armadura) if armadura not in heroe_TIPOS else armadura, bool(antorcha)]
+        for guardada, derecha, reflejada in self._heroes:
+            if guardada == clave:
+                return reflejada if izquierda else derecha
+        derecha = [[_tex(c) for c in cuadros] for cuadros in heroe.animaciones(*clave)]
+        reflejada = [[t.flip_left_right() for t in cuadros] for cuadros in derecha]
+        self._heroes.append([clave, derecha, reflejada])
+        return reflejada if izquierda else derecha
 
     def _agregar(self, nombre, animaciones):
         """Registra [reposo, ataque, herida, muerte] (imágenes PIL o texturas) con un nombre."""
