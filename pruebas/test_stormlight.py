@@ -74,7 +74,7 @@ class PruebasStormlight(unittest.TestCase):
                     cola.append(salida["sala"])
                 else:
                     self.assertIn(salida["llave"], ids)
-        for llave in ("sl_llave_archivo", "sl_llave_radiante"):
+        for llave in ["sl_llave_archivo", "sl_llave_radiante"]:
             self.assertTrue(any(llave in sala["objetos"] and sala["sala"] in visitadas
                                 for sala in contenido))
         entradas_salida = [v for s in salas for v in s["salidas"].values() if v["sala"] == 20]
@@ -91,7 +91,7 @@ class PruebasStormlight(unittest.TestCase):
         self.assertTrue(resultado.ok, resultado.motivo)
         self.assertEqual(len(fuente.lotes_salas[0]), 10)
         self.assertEqual(len(app.estado_partida().salas_conocidas), 20)
-        for direccion in ("S", "S", "S", "E"):
+        for direccion in ["S", "S", "S", "E"]:
             resultado = app.mover(direccion)
             self.assertTrue(resultado.ok, resultado.motivo)
         self.assertGreater(len(fuente.lotes_salas), 1)

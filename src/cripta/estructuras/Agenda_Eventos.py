@@ -11,7 +11,7 @@ class Evento:
         self.indice = -1
 
     def clave(self):
-        return self.tiempo_siguiente, self.secuencias
+        return [self.tiempo_siguiente, self.secuencias]
 
 
 class HeapAgendaEventos:
@@ -49,7 +49,7 @@ class HeapAgendaEventos:
         self.cambiar(self, "_secuencia_actual", self._secuencia_actual + 1)
         evento = Evento(tiempo_siguiente, self._secuencia_actual, actor, tipo)
         self._agregar(evento)
-        self.registrar("evento_insertado", (self, evento))
+        self.registrar("evento_insertado", [self, evento])
         return evento
 
     def _agregar(self, evento):
@@ -70,7 +70,7 @@ class HeapAgendaEventos:
     def _extraer_raiz(self):
         evento = self._heap[0]
         self._quitar(evento)
-        self.registrar("evento_extraido", (self, evento))
+        self.registrar("evento_extraido", [self, evento])
         return evento
 
     def _quitar(self, evento):

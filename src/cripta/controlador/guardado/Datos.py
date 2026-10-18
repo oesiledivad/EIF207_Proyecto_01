@@ -48,10 +48,10 @@ class SalaG:
     sala_id: int
     ultimo_tiempo_visita: int | None
     contenido_cargado: bool
-    salidas: list[tuple[str, bool]]
+    salidas: list[list[str, bool]]
     enemigos: list[EnemigoG]
-    objetos: list[tuple[str, str, str]]
-    trampas: list[tuple[str, bool, int, int | None, str, str]]
+    objetos: list[list[str, str, str]]
+    trampas: list[list[str, bool, int, int | None, str, str]]
 
 
 @dataclass

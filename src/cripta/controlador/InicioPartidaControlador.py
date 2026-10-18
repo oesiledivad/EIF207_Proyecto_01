@@ -73,6 +73,10 @@ class InicioPartidaControlador:
             return ResultadoInicio(ok=False, motivo=f"No se pudo cargar la cripta: {e}")
 
         sala_inicial = app._salas.obtener(detalles.sala_inicial)
+        if sala_inicial is None or not sala_inicial.contenido_cargado:
+            app._gestor.estado.activa = False
+            return ResultadoInicio(ok=False, motivo="No se pudo cargar la cripta: el contenido de la "
+                                                    "sala inicial no está disponible.")
         sala_inicial.ultimo_tiempo_visita = 0             # §2.9
         app._combate.activar_sala(sala_inicial, app._simulacion)  # §2.4: enemigos de la sala inicial en t=0
         app._avisar(app._cripta_service.fijar_contenido_visible(sala_inicial))  # §4.4

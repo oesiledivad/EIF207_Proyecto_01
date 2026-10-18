@@ -1,6 +1,6 @@
 """Ejecución reversible de acciones y sincronización de la vista."""
 
-from cripta.dto.Partida_dto import EnemigoPartida
+from cripta.dto.Partida_dto import EnemigoPartida, TrampaPartida
 from cripta.dto.ResultadoAccion import ResultadoAccion
 from cripta.estructuras.Bitacora import Mensaje
 from cripta.modelo.Combate import esta_vivo
@@ -102,9 +102,15 @@ class CicloAccionesControlador:
                 EnemigoPartida(
                     id=e.identificador, nombre=e.nombre, vida=e.vida, vida_max=e.vida_max,
                     ataque=e.ataque, defensa=e.defensa, velocidad=e.velocidad,
-                    comportamiento=e.comportamiento,
+                    comportamiento=e.comportamiento, tipo=getattr(e, "tipo", ""),
                 )
                 for e in sala_actual.enemigos if esta_vivo(e)
+            ]
+            # Trampas de la sala actual, para que la vista las dibuje (armadas o no).
+            estado.trampas = [
+                TrampaPartida(id=t.instancia, tipo=t.tipo, activa=t.armada, dano=t.dano,
+                              rearme=t.rearme, efecto=t.efecto)
+                for t in sala_actual.trampas
             ]
             # Misma lista (alias): recoger/soltar modifican directamente el suelo de la sala.
             estado.objetos_suelo = sala_actual.objetos

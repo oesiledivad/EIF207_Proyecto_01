@@ -80,8 +80,8 @@ class PruebasControladores(unittest.TestCase):
                              regeneracion=2, tipo="ent_rata_gigante", suelta=["itm_pocion_menor"])
         enemigo = CombateControlador.crear_enemigo(dto, 2)
         self.assertIsInstance(enemigo, Rastreador)
-        self.assertEqual((enemigo.sala, enemigo.tipo, enemigo.suelta, enemigo.regeneracion_objetivo),
-                         (2, "ent_rata_gigante", ["itm_pocion_menor"], 2))
+        self.assertEqual([enemigo.sala, enemigo.tipo, enemigo.suelta, enemigo.regeneracion_objetivo],
+                         [2, "ent_rata_gigante", ["itm_pocion_menor"], 2])
         self.assertEqual(enemigo.etiqueta, "Rata gigante (e-201)")
         self.assertIsNone(enemigo._proximo_evento)  # dormido hasta que entre el jugador
 
@@ -93,7 +93,7 @@ class PruebasControladores(unittest.TestCase):
     def test_planificar_precarga_bfs_y_tope_de_10(self):
         salas = IndiceSalas()
         for i in range(1, 16):  # pasillo lineal 1-2-...-15
-            vecinos = ([("S", i - 1, False)] if i > 1 else []) + ([("N", i + 1, False)] if i < 15 else [])
+            vecinos = ([["S", i - 1, False]] if i > 1 else []) + ([["N", i + 1, False]] if i < 15 else [])
             salas.insertar(i, _sala(i, vecinos))
         salas.obtener(2).contenido_cargado = True
         plan = CriptaService.planificar_precarga(salas, 15, 1)
@@ -108,23 +108,23 @@ class PruebasControladores(unittest.TestCase):
 class PruebasApendiceB(unittest.TestCase):
     def test_errante_sin_salidas_abiertas_espera(self):
         salas = IndiceSalas()
-        salas.insertar(1, _sala(1, [("N", 2, True)]))
+        salas.insertar(1, _sala(1, [["N", 2, True]]))
         errante = Errante("e", 10, 10, 1, 0, 100, 1, None)
-        self.assertEqual(errante.decidir_accion(99, salas, 0, random.Random(1)), ("esperar", None))
+        self.assertEqual(errante.decidir_accion(99, salas, 0, random.Random(1)), ["esperar", None])
 
     def test_rastreador_empate_elige_menor_id_y_rastro_caduca(self):
         salas = IndiceSalas()
-        salas.insertar(5, _sala(5, [("N", 9, False), ("S", 7, False)]))
-        for id_ in (7, 9):
+        salas.insertar(5, _sala(5, [["N", 9, False], ["S", 7, False]]))
+        for id_ in [7, 9]:
             vecina = _sala(id_, [])
             vecina.ultimo_tiempo_visita = 100
             salas.insertar(id_, vecina)
         rastreador = Rastreador("r", 10, 10, 1, 0, 100, 5, None)
-        self.assertEqual(rastreador.decidir_accion(99, salas, 499, random.Random(1)), ("mover", 7))
-        self.assertEqual(rastreador.decidir_accion(99, salas, 500, random.Random(1)), ("esperar", None))
+        self.assertEqual(rastreador.decidir_accion(99, salas, 499, random.Random(1)), ["mover", 7])
+        self.assertEqual(rastreador.decidir_accion(99, salas, 500, random.Random(1)), ["esperar", None])
 
     def test_antidoto_cancela_pulsos_y_veneno_hace_5(self):
-        for cancelar, vida_esperada in ((True, 30), (False, 20)):
+        for cancelar, vida_esperada in [[True, 30], [False, 20]]:
             sim, jugador, salas = Simulacion(1), _jugador(sala=1), IndiceSalas()
             salas.insertar(1, _sala(1, []))
             sim.agenda.reprogramar(jugador, 1000, "accion_actor")
@@ -187,11 +187,11 @@ class PruebasPuertasYRetroceso(unittest.TestCase):
     def test_errante_respeta_puerta_y_queda_del_otro_lado_al_cerrarse(self):
         """Apéndice B: la puerta se cierra con el actor al otro lado; él permanece allí."""
         sim, jugador, salas = Simulacion(3), _jugador(sala=99), IndiceSalas()
-        salas.insertar(1, _sala(1, [("E", 2, True)]))
-        salas.insertar(2, _sala(2, [("O", 1, True)]))
+        salas.insertar(1, _sala(1, [["E", 2, True]]))
+        salas.insertar(2, _sala(2, [["O", 1, True]]))
         errante = Errante("e", 10, 10, 1, 0, 100, 1, None)
         salas.obtener(1).agregar_enemigo(errante)
-        self.assertEqual(errante.decidir_accion(99, salas, 0, sim.azar), ("esperar", None))
+        self.assertEqual(errante.decidir_accion(99, salas, 0, sim.azar), ["esperar", None])
 
         abrir_salida(salas.obtener(1).salidas.obtener("E"), 0, sim.agenda)  # se cierra en t=150
         sim.agenda.reprogramar(errante, 100, "accion_actor")

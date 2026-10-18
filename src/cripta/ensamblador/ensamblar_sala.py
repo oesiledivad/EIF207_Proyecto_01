@@ -7,8 +7,8 @@ from ensamblador.Ensamblar_Item import ensamblar_item
 def ensamblar_sala(esqueleto) -> SalaJuego:
     """Crea la sala solo con el mapa. El contenido llega después."""
     salidas = Salidas()
-    for direccion in ("N", "S", "E", "O"):
-        s = esqueleto.salidas.get(direccion)
+    for direccion in ["N", "S", "E", "O"]:
+        s = esqueleto.obtener_salida(direccion)
         if s is not None:
             salidas.agregar(direccion, s.sala, bool(s.cerrada), s.llave, s.cierre_automatico)
 

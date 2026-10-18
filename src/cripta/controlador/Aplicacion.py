@@ -126,7 +126,13 @@ class Aplicacion:
                 and self._gestor.estado.activa)
 
     def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None) -> ResultadoAccion:
+        # Punto fijo para incorporar la precarga en segundo plano (determinista, §4.2).
+        self._avisar(self._cripta_service.completar_precarga())
         return self._ciclo.ejecutar(nombre_costo, ejecutar, argumento)
+
+    def activar_precarga_en_segundo_plano(self) -> None:
+        """Solo la vista interactiva: replay, bench y pruebas quedan sincrónicos."""
+        self._cripta_service.activar_precarga_en_segundo_plano()
 
     def _consumir_tiempo_jugador(self, nombre_costo: str) -> None:
         self._ciclo.consumir_tiempo(nombre_costo)
@@ -281,4 +287,5 @@ class Aplicacion:
         return self._partida.error_puntaje
 
     def terminar(self) -> None:
+        self._cripta_service.esperar_precarga()   # sus solicitudes entran en el resumen
         self._partida.terminar(self.resumen_red())

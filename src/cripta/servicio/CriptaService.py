@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.dto.Partida_dto import (
@@ -19,6 +21,25 @@ from cripta.dto.FactoryDto_Partida import (
 MAX_POR_LOTE = 10  # §3.4: contenido y catálogo aceptan hasta 10 por solicitud
 
 
+class _FuenteSincronizada:
+    """Envuelve el adaptador para que la precarga en segundo plano y el hilo del
+    juego nunca hagan solicitudes al mismo tiempo (el contador de presupuesto
+    y el cliente HTTP no son seguros entre hilos)."""
+
+    def __init__(self, fuente: CryptDataSource) -> None:
+        self.fuente = fuente
+        self._candado = threading.Lock()
+
+    def __getattr__(self, nombre):
+        valor = getattr(self.fuente, nombre)
+        if not callable(valor):
+            return valor
+        def sincronizado(*args, **kwargs):
+            with self._candado:
+                return valor(*args, **kwargs)
+        return sincronizado
+
+
 class CriptaService:
     """Coordina solicitudes, caché y precarga sin avanzar el reloj del juego."""
 
@@ -36,7 +57,29 @@ class CriptaService:
         self._catalogo = CatalogoService(self)
         self._precarga = PrecargaService(self)
 
+    #  Precarga en segundo plano (§4.2)
+
+    def activar_precarga_en_segundo_plano(self) -> None:
+        """La vista interactiva la activa: la red ya no congela la ventana al cruzar
+        puertas. Replay, bench y pruebas siguen sincrónicos."""
+        if not isinstance(self._data_source, _FuenteSincronizada):
+            self._data_source = _FuenteSincronizada(self._data_source)
+        self._precarga.activar_segundo_plano()
+
+    @property
+    def precarga_en_segundo_plano(self) -> bool:
+        return self._precarga.en_segundo_plano
+
+    def completar_precarga(self) -> str | None:
+        """Incorpora lo que la precarga trajo (se llama al inicio de cada acción)."""
+        return self._precarga.completar_pendiente()
+
+    def esperar_precarga(self) -> None:
+        """Espera y descarta la precarga pendiente (fin o reinicio de partida)."""
+        self._precarga.descartar_pendiente()
+
     def reiniciar_partida(self) -> None:
+        self._precarga.descartar_pendiente()
         self._data_source.reiniciar_partida()
         self._detalles = None
         self._version_catalogo = None
@@ -147,6 +190,8 @@ class CriptaService:
     def listar_criptas(self) -> list[CriptaResumen]:
         try:
             respuesta = self._data_source.crypta_list()
+            if self._almacen is not None:
+                self._almacen.guardar_lista_criptas(respuesta)   # para --offline
             bruto = respuesta.get("criptas", [])
             resultado: list[CriptaResumen] = []
             for item in bruto:
@@ -169,6 +214,8 @@ class CriptaService:
         try:
             detalles = self._data_source.crypta_details(cripta_id)
             self._detalles = parsear_detalles(detalles, cripta_id)
+            if self._almacen is not None:
+                self._almacen.guardar_detalles(cripta_id, detalles)   # para --offline
             return self._detalles
         except NotImplementedError:
             return DetallesCripta(
@@ -213,52 +260,93 @@ class CriptaService:
         resultado: list[list] = []
         for i in range(0, len(sala_ids), MAX_POR_LOTE):
             lote = sala_ids[i:i + MAX_POR_LOTE]
-
-            # Primero disco; a la red solo van las salas que no estaban guardadas.
-            entradas: list[dict] = []
-            para_red: list[int] = []
-            for sala_id in lote:
-                entrada = self._almacen.leer_contenido(cripta_id, sala_id) if self._cripta_en_disco else None
-                if entrada is None:
-                    para_red.append(sala_id)
-                else:
-                    self._lecturas_disco += 1
-                    entradas.append(entrada)
-            if para_red:
-                try:
-                    resp = self._data_source.room_content(cripta_id, para_red)
-                except NotImplementedError:
-                    resp = {}
-                for entrada in resp.get("contenido", []):
-                    if self._cripta_en_disco:
-                        self._almacen.guardar_contenido(cripta_id, entrada)
-                    entradas.append(entrada)
-
-            tipos: list[str] = []
-            for entrada in entradas:
-                for e in entrada.get("enemigos", []):
-                    tipos.append(e.get("tipo"))
-                for o in entrada.get("objetos", []):
-                    tipos.append(str(o))
-                for t in entrada.get("trampas", []):
-                    tipos.append(t.get("tipo"))
-            catalogo = self.asegurar_fichas(tipos)
-
-            for sala_id in lote:
-                entrada = None
-                for candidata in entradas:
-                    if int(candidata.get("sala", 0)) == sala_id:
-                        entrada = candidata
-                        break
-                if entrada is None:
-                    resultado.append([sala_id, ContenidoSala()])
-                else:
-                    resultado.append([sala_id, parsear_contenido(entrada, catalogo)])
+            resultado.extend(self.armar_contenido(lote, self._leer_entradas(cripta_id, lote)))
         return resultado
+
+    def _leer_entradas(self, cripta_id: str, lote: list[int]) -> list[dict]:
+        """Solo E/S: primero disco; a la red solo van las salas que no estaban guardadas."""
+        entradas: list[dict] = []
+        para_red: list[int] = []
+        for sala_id in lote:
+            entrada = self._almacen.leer_contenido(cripta_id, sala_id) if self._cripta_en_disco else None
+            if entrada is None:
+                para_red.append(sala_id)
+            else:
+                self._lecturas_disco += 1
+                entradas.append(entrada)
+        if para_red:
+            try:
+                resp = self._data_source.room_content(cripta_id, para_red)
+            except NotImplementedError:
+                resp = {}
+            for entrada in resp.get("contenido", []):
+                if self._cripta_en_disco:
+                    self._almacen.guardar_contenido(cripta_id, entrada)
+                entradas.append(entrada)
+        return entradas
+
+    @staticmethod
+    def _tipos_de(entradas: list[dict]) -> list[str]:
+        tipos: list[str] = []
+        for entrada in entradas:
+            for e in entrada.get("enemigos", []):
+                tipos.append(e.get("tipo"))
+            for o in entrada.get("objetos", []):
+                tipos.append(str(o))
+            for t in entrada.get("trampas", []):
+                tipos.append(t.get("tipo"))
+        return tipos
+
+    def armar_contenido(self, lote: list[int], entradas: list[dict],
+                        fichas_descargadas: list[dict] | None = None) -> list[list]:
+        """Resuelve fichas y arma el contenido en el orden de `lote` (determinista).
+
+        Toca la caché de fichas, así que siempre corre en el hilo del juego.
+        """
+        catalogo = self._catalogo.asegurar_fichas(self._tipos_de(entradas),
+                                                  descargadas=fichas_descargadas)
+        resultado: list[list] = []
+        for sala_id in lote:
+            entrada = None
+            for candidata in entradas:
+                if int(candidata.get("sala", 0)) == sala_id:
+                    entrada = candidata
+                    break
+            if entrada is not None:
+                resultado.append([sala_id, parsear_contenido(entrada, catalogo)])
+            # Sin respuesta (p. ej. --offline sin esa sala descargada) la sala queda
+            # sin cargar: nunca se entra a una sala cuyo contenido no se conoce (§4.2).
+        return resultado
+
+    def descargar_contenido(self, cripta_id: str, lote: list[int]) -> list[list]:
+        """Trabajo del hilo de precarga: SOLO E/S (disco y red), sin tocar el modelo.
+
+        Trae el contenido del lote y las fichas que no estén ni en memoria ni en
+        disco. Devuelve [entradas, fichas_crudas]; el armado se hace después en
+        el hilo del juego, en un punto fijo (determinista).
+        """
+        entradas = self._leer_entradas(cripta_id, lote)
+        faltantes: list[str] = []
+        for id_ in self._tipos_de(entradas):
+            if not id_ or id_ in faltantes or self._cache_fichas.contiene(id_):
+                continue
+            if self._catalogo_en_disco and self._almacen.leer_ficha(id_) is not None:
+                continue
+            faltantes.append(id_)
+        fichas: list[dict] = []
+        for i in range(0, len(faltantes), MAX_POR_LOTE):
+            resp = self._data_source.catalog(faltantes[i:i + MAX_POR_LOTE])
+            for bruto in resp.get("entidades", []):
+                if self._catalogo_en_disco:
+                    self._almacen.guardar_ficha(bruto)
+                fichas.append(bruto)
+        return [entradas, fichas]
 
     def cargar_contenido_sala(self, cripta_id: str, sala_id: int) -> ContenidoSala:
         """Compatibilidad: una sola sala (gasta un lote entero, preferir la versión por lotes)."""
-        return self.cargar_contenido_salas(cripta_id, [sala_id])[0][1]
+        for _, contenido in self.cargar_contenido_salas(cripta_id, [sala_id]):
+            return contenido
+        return ContenidoSala()
 
     #  Presupuesto y estadísticas (§5.1)
 
@@ -281,7 +369,8 @@ class CriptaService:
         return self._data_source.requests_made
 
     def es_offline(self) -> bool:
-        return self._data_source.__class__.__name__ == "AdaptadorOffline"
+        fuente = getattr(self._data_source, "fuente", self._data_source)
+        return fuente.__class__.__name__ == "AdaptadorOffline"
 
     def obtener_ficha(self, id_: str):
         return self._cache_fichas.obtener(id_)

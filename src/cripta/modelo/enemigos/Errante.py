@@ -13,5 +13,5 @@ class Errante(Enemigo):
     def _decidir_movimiento(self, salas, tiempo_actual, azar):
         transitables = [s.sala_destino for s in salas.obtener(self.sala).salidas if not s.cerrada]
         if not transitables:
-            return "esperar", None
-        return "mover", azar.choice(transitables)
+            return ["esperar", None]
+        return ["mover", azar.choice(transitables)]

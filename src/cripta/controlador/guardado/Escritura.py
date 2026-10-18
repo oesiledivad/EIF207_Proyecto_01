@@ -77,10 +77,10 @@ def _cuerpo_sala(sala) -> bytes:
     return w.a_bytes()
 
 
-def _referencia_actor(app, actor) -> tuple[int, int, str]:
+def _referencia_actor(app, actor) -> list[int, int, str]:
     """Identifica al dueño de un evento: (clase, sala, clave). Compara por identidad."""
     if actor is app._jugador:
-        return ACTOR_JUGADOR, 0, ""
+        return [ACTOR_JUGADOR, 0, ""]
     for sala_modelo in app._gestor.estado.salas_conocidas:
         sala = app._salas.obtener(sala_modelo.id)
         if sala is None:
@@ -88,15 +88,15 @@ def _referencia_actor(app, actor) -> tuple[int, int, str]:
         if isinstance(actor, Enemigo):
             for e in sala.enemigos:
                 if e is actor:
-                    return ACTOR_ENEMIGO, sala.id, e.identificador
+                    return [ACTOR_ENEMIGO, sala.id, e.identificador]
         elif isinstance(actor, TrampaJuego):
             for posicion, t in enumerate(sala.trampas):
                 if t is actor:
-                    return ACTOR_TRAMPA, sala.id, str(posicion)
+                    return [ACTOR_TRAMPA, sala.id, str(posicion)]
         elif isinstance(actor, SalidaSimple):
             for s in sala.salidas:
                 if s is actor:
-                    return ACTOR_SALIDA, sala.id, s.direccion
+                    return [ACTOR_SALIDA, sala.id, s.direccion]
     raise ValueError("Hay un evento programado cuyo dueño no está en la partida.")
 
 

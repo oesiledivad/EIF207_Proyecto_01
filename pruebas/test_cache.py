@@ -17,7 +17,7 @@ class PruebasCache(unittest.TestCase):
         self.assertEqual(cache.obtener("a"), "actualizada")
         self.assertEqual(cache.desalojos, 1)
         self.assertIsNone(cache.obtener("b"))
-        self.assertEqual((cache.aciertos, cache.fallos), (2, 1))
+        self.assertEqual([cache.aciertos, cache.fallos], [2, 1])
 
     def test_referencias_multiples_y_desalojo_tras_liberar(self):
         cache = Cache_Fichas(2)

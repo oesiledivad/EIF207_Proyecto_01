@@ -173,7 +173,7 @@ class MenuPrincipal(arcade.View):
             self.foco.borrar()
         elif symbol == arcade.key.TAB:
             self.foco = self.semilla if self.foco is self.nombre else self.nombre
-        elif symbol in (arcade.key.ENTER, arcade.key.RETURN):
+        elif symbol in [arcade.key.ENTER, arcade.key.RETURN]:
             self.comenzar()
         elif symbol == arcade.key.UP:
             self.elegir(self.seleccion - 1)

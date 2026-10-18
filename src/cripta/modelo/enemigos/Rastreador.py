@@ -26,11 +26,11 @@ class Rastreador(Enemigo):
                 continue
             antiguedad = tiempo_actual - vecina.ultimo_tiempo_visita
             if antiguedad < DURACION_RASTRO:
-                candidatos.append((vecina.ultimo_tiempo_visita, vecina.id))
+                candidatos.append([vecina.ultimo_tiempo_visita, vecina.id])
 
         if not candidatos:
-            return "esperar", None
+            return ["esperar", None]
 
-        candidatos = ordenar(candidatos, key=lambda par: (-par[0], par[1]))
+        candidatos = ordenar(candidatos, key=lambda par: [-par[0], par[1]])
         _, destino = candidatos[0]
-        return "mover", destino
+        return ["mover", destino]

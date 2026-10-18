@@ -390,11 +390,20 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert objetos == [[z.argumento, z.x, z.y, z.ancho, z.alto] for z in vista.zonas if z.accion == 'recoger']
         assert firma(app) == antes
         recursos = vista.escena.recursos
-        assert recursos.enemigo(SimpleNamespace(tipo='oseo', nombre='Guardián óseo')) is next(c for n, c in recursos.personajes if n == 'Demon_A')
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_guardian_oseo', nombre='Guardián óseo')) == 'Esqueleto'
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_rata_gigante', nombre='Rata gigante')) == 'Rata'
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='sl_acechador_grietas', nombre='Acechador')) == 'Orc'
+        # Respaldo: un tipo desconocido usa el espectro de su comportamiento.
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_nuevo', nombre='Cosa', comportamiento='errante')) == 'Espectro errante'
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_nuevo', nombre='Cosa', comportamiento='')) == 'Espectro '
+        assert recursos.enemigo(SimpleNamespace(tipo='ent_guardian_oseo', nombre='Guardián óseo')) is next(c for n, c in recursos.personajes if n == 'Esqueleto')
         from cripta.vista.grafica.recursos import Recursos
         with patch('cripta.vista.grafica.packs.LOCAL', Path(carpeta) / 'sin_packs'):
             alternativa = Recursos()                                   # sin packs: no falla
             assert alternativa.soldado_idle and alternativa.espada
+            # Sin packs, los tipos de los packs caen al espectro según su comportamiento.
+            assert alternativa.nombre_enemigo(SimpleNamespace(tipo='sl_acechador_grietas', nombre='Acechador', comportamiento='rastreador')) == 'Espectro rastreador'
+            assert alternativa.enemigo(SimpleNamespace(tipo='ent_rata_gigante', nombre='Rata gigante'))
         assert recursos.icono(SimpleNamespace(tipo_id='itm_daga_oxidada', nombre='Daga')) is recursos.daga
         assert recursos.icono(SimpleNamespace(tipo_id='itm_pocion_menor', nombre='Poción')) is recursos.pocion_roja
         assert recursos.icono(SimpleNamespace(tipo_id='itm_antidoto', nombre='Antídoto')) is recursos.antidoto

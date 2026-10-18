@@ -14,7 +14,7 @@ class PruebasFin(unittest.TestCase):
         self.assertEqual(fuente.headers["X-Cripta-Client-Id"], fuente.client_id)
         self.assertEqual(fuente.requests_made, 0)
         self.assertIsNone(fuente.solicitudes_restantes())
-        self.assertEqual((fuente.timeout, fuente.max_reintentos_429), (3, 1))
+        self.assertEqual([fuente.timeout, fuente.max_reintentos_429], [3, 1])
 
     def test_otra_partida_no_reutiliza_fichas_de_version_anterior(self):
         from pruebas.test_replay import FuenteReplay

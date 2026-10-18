@@ -23,7 +23,7 @@ class PruebasMedidas(unittest.TestCase):
         self.assertAlmostEqual(calcular_escala(1366, 705)[0], 705 / 450)
 
     def test_tamano_inicial_segun_pantalla(self):
-        self.assertEqual(tamano_ventana_inicial(1920, 1080), (1600, 900))
+        self.assertEqual(tamano_ventana_inicial(1920, 1080), [1600, 900])
         ancho, alto = tamano_ventana_inicial(1366, 768)        # laptop: no ocupa toda la pantalla
         self.assertLessEqual(ancho, 1366 * 0.9)
         self.assertLessEqual(alto, 768 * 0.85)

@@ -60,7 +60,7 @@ class Guardado_Binario:
     def guardar(
         self,
         version_cripta: str,
-        salas: list[tuple[int, bytes]] | list,
+        salas: list[list[int, bytes]] | list,
     ) -> None:
         """Escribe el archivo con las salas dadas.
 
@@ -97,7 +97,7 @@ class Guardado_Binario:
             for s in salas:
                 f.write(s.bytes_)
 
-    def _leer_cabecera(self) -> tuple[str, list[EntradaIndice]]:
+    def _leer_cabecera(self) -> list[str, list[EntradaIndice]]:
         with open(self._ruta, "rb") as f:
             header = f.read(_HEADER_SIZE)
             magic, version_formato, len_version, n, _ = struct.unpack(
@@ -117,7 +117,7 @@ class Guardado_Binario:
                 sid, off, lon = struct.unpack(_ENTRADA_FMT, f.read(_ENTRADA_SIZE))
                 entradas.append(EntradaIndice(sid, off, lon))
 
-        return version_cripta, entradas
+        return [version_cripta, entradas]
 
     def cargar_sala(self, sala_id: int) -> bytes | None:
         """Recupera los bytes de una sala concreta.
