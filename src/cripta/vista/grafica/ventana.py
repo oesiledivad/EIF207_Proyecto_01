@@ -404,7 +404,8 @@ class VentanaCripta(arcade.Window):
             return
         self.raton = self.lienzo.a_virtual(x, y)
         if button == arcade.MOUSE_BUTTON_LEFT:
-            for zona in reversed(self.zonas):     # lo dibujado al final queda encima
+            for indice in range(len(self.zonas) - 1, -1, -1):  # lo último queda encima
+                zona = self.zonas[indice]
                 if zona.contiene(*self.raton):
                     self.ejecutar(zona.accion, zona.argumento)
                     if zona.accion == "seleccionar":

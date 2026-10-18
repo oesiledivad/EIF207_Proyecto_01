@@ -13,6 +13,7 @@ import math
 import random
 
 from PIL import Image
+from cripta.estructuras.Ordenamientos import ordenar
 
 from . import fuente_pixel as fp
 from . import pixelart as pa
@@ -174,7 +175,7 @@ class Escena:
             pa.componer(img, r.img_borde[(col + 1) % 4], col * 16, abajo_suelo + 3)
         for x in range(lado, ancho - lado):
             img.putpixel((x, abajo_suelo), (150, 135, 100, 255))
-        for indice, x, y in sorted(decoracion, key=lambda d: -d[2]):  # decoración (atrás primero)
+        for indice, x, y in ordenar(decoracion.copy(), key=lambda d: -d[2]):  # atrás primero
             figura = r.img_decoracion[indice]
             ax, ay = int((x - SALA_X) / K), int(alto - (y - SALA_Y) / K)
             pa.sombra_ovalada(img, ax, ay, int(figura.width * 0.9), 3)
