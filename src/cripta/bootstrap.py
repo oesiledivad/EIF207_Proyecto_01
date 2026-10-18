@@ -102,9 +102,8 @@ def main(argv: list[str] | None = None) -> int:
     data_source = _construir_data_source(args)
     if args.replay:
         from cripta.replay.reproductor import reproducir
-        fuentes = [data_source]
-        if not args.offline:
-            fuentes.append(AdaptadorOffline(args.offline_dir))
+        # El paquete se valida por separado: una caché incompleta no lo oculta.
+        fuentes = [data_source, AdaptadorOffline(args.offline_dir)]
         try:
             controlador = reproducir(args.replay, fuentes)
         except (OSError, RuntimeError, ValueError) as error:

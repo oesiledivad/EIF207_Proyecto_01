@@ -178,6 +178,7 @@ class PruebasReplay(unittest.TestCase):
 
     def test_cli_con_archivos_offline_reales(self):
         import subprocess
+        from cripta.adaptadores.Almacen_Disco import AlmacenDisco
         fuente = FuenteReplay()
         datos = self.carpeta / "datos"
         datos.mkdir()
@@ -191,8 +192,14 @@ class PruebasReplay(unittest.TestCase):
             (datos / nombre).write_text(json.dumps(respuesta), encoding="utf-8")
         app = self.iniciar()
         app.mover("N")
+        # Una descarga incompleta no debe ocultar un paquete compatible completo.
+        cache = self.carpeta / "cache"
+        almacen = AlmacenDisco(cache)
+        almacen.guardar_detalles("cripta-01", fuente.crypta_details("cripta-01"))
+        almacen.validar_catalogo(fuente.get_catalog_version()["version"])
         proceso = subprocess.run(
             [sys.executable, "-B", "-m", "cripta", "--offline", "--offline-dir", str(datos),
+             "--cache-dir", str(cache),
              "--replay", str(app._partida.registro.ruta)],
             capture_output=True, text=True,
         )
