@@ -86,7 +86,7 @@ class Lienzo:
         y0 = round(self.oy + y * self.escala)
         x1 = round(self.ox + (x + ancho) * self.escala)
         y1 = round(self.oy + (y + alto) * self.escala)
-        return x0, y0, x1 - x0, y1 - y0
+        return [x0, y0, x1 - x0, y1 - y0]
 
     #  Cuadro
 

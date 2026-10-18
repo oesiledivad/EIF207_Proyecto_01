@@ -9,7 +9,7 @@ ANCHO = 800
 ALTO = 450
 
 
-def calcular_escala(ancho_ventana: float, alto_ventana: float) -> tuple[float, int, int]:
+def calcular_escala(ancho_ventana: float, alto_ventana: float) -> list[float, int, int]:
     """Escala y márgenes para que el lienzo quepa centrado en la ventana.
 
     Si la escala es casi entera (pierde menos del 10 %) se usa la entera, para
@@ -23,10 +23,10 @@ def calcular_escala(ancho_ventana: float, alto_ventana: float) -> tuple[float, i
     if entera >= 1 and entera / escala >= 0.9:
         escala = float(entera)
     escala = max(0.1, escala)
-    return escala, round((ancho_ventana - ANCHO * escala) / 2), round((alto_ventana - ALTO * escala) / 2)
+    return [escala, round((ancho_ventana - ANCHO * escala) / 2), round((alto_ventana - ALTO * escala) / 2)]
 
 
-def tamano_ventana_inicial(pantalla_ancho: int, pantalla_alto: int) -> tuple[int, int]:
+def tamano_ventana_inicial(pantalla_ancho: int, pantalla_alto: int) -> list[int, int]:
     """Tamaño inicial proporcional a la pantalla (16:9, hasta 90 % x 85 %).
 
     Si cabe un múltiplo entero de 800x450 se usa ese (pixel art nítido).
@@ -34,6 +34,6 @@ def tamano_ventana_inicial(pantalla_ancho: int, pantalla_alto: int) -> tuple[int
     limite_ancho, limite_alto = pantalla_ancho * 0.9, pantalla_alto * 0.85
     entero = int(min(limite_ancho / ANCHO, limite_alto / ALTO))
     if entero >= 2:
-        return ANCHO * entero, ALTO * entero
+        return [ANCHO * entero, ALTO * entero]
     escala = max(0.8, min(limite_ancho / ANCHO, limite_alto / ALTO))
-    return int(ANCHO * escala), int(ALTO * escala)
+    return [int(ANCHO * escala), int(ALTO * escala)]

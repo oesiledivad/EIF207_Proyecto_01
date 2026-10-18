@@ -122,12 +122,15 @@ class GuardadoControlador:
             modo = "offline" if app._cripta_service.es_offline() else "red"
             if datos.modo == modo:
                 return [self.cargar(origen), app]
-            fuente = AdaptadorOffline(self.offline_dir) if datos.modo == "offline" else NetworkAdapter()
+            fuente = (AdaptadorOffline(self.offline_dir, almacen=self.almacen) if datos.modo == "offline"
+                      else NetworkAdapter())
             nuevo = type(app)(fuente, capacidad_cache=self.capacidad_cache,
                               almacen=self.almacen if datos.modo == "red" else None,
                               carpeta_logs=self.carpeta_logs, ruta_puntajes=self.ruta_puntajes,
                               ruta_guardado=self.ruta if self.ruta_fija else None,
                               offline_dir=self.offline_dir)
+            if app._cripta_service.precarga_en_segundo_plano:
+                nuevo.activar_precarga_en_segundo_plano()
             return [nuevo.cargar(origen), nuevo]
         except (OSError, RuntimeError, ValueError, struct.error) as error:
             return [ResultadoAccion.fallo(f"No se pudo cargar el guardado: {error}"), app]

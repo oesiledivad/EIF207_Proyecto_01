@@ -46,10 +46,10 @@ class PruebasPuntajes(unittest.TestCase):
         registros = TablaPuntajes(self.ruta).leer()
         self.assertEqual(len(registros), 1)
         p = registros[0]
-        self.assertEqual((p.nombre_jugador, p.cripta_id, p.version_cripta),
-                         ("Jugador", "cripta-01", self.app.estado_partida().version_cripta))
-        self.assertEqual((p.acciones, p.enemigos_derrotados, p.tiempo_final, p.resultado),
-                         (1, 0, 100, "abandono"))
+        self.assertEqual([p.nombre_jugador, p.cripta_id, p.version_cripta],
+                         ["Jugador", "cripta-01", self.app.estado_partida().version_cripta])
+        self.assertEqual([p.acciones, p.enemigos_derrotados, p.tiempo_final, p.resultado],
+                         [1, 0, 100, "abandono"])
         self.assertFalse(self.app.esperar().ok)
         self.assertEqual(self.app.estado_partida().acciones_ejecutadas, 1)
 
@@ -86,7 +86,7 @@ class PruebasPuntajes(unittest.TestCase):
         self.assertEqual(self.app.error_puntaje, "")
 
     def test_tabla_invalida_no_se_sobreescribe(self):
-        for datos in ("incompleto", "{}", '[{"partida_id": 1}]'):
+        for datos in ["incompleto", "{}", '[{"partida_id": 1}]']:
             self.ruta.write_text(datos, encoding="utf-8")
             with self.assertRaises(ValueError):
                 TablaPuntajes(self.ruta).registrar(
@@ -98,6 +98,6 @@ class PruebasPuntajes(unittest.TestCase):
         a = Puntaje("a", "A", "cripta", "1", 5, 2, 400, "derrota")
         b = Puntaje("b", "B", "cripta", "1", 3, 2, 400, "derrota")
         c = Puntaje("c", "C", "cripta", "1", 8, 1, 700, "victoria")
-        for puntaje in (a, b, c, a):
+        for puntaje in [a, b, c, a]:
             tabla.registrar(puntaje)
         self.assertEqual([p.partida_id for p in tabla.ordenados()], ["c", "b", "a"])

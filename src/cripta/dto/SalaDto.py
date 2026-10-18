@@ -1,32 +1,32 @@
-
-
 from dataclasses import dataclass, field
 from .Salida import Salida
 
+
 @dataclass
 class Sala:
-    """Una sala individual del esqueleto."""
+    """Una sala individual del esqueleto.
+
+    `salidas` llega del JSON como objeto {"N": {...}}; aquí se guarda como una
+    lista de pares [direccion, Salida] (máx. 4), sin usar dict como estructura (§7).
+    """
     id: int
     nombre: str
-    salidas: dict[str, Salida] = field(default_factory=dict)
-  
+    salidas: list = field(default_factory=list)
+
     def __post_init__(self):
-        # 1. Si la API no mandó "salidas", partimos de un diccionario vacío
-        if self.salidas is None:
-            self.salidas = {}
+        brutas = self.salidas
+        self.salidas = []
+        if brutas is None:
+            return
+        # El JSON puede traer un objeto (se recorre solo para leerlo) o ya una lista de pares.
+        pares = brutas.items() if hasattr(brutas, "items") else brutas
+        for direccion, datos in pares:
+            salida = datos if isinstance(datos, Salida) else Salida(**datos)
+            self.salidas.append([direccion, salida])
 
-        # 2. Aquí iremos guardando las salidas ya convertidas
-        salidas_convertidas = {}
-
-        # 3. Recorremos cada salida que llegó
-        for direccion, datos in self.salidas.items():
-
-            if isinstance(datos, Salida):
-                # ya es una Salida, la dejamos como está
-                salidas_convertidas[direccion] = datos
-            else:
-                # es un diccionario, lo convertimos en Salida
-                salidas_convertidas[direccion] = Salida(**datos)
-
-        # 4. Reemplazamos el contenido original por el ya convertido
-        self.salidas = salidas_convertidas
+    def obtener_salida(self, direccion: str) -> Salida | None:
+        """Busca la salida de una dirección; O(4) como máximo."""
+        for d, salida in self.salidas:
+            if d == direccion:
+                return salida
+        return None

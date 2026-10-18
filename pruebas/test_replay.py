@@ -28,22 +28,22 @@ class FuenteReplay(FuenteRetroceso):
 def firma(app):
     sim = app._simulacion
     jugador = app._jugador
-    return (
+    return [
         sim.reloj.tiempo_actual, sim.azar.getstate(), sim.agenda._secuencia_actual,
         jugador.vida, jugador.sala, jugador.velocidad, jugador.ataque, jugador.defensa,
         jugador.fin_veneno, jugador.antorcha_encendida,
-        [(i.instancia_id, i.equipado) for i in app.inventario().items()],
+        [[i.instancia_id, i.equipado] for i in app.inventario().items()],
         app.inventario().item_actual().instancia_id if app.inventario().item_actual() else None,
-        [(s.id, s.ultimo_tiempo_visita,
-          [(e.identificador, e.vida, e.sala) for e in s.enemigos],
-          [(t.instancia, t.armada) for t in s.trampas],
-          [(o.id, o.tipo_id) for o in s.objetos])
+        [[s.id, s.ultimo_tiempo_visita,
+          [[e.identificador, e.vida, e.sala] for e in s.enemigos],
+          [[t.instancia, t.armada] for t in s.trampas],
+          [[o.id, o.tipo_id] for o in s.objetos]]
          for s in app._salas._datos if s is not None],
-        [(e.tiempo_siguiente, e.secuencias, getattr(e.actor, "identificador", getattr(e.actor, "instancia", "")), e.tipo, e.valido)
+        [[e.tiempo_siguiente, e.secuencias, getattr(e.actor, "identificador", getattr(e.actor, "instancia", "")), e.tipo, e.valido]
          for e in sim.agenda._heap],
         len(app._gestor.historial), app.estado_partida().terminada,
         app.estado_partida().acciones_ejecutadas, app.estado_partida().enemigos_derrotados,
-    )
+    ]
 
 
 class PruebasReplay(unittest.TestCase):
@@ -60,7 +60,7 @@ class PruebasReplay(unittest.TestCase):
 
     def test_partida_completa_combate_inventario_y_dos_retrocesos(self):
         app = self.iniciar()
-        for posicion in (0, 1, 8, 9, 10):
+        for posicion in [0, 1, 8, 9, 10]:
             self.assertTrue(app.recoger(f"sala-1-objeto-{posicion}").ok)
         self.assertTrue(app.equipar("sala-1-objeto-9").ok)
         self.assertTrue(app.equipar("sala-1-objeto-10").ok)
@@ -122,7 +122,7 @@ class PruebasReplay(unittest.TestCase):
         self.assertFalse(app.estado_partida().activa)
 
     def test_error_disco_revierte_recorrido_y_detiene_sesion(self):
-        for direccion in ("siguiente_item", "anterior_item"):
+        for direccion in ["siguiente_item", "anterior_item"]:
             with self.subTest(direccion=direccion):
                 app = self.iniciar()
                 for objeto in list(app.estado_partida().objetos_suelo)[:2]:
@@ -158,7 +158,7 @@ class PruebasReplay(unittest.TestCase):
         registro = RegistroPartida(self.carpeta)
         registro.iniciar(Cabecera("cripta-01", "1", "cat", 42, "Jugador", 25))
         cabecera = registro.ruta.read_text(encoding="utf-8")
-        for accion in ('["__dict__", null]', '["mover", "X"]', '["recoger", 1]', '["esperar"'):
+        for accion in ['["__dict__", null]', '["mover", "X"]', '["recoger", 1]', '["esperar"']:
             registro.ruta.write_text(cabecera + accion + "\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "linea 2"):
                 leer_partida(registro.ruta)
@@ -181,13 +181,13 @@ class PruebasReplay(unittest.TestCase):
         fuente = FuenteReplay()
         datos = self.carpeta / "datos"
         datos.mkdir()
-        for nombre, respuesta in (
-            ("cripta_cripta-01.json", fuente.crypta_details("cripta-01")),
-            ("cripta_cripta-01_salas_1.json", fuente.list_rooms("cripta-01", 1)),
-            ("cripta_cripta-01_contenido.json", fuente.room_content("cripta-01", [1, 2])),
-            ("catalogo.json", fuente._leer("catalogo.json")),
-            ("catalogo_version.json", fuente.get_catalog_version()),
-        ):
+        for nombre, respuesta in [
+            ["cripta_cripta-01.json", fuente.crypta_details("cripta-01")],
+            ["cripta_cripta-01_salas_1.json", fuente.list_rooms("cripta-01", 1)],
+            ["cripta_cripta-01_contenido.json", fuente.room_content("cripta-01", [1, 2])],
+            ["catalogo.json", fuente._leer("catalogo.json")],
+            ["catalogo_version.json", fuente.get_catalog_version()],
+        ]:
             (datos / nombre).write_text(json.dumps(respuesta), encoding="utf-8")
         app = self.iniciar()
         app.mover("N")

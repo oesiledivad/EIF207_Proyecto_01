@@ -14,4 +14,4 @@ class Guardian(Enemigo):
                           velocidad, sala, tiempo_siguiente, comportamiento)
 
     def _decidir_movimiento(self, salas, tiempo_actual, azar):
-        return "esperar", None
+        return ["esperar", None]

@@ -29,7 +29,8 @@ class CatalogoService:
 
     #  Catálogo (§4.3, §4.4)
 
-    def asegurar_fichas(self, ids: list[str], fijar: bool = False) -> Catalogo_Lista:
+    def asegurar_fichas(self, ids: list[str], fijar: bool = False,
+                        descargadas: list[dict] | None = None) -> Catalogo_Lista:
         """Resuelve los ids a fichas pidiendo a la red solo lo que falta, en lotes de 10.
 
         Devuelve las fichas resueltas en una lista propia, así quien llama
@@ -51,13 +52,20 @@ class CatalogoService:
                     self._fijar_apariciones(id_, ids)
 
         # 1) Disco: una ficha liberada de memoria cuesta una lectura, no una solicitud.
+        #    `descargadas`: fichas que la precarga en segundo plano ya trajo (sin disco).
         para_red: list[str] = []
         for id_ in faltantes:
             bruto = self._servicio._almacen.leer_ficha(id_) if self._servicio._catalogo_en_disco else None
+            if bruto is not None:
+                self._servicio._lecturas_disco += 1
+            else:
+                for candidata in descargadas or []:
+                    if candidata.get("id") == id_:
+                        bruto = candidata
+                        break
             if bruto is None:
                 para_red.append(id_)
                 continue
-            self._servicio._lecturas_disco += 1
             self._incorporar_ficha(bruto, resueltas, ids, fijar)
 
         # 2) Red: solo lo que nunca se persistió (o cuya versión cambió), en lotes de 10.

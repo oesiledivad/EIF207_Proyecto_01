@@ -4,6 +4,8 @@ Guarda las respuestas crudas (JSON) del servicio para no volver a pedirlas
 por red mientras su versión siga vigente:
 
     <carpeta>/
+        criptas.json                   lista de criptas (para jugar con --offline)
+        detalles/<id>.json             datos generales de cada cripta descargada
         catalogo/version.txt           versión global del catálogo
         catalogo/fichas/<id>.json      una ficha por archivo
         criptas/<id>/version.txt       versión de la cripta
@@ -119,3 +121,21 @@ class AlmacenDisco:
     def guardar_contenido(self, cripta_id: str, entrada: dict) -> None:
         sala_id = int(entrada.get("sala", 0))
         self._escribir_json(self._dir_cripta(cripta_id) / "contenido" / f"{sala_id}.json", entrada)
+
+    #  Datos generales (los usa --offline para jugar lo ya descargado)
+
+    def guardar_lista_criptas(self, datos: dict) -> None:
+        self._escribir_json(self._raiz / "criptas.json", datos)
+
+    def leer_lista_criptas(self) -> dict | None:
+        return self._leer_json(self._raiz / "criptas.json")
+
+    def guardar_detalles(self, cripta_id: str, datos: dict) -> None:
+        # Fuera de criptas/<id>/: validar_cripta borra esa carpeta si cambia la versión.
+        self._escribir_json(self._raiz / "detalles" / f"{_nombre_seguro(cripta_id)}.json", datos)
+
+    def leer_detalles(self, cripta_id: str) -> dict | None:
+        return self._leer_json(self._raiz / "detalles" / f"{_nombre_seguro(cripta_id)}.json")
+
+    def leer_version_catalogo(self) -> str | None:
+        return self._leer_texto(self._dir_catalogo / "version.txt")

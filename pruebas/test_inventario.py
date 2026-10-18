@@ -64,7 +64,7 @@ class InventarioPruebas(unittest.TestCase):
         suelo = self.gestor.estado.objetos_suelo
         suelo.extend([ObjetoSuelo("a", "Espada", "arma"),
                       ObjetoSuelo("b", "Espada", "arma")])
-        for id_ in ("a", "b"):
+        for id_ in ["a", "b"]:
             self.assertTrue(self.accion(lambda: self.control.recoger(id_)).ok)
         inv = self.gestor.inventario
         self.assertEqual(inv.buscar_por_id("a").peso, 2)
@@ -112,7 +112,7 @@ class InventarioPruebas(unittest.TestCase):
 
     def test_reinsertar_final_y_vista_sin_mutar(self):
         inv = Inventario(3)
-        for id_ in ("a", "b", "c"):
+        for id_ in ["a", "b", "c"]:
             inv.agregar(ItemInventario(id_, id_, id_, "arma", 1, 1))
         item = inv.soltar_por_id("a")
         self.assertTrue(inv.reinsertar_en(item, 2))

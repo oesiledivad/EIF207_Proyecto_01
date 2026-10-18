@@ -296,7 +296,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert vista.current_view is None    # primero se anima la muerte
         with patch.object(vista.escena, 'personaje', wraps=vista.escena.personaje) as dibujar:
             vista.on_draw()
-            cuadros = vista.escena.recursos.soldado_morir
+            cuadros = vista.escena.recursos.heroe(*vista.escena.equipo_jugador(p))[4]
             assert dibujar.call_args.args[0] is cuadros[min(len(cuadros) - 1, int(0.25 * len(cuadros)))]
         vista.on_update(0.4)
         assert vista.current_view is None
@@ -390,11 +390,24 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert objetos == [[z.argumento, z.x, z.y, z.ancho, z.alto] for z in vista.zonas if z.accion == 'recoger']
         assert firma(app) == antes
         recursos = vista.escena.recursos
-        assert recursos.enemigo(SimpleNamespace(tipo='oseo', nombre='Guardián óseo')) is next(c for n, c in recursos.personajes if n == 'Demon_A')
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_guardian_oseo', nombre='Guardián óseo')) == 'Esqueleto'
+        assert vista.pista_actual() in ['cripta', 'combate']            # música de la partida
+        equipado = recursos.heroe('itm_daga_oxidada Daga oxidada', 'itm_coraza_cuero Coraza de cuero', True)
+        assert len(equipado) == 5 and equipado is recursos.heroe('daga', 'cuero', True)
+        assert equipado is not recursos.heroe()                         # sin equipo es otro sprite
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_rata_gigante', nombre='Rata gigante')) == 'Rata'
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='sl_acechador_grietas', nombre='Acechador')) == 'Orc'
+        # Respaldo: un tipo desconocido usa el espectro de su comportamiento.
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_nuevo', nombre='Cosa', comportamiento='errante')) == 'Espectro errante'
+        assert recursos.nombre_enemigo(SimpleNamespace(tipo='ent_nuevo', nombre='Cosa', comportamiento='')) == 'Espectro '
+        assert recursos.enemigo(SimpleNamespace(tipo='ent_guardian_oseo', nombre='Guardián óseo')) is next(c for n, c in recursos.personajes if n == 'Esqueleto')
         from cripta.vista.grafica.recursos import Recursos
         with patch('cripta.vista.grafica.packs.LOCAL', Path(carpeta) / 'sin_packs'):
             alternativa = Recursos()                                   # sin packs: no falla
             assert alternativa.soldado_idle and alternativa.espada
+            # Sin packs, los tipos de los packs caen al espectro según su comportamiento.
+            assert alternativa.nombre_enemigo(SimpleNamespace(tipo='sl_acechador_grietas', nombre='Acechador', comportamiento='rastreador')) == 'Espectro rastreador'
+            assert alternativa.enemigo(SimpleNamespace(tipo='ent_rata_gigante', nombre='Rata gigante'))
         assert recursos.icono(SimpleNamespace(tipo_id='itm_daga_oxidada', nombre='Daga')) is recursos.daga
         assert recursos.icono(SimpleNamespace(tipo_id='itm_pocion_menor', nombre='Poción')) is recursos.pocion_roja
         assert recursos.icono(SimpleNamespace(tipo_id='itm_antidoto', nombre='Antídoto')) is recursos.antidoto

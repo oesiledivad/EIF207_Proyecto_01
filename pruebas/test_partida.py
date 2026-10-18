@@ -61,9 +61,9 @@ class PruebasPartida(unittest.TestCase):
     def test_validar_inicio(self):
         self.assertEqual(PartidaControlador.validar_inicio(" Jugador ", " 0 ", "cripta"),
                          ["Jugador", 0])
-        for nombre, semilla, cripta in ((" ", "1", "c"), ("J", "1", ""),
-                                       ("J", "-1", "c"), ("J", "²", "c"),
-                                       ("J", "abc", "c")):
+        for nombre, semilla, cripta in [[" ", "1", "c"], ["J", "1", ""],
+                                       ["J", "-1", "c"], ["J", "²", "c"],
+                                       ["J", "abc", "c"]]:
             with self.subTest(semilla=semilla), self.assertRaises(ValueError):
                 PartidaControlador.validar_inicio(nombre, semilla, cripta)
         self.assertGreater(PartidaControlador.validar_inicio("J", "", "c")[1], 0)
@@ -93,6 +93,6 @@ class PruebasPartida(unittest.TestCase):
             replay = reproducir(app._partida.registro.ruta, [FuentePuertas()])
             self.assertEqual(firma(replay), firma(app))
             otra = replay._salas.obtener(1).salidas.obtener("N")
-            self.assertEqual((otra.cerrada, otra.evento_cierre),
-                             (puerta.cerrada, puerta.evento_cierre))
+            self.assertEqual([otra.cerrada, otra.evento_cierre],
+                             [puerta.cerrada, puerta.evento_cierre])
             self.assertIsNotNone(cierre)

@@ -34,7 +34,8 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument(
         "--offline",
         action="store_true",
-        help="Usa el paquete de respuestas descargadas en lugar de la red.",
+        help="Juega sin red con lo ya descargado en --cache-dir; el paquete --offline-dir "
+             "solo completa lo que la caché no tenga.",
     )
     parser.add_argument(
         "--cache-size",
@@ -52,7 +53,7 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
                        help="Reproduce acciones sin interfaz; exige versiones compatibles.")
     parser.add_argument("--puntajes", help="Archivo de puntajes (por defecto, dentro de --log-dir).")
     parser.add_argument("--log-dir", default="partidas", help="Carpeta de registros de partida.")
-    parser.add_argument("--offline-dir", default="datos_prueba", help="Carpeta de respuestas offline.")
+    parser.add_argument("--offline-dir", default="datos_prueba", help="Paquete de respuestas del curso (respaldo de --offline).")
     modos.add_argument("--bench", action="store_true",
                         help="Ejecuta cargas sinteticas sin red ni interfaz.")
     modos.add_argument("--grafica", action="store_true",
@@ -73,7 +74,9 @@ def _construir_data_source(args: argparse.Namespace) -> CryptDataSource:
         Instancia de CryptDataSource (OfflineAdapter o NetworkAdapter).
     """
     if args.offline:
-        return AdaptadorOffline(args.offline_dir)
+        # Primero lo descargado al jugar en línea (--cache-dir); el paquete del
+        # curso (--offline-dir) solo completa lo que la caché no tenga.
+        return AdaptadorOffline(args.offline_dir, almacen=AlmacenDisco(args.cache_dir))
     return NetworkAdapter()
 
 
@@ -113,10 +116,12 @@ def main(argv: list[str] | None = None) -> int:
         print(controlador.resumen_red())
         return 0
 
-    # En --offline los datos ya vienen de disco: no hace falta la caché persistente.
+    # En --offline los datos ya vienen de disco (la caché la lee el propio adaptador).
     almacen = None if args.offline else AlmacenDisco(args.cache_dir)
     controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen,
                              carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes, offline_dir=args.offline_dir)
+    # Ventana interactiva: la precarga va en un hilo para que cruzar puertas no se trabe.
+    controlador.activar_precarga_en_segundo_plano()
 
     # Import diferido: arcade solo se carga si de verdad se abre la ventana.
     from cripta.vista.grafica import iniciar

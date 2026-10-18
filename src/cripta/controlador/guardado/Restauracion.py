@@ -104,7 +104,7 @@ def restaurar_partida(app, datos: DatosGuardado) -> None:
     # Simulación nueva: reloj, azar y agenda.
     sim = Simulacion(datos.semilla, app._gestor.historial)
     sim.reloj.tiempo_actual = datos.tiempo_actual
-    sim.azar.setstate((datos.azar_version, tuple(datos.azar_interno), datos.azar_gauss))
+    sim.azar.setstate((datos.azar_version, tuple(datos.azar_interno), datos.azar_gauss))  # random exige tupla
     app._simulacion = sim
 
     j = datos.jugador

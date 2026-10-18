@@ -21,26 +21,26 @@ def huella(app):
     sim = app._simulacion
     j = app._jugador
     est = app.estado_partida()
-    return (
+    return [
         sim.reloj.tiempo_actual, sim.azar.getstate(),
         j.vida, j.vida_max, j.sala, j.velocidad, j.velocidad_base, j.ataque, j.defensa,
         j.fin_veneno, j.dano_veneno, j.antorcha_encendida, j.tiempo_siguiente,
-        [(i.instancia_id, i.tipo_id, i.equipado) for i in app.inventario().items()],
+        [[i.instancia_id, i.tipo_id, i.equipado] for i in app.inventario().items()],
         app.inventario().item_actual().instancia_id if app.inventario().item_actual() else None,
-        [(s.id, s.ultimo_tiempo_visita, s.contenido_cargado,
-          [(sa.direccion, sa.cerrada) for sa in s.salidas],
-          [(e.identificador, e.vida, e.sala, e.tiempo_siguiente, e.comportamiento, e.tipo)
+        [[s.id, s.ultimo_tiempo_visita, s.contenido_cargado,
+          [[sa.direccion, sa.cerrada] for sa in s.salidas],
+          [[e.identificador, e.vida, e.sala, e.tiempo_siguiente, e.comportamiento, e.tipo]
            for e in s.enemigos],
-          [(t.instancia, t.armada) for t in s.trampas],
-          [(o.id, o.tipo_id) for o in s.objetos])
+          [[t.instancia, t.armada] for t in s.trampas],
+          [[o.id, o.tipo_id] for o in s.objetos]]
          for s in app._salas._datos if s is not None],
         # Cada evento válido en orden de ejecución: (tiempo, tipo, dueño).
-        [(e.tiempo_siguiente, e.tipo,
-          getattr(e.actor, "identificador", getattr(e.actor, "instancia", getattr(e.actor, "direccion", ""))))
+        [[e.tiempo_siguiente, e.tipo,
+          getattr(e.actor, "identificador", getattr(e.actor, "instancia", getattr(e.actor, "direccion", "")))]
          for e in sorted(sim.agenda.eventos_validos(), key=lambda ev: ev.clave())],
         est.acciones_ejecutadas, est.enemigos_derrotados, est.sala_actual_id, est.terminada,
         [list(p) for p in app._partida._salidas_abiertas],
-    )
+    ]
 
 
 def preparar_partida(ruta):
@@ -48,7 +48,7 @@ def preparar_partida(ruta):
     resultado = app.iniciar_partida("Jugador", "42", "cripta-01")
     assert resultado.ok, resultado.motivo
     app._jugador.vida = app._jugador.vida_max = 300   # que la prueba no termine en derrota
-    for posicion in (0, 1, 8, 9, 10):
+    for posicion in [0, 1, 8, 9, 10]:
         assert app.recoger(f"sala-1-objeto-{posicion}").ok
     assert app.equipar("sala-1-objeto-9").ok
     # Efectos pendientes en la agenda: veneno, antorcha y una puerta con cierre automático.

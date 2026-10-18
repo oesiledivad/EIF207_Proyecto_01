@@ -6,8 +6,9 @@ Juego de mazmorra dirigido por eventos.
 
 ## Requisitos
 
-- Python 3.11 o superior
+- Python 3.13 o superior (lo exige `pyproject.toml`)
 - [uv](https://docs.astral.sh/uv/) como gestor de entorno y dependencias
+- Dependencias (las instala `uv sync`): `requests` y `arcade` (vista gráfica)
 
 ## Instalación
 
@@ -41,34 +42,52 @@ declaradas en `pyproject.toml` según lo fijado en `uv.lock`.
 
 ## Ejecución
 
-```bash
-uv run python -m cripta
-```
-
-Esto debe mostrar el banner de bienvenida del juego.
-
-## Estado actual del proyecto
-
-En desarrollo. Por ahora solo está disponible el arranque del programa
-(vista de bienvenida). Los comandos de juego, `--offline`, `--replay` y
-`--bench` todavía no están implementados.
-
-## Vista gráfica (Arcade)
-
-El juego se juega en una ventana hecha con Arcade (ya no hay vista de consola Textual).
+El juego se juega en una ventana hecha con Arcade.
 
 ```bash
-uv sync
-uv run cripta            # en red
-uv run cripta --offline  # con datos_prueba
+uv run cripta                    # en red (usa la caché persistente)
+uv run cripta --offline          # sin red: lo ya descargado + paquete del curso
+uv run cripta --cache-size 25    # tope de fichas en memoria (§4.4, por defecto 25)
+uv run cripta --replay partidas/<archivo>.log   # reproduce una partida sin ventana
+uv run cripta --bench            # mediciones por subsistema, sin red ni ventana
 ```
+
+Otras banderas: `--cache-dir` (carpeta de la caché, por defecto `.cripta_cache`),
+`--offline-dir` (paquete de respuestas del curso, por defecto `datos_prueba`),
+`--log-dir` (carpeta de registros, por defecto `partidas`), `--puntajes`,
+`--cripta`, `--nombre` y `--semilla`.
+
+### Modo `--offline`
+
+Lee las respuestas desde disco con el mismo contrato que el cliente de red:
+
+1. Primero la caché persistente (`--cache-dir`): lo que se fue descargando al
+   jugar en línea (lista de criptas, datos generales, esqueleto, contenido de
+   las salas visitadas o precargadas y fichas del catálogo).
+2. Solo lo que no esté en la caché se toma del paquete del curso (`--offline-dir`).
+
+Una cripta descargada se juega únicamente con lo de la caché (no se mezclan
+versiones). Si una sala nunca se descargó, el juego no deja entrar en ella.
+
+### Archivos que genera el programa
+
+- `.cripta_cache/`: caché persistente (fichas, esqueleto, contenido, datos generales).
+- `partidas/`: registros de partida (`*.log`, para `--replay`) y `puntajes.json`.
+- `partidas/guardadas/`: partidas guardadas en formato binario propio (`*.bin`).
+
+### Controles de la vista gráfica
 
 - La interfaz se dibuja en un lienzo virtual de 800x450 y se escala a la
-  ventana, así se ve con las mismas proporciones en cualquier computadora
-  (laptop con escalado de Windows, monitor 1080p, 4K...). La ventana inicial
-  se calcula según el tamaño de la pantalla y se puede redimensionar.
-- **F11**: pantalla completa. **Esc**: menú. **F1** o **/**: ayuda con todos los controles.
+  ventana, así se ve con las mismas proporciones en cualquier computadora.
+- La precarga de salas corre en segundo plano: cruzar una puerta no congela la
+  ventana mientras llega la respuesta de la red.
+- Música de ambientación propia (menú, exploración y combate), generada con
+  `herramientas/generar_musica.py`; el jugador muestra el arma, la armadura y la
+  antorcha que lleva puestas (sin arma pelea a puñetazos).
+- **F11**: pantalla completa. **Esc**: menú. **F1** o **/**: ayuda con todos los controles. **F2**: efectos de sonido. **F3**: música.
 
 ## Documentación adicional
 
 - [`docs/api.md`](docs/api.md): documentación del API de Cripta.
+- [`docs/desiciones.md`](docs/desiciones.md): Documento de Decisiones de Diseño.
+- [`PROMPTS_LLM.md`](PROMPTS_LLM.md): bitácora de prompts (§10.3).

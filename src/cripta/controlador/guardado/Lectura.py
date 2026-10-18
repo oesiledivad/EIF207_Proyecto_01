@@ -32,14 +32,14 @@ def _leer_sala(datos: bytes) -> SalaG:
         raise ValueError("Versión de cuerpo de sala incompatible.")
     sala = SalaG(r.entero(), r.entero_opcional(), r.booleano(), [], [], [], [])
     for _ in range(r.entero()):
-        sala.salidas.append((r.texto(), r.booleano()))
+        sala.salidas.append([r.texto(), r.booleano()])
     for _ in range(r.entero()):
         sala.enemigos.append(_leer_enemigo(r))
     for _ in range(r.entero()):
-        sala.objetos.append((r.texto(), r.texto(), r.texto()))
+        sala.objetos.append([r.texto(), r.texto(), r.texto()])
     for _ in range(r.entero()):
-        sala.trampas.append((r.texto(), r.booleano(), r.entero(), r.entero_opcional(),
-                             r.texto(), r.texto()))
+        sala.trampas.append([r.texto(), r.booleano(), r.entero(), r.entero_opcional(),
+                             r.texto(), r.texto()])
     if not r.al_final():
         raise ValueError("Guardado dañado: sobran datos en una sala.")
     return sala

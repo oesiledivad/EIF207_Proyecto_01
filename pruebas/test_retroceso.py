@@ -32,28 +32,28 @@ class FuenteRetroceso(FuentePrueba):
 
 
 def eventos(agenda):
-    return ordenar([(e.tiempo_siguiente, e.secuencias, e.actor, e.tipo, e.valido)
-                    for e in agenda._heap], key=lambda e: (e[0], e[1]))
+    return ordenar([[e.tiempo_siguiente, e.secuencias, e.actor, e.tipo, e.valido]
+                    for e in agenda._heap], key=lambda e: [e[0], e[1]])
 
 
 def estado(app):
     """Comparación de prueba; no se almacena en el historial de producción."""
     jugador = app._jugador
     sim = app._simulacion
-    return (
+    return [
         sim.reloj.tiempo_actual, sim.azar.getstate(), sim.agenda._secuencia_actual,
         jugador.vida, jugador.sala, jugador.velocidad, jugador.ataque, jugador.defensa,
         jugador.evento_veneno, jugador.fin_veneno, jugador.evento_fin_velocidad,
         jugador.antorcha_encendida, jugador.evento_antorcha, jugador._proximo_evento,
         eventos(sim.agenda),
-        [(s.id, s.ultimo_tiempo_visita,
-          [(e, e.vida, e.sala, e._proximo_evento, e.tiempo_siguiente) for e in s.enemigos],
-          [(t, t.armada) for t in s.trampas],
-          [(o.id, o.tipo_id) for o in s.objetos if o.tipo_id != "itm_pergamino_retroceso"])
+        [[s.id, s.ultimo_tiempo_visita,
+          [[e, e.vida, e.sala, e._proximo_evento, e.tiempo_siguiente] for e in s.enemigos],
+          [[t, t.armada] for t in s.trampas],
+          [[o.id, o.tipo_id] for o in s.objetos if o.tipo_id != "itm_pergamino_retroceso"]]
          for s in app._salas._datos if s is not None],
-        [(i.instancia_id, i.equipado) for i in app.inventario().items()
+        [[i.instancia_id, i.equipado] for i in app.inventario().items()
          if i.clase != "pergamino_retroceso"],
-    )
+    ]
 
 
 class RetrocesoPruebas(unittest.TestCase):
@@ -179,7 +179,7 @@ class RetrocesoPruebas(unittest.TestCase):
         enemigo.regeneracion_objetivo = 2
         self.app._combate.activar_sala(sala, self.app._simulacion)
         # Un movimiento concreto permite comprobar pertenencia sin depender del RNG.
-        with patch.object(enemigo, "decidir_accion", return_value=("mover", 1)):
+        with patch.object(enemigo, "decidir_accion", return_value=["mover", 1]):
             antes = estado(self.app)
             self.assertTrue(self.app.esperar().ok)
             self.assertEqual(enemigo.sala, 1)

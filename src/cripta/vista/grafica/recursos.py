@@ -3,10 +3,14 @@ from pathlib import Path
 
 import arcade
 
+from . import heroe
+from . import monstruos
 from . import pixelart as pa
 from .packs import animacion, armas
 
 RECURSOS = Path(__file__).resolve().parents[1] / "recursos"
+heroe_TIPOS = ["ninguna", "daga", "espada", "hacha", "lanza", "baston", "maza",
+               "cuero", "placas", "manto", "malla"]   # tipos ya clasificados
 
 
 def _tex(imagen):
@@ -34,7 +38,7 @@ class Recursos:
         self.img_pilar = pa.pilar(40)
         self.img_decoracion = [pa.dibujo(d) for d in [pa.BARRIL, pa.VASIJA, pa.ROCAS, pa.CALAVERA]]
         # Tres intensidades del halo: el parpadeo alterna texturas (sin transparencia variable).
-        self.resplandores = [_tex(pa.resplandor(48, fuerza=f)) for f in (0.7, 0.85, 1.0)]
+        self.resplandores = [_tex(pa.resplandor(48, fuerza=f)) for f in [0.7, 0.85, 1.0]]
         self.resplandor = self.resplandores[-1]
         self.resplandor_oro = _tex(pa.resplandor(32, (255, 210, 110)))
         carpeta = RECURSOS / "catacombs"
@@ -43,7 +47,7 @@ class Recursos:
         self.puertas = []
         for direccion, fabrica in [["N", pa.puerta_norte], ["S", pa.puerta_sur],
                                    ["O", pa.puerta_lateral], ["E", pa.puerta_lateral]]:
-            imagenes = [fabrica(cerrada, salida) for salida in (False, True) for cerrada in (False, True)]
+            imagenes = [fabrica(cerrada, salida) for salida in [False, True] for cerrada in [False, True]]
             if direccion == "E":
                 imagenes = [i.transpose(0) for i in imagenes]   # reflejo horizontal
             self.puertas.append([direccion, [_tex(i) for i in imagenes]])
@@ -63,6 +67,9 @@ class Recursos:
         self.icono_pergamino = _tex(pa.dibujo(pa.PERGAMINO))
         self.icono_sala = _tex(pa.dibujo(pa.LUPA))
         self.icono_salir = _tex(pa.dibujo(pa.PUERTA_SALIR))
+        # Trampas: [desarmada, armada]
+        self.lanzadardos = [_tex(pa.lanzadardos(False)), _tex(pa.lanzadardos(True))]
+        self.placa_presion = [_tex(pa.placa_presion(False)), _tex(pa.placa_presion(True))]
 
     #  Objetos
 
@@ -126,11 +133,24 @@ class Recursos:
         self.soldado_izquierda = [[t.flip_left_right() for t in cuadros]
                                   for cuadros in [self.soldado_idle, self.soldado_correr, self.soldado_atacar,
                                                   self.soldado_herido, self.soldado_morir]]
-        nombres = ["Orc", "Demon_A", "Blood Monster_A", "Soldier"]
-        self.personajes = [[n, animacion(n, "Idle") or respaldo] for n in nombres]
-        self.ataques = [[n, animacion(n, "Attack01") or c] for n, c in self.personajes]
-        self.heridos = [[n, animacion(n, "Hurt") or c] for n, c in self.personajes]
-        self.muertes = [[n, animacion(n, "Death") or c] for n, c in self.personajes]
+        self._heroes = []
+        self.heroe()                    # el jugador sin equipo queda listo desde el inicio
+        # Personajes de los packs (solo los que estén instalados en recursos/local).
+        self.personajes = []
+        self.ataques = []
+        self.heridos = []
+        self.muertes = []
+        for n in ["Orc", "Demon_A", "Blood Monster_A", "Soldier"]:
+            reposo = animacion(n, "Idle")
+            if reposo:
+                self._agregar(n, [reposo, animacion(n, "Attack01") or reposo,
+                                  animacion(n, "Hurt") or reposo, animacion(n, "Death") or reposo])
+        # Arte propio: los enemigos de las criptas publicadas (más grandes y tenebrosos que
+        # los "chibi" de los packs) y el espectro de respaldo para cualquier tipo desconocido.
+        self._agregar("Rata", monstruos.rata())
+        self._agregar("Esqueleto", monstruos.esqueleto())
+        for comportamiento in ["rastreador", "errante", "guardián", ""]:
+            self._agregar(f"Espectro {comportamiento}", monstruos.espectro(comportamiento))
 
         def reflejar(coleccion):
             return [[n, [t.flip_left_right() for t in c]] for n, c in coleccion]
@@ -138,6 +158,53 @@ class Recursos:
         self.ataques_izquierda = reflejar(self.ataques)
         self.heridos_izquierda = reflejar(self.heridos)
         self.muertes_izquierda = reflejar(self.muertes)
+
+    def heroe(self, arma="ninguna", armadura="ninguna", antorcha=False, izquierda=False):
+        """Animaciones del jugador con ese equipo: [reposo, caminar, atacar, herido, muerte].
+
+        Se generan la primera vez que aparece cada combinación y se reutilizan
+        (lista de [clave, derecha, izquierda]; sin dict).
+        """
+        clave = [heroe.tipo_arma(arma) if arma not in heroe_TIPOS else arma,
+                 heroe.tipo_armadura(armadura) if armadura not in heroe_TIPOS else armadura, bool(antorcha)]
+        for guardada, derecha, reflejada in self._heroes:
+            if guardada == clave:
+                return reflejada if izquierda else derecha
+        derecha = [[_tex(c) for c in cuadros] for cuadros in heroe.animaciones(*clave)]
+        reflejada = [[t.flip_left_right() for t in cuadros] for cuadros in derecha]
+        self._heroes.append([clave, derecha, reflejada])
+        return reflejada if izquierda else derecha
+
+    def _agregar(self, nombre, animaciones):
+        """Registra [reposo, ataque, herida, muerte] (imágenes PIL o texturas) con un nombre."""
+        texturas = [[c if isinstance(c, arcade.Texture) else _tex(c) for c in cuadros]
+                    for cuadros in animaciones]
+        colecciones = [self.personajes, self.ataques, self.heridos, self.muertes]
+        for i in range(len(colecciones)):
+            colecciones[i].append([nombre, texturas[i]])
+
+    def nombre_enemigo(self, enemigo):
+        """Qué arte usa un enemigo. Orden de respaldo:
+
+        1. Arte propio por nombre o tipo (rata, esqueleto/óseo).
+        2. Personaje de un pack si el tipo se parece y el pack está instalado.
+        3. Espectro según el comportamiento (guardián, errante, rastreador).
+        4. Espectro genérico.
+        """
+        tipo = f"{getattr(enemigo, 'tipo', '')} {getattr(enemigo, 'nombre', '')}".lower()
+        disponibles = [n for n, _ in self.personajes]
+        for palabras, nombre in [[["rata", "ratón", "raton", "roedor"], "Rata"],
+                                 [["óseo", "oseo", "esqueleto", "hueso", "calavera", "osario"], "Esqueleto"],
+                                 [["orco", "orc", "acechador"], "Orc"],
+                                 [["demon", "custodio"], "Demon_A"],
+                                 [["sangre", "sombra"], "Blood Monster_A"],
+                                 [["guardia", "soldado", "patrullero"], "Soldier"]]:
+            if any(p in tipo for p in palabras) and nombre in disponibles:
+                return nombre
+        comportamiento = (getattr(enemigo, "comportamiento", "") or "").lower().replace("guardian", "guardián")
+        if f"Espectro {comportamiento}" in disponibles:
+            return f"Espectro {comportamiento}"
+        return "Espectro "
 
     def enemigo(self, enemigo, atacar=False, izquierda=False, estado=""):
         """Elige una animación por identidad, orientación y estado visual."""
@@ -149,13 +216,5 @@ class Recursos:
             coleccion = self.ataques_izquierda if izquierda else self.ataques
         else:
             coleccion = self.personajes_izquierda if izquierda else self.personajes
-        tipo = f"{getattr(enemigo, 'tipo', '')} {enemigo.nombre}".lower()
-        for palabra, nombre in [["óseo", "Demon_A"], ["oseo", "Demon_A"], ["esqueleto", "Demon_A"],
-                                ["orco", "Orc"], ["orc", "Orc"], ["demon", "Demon_A"],
-                                ["sangre", "Blood Monster_A"], ["guardia", "Soldier"],
-                                ["soldado", "Soldier"], ["patrullero", "Soldier"],
-                                ["acechador", "Orc"], ["custodio", "Demon_A"],
-                                ["sombra", "Blood Monster_A"], ["rata", "Blood Monster_A"]]:
-            if palabra in tipo:
-                return next(c for n, c in coleccion if n == nombre)
-        return next(c for n, c in coleccion if n == "Orc")
+        nombre = self.nombre_enemigo(enemigo)
+        return next(c for n, c in coleccion if n == nombre)

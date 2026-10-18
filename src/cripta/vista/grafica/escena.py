@@ -60,6 +60,10 @@ class Escena:
         self.accion_activa = ""
         self._clave_sala = None
         self._textura_sala = None
+        # Trampas: ids que ya se vieron disparadas y dardos en vuelo [x, y, inicio].
+        self._clave_trampas = None
+        self._disparadas: list[str] = []
+        self._dardos: list[list] = []
 
     # Atajos usados por otras pantallas
     @property
@@ -100,6 +104,7 @@ class Escena:
         self.accion_activa = vista.accion_visual if vista.pausa_visual else ""
         self.distribucion.preparar(p)
         self._preparar_sala(p)
+        self._inventario = inventario
         cuadro = int(vista.animacion * 6)
 
         l.texto(f"CRIPTA — SALA {p.sala_actual_id}", SALA_X + 2, ALTO - 22, 2, (196, 186, 160), negrita=True)
@@ -111,6 +116,7 @@ class Escena:
 
         self.sala(vista, p, cuadro)
         self.entidades(vista, p, cuadro)
+        self.dardos_en_vuelo(vista)
         self.minimapa(vista, p)
         self.mensaje_estado(vista)
         self.inventario(vista, inventario)
@@ -129,7 +135,7 @@ class Escena:
         la sala, así que se arman con PIL y se dibujan con una sola llamada. El
         azar visual es propio (no toca el azar de la simulación).
         """
-        clave = (p.cripta_id, p.semilla, p.sala_actual_id)
+        clave = [p.cripta_id, p.semilla, p.sala_actual_id]
         if clave == self._clave_sala:
             return
         self._clave_sala = clave
@@ -149,41 +155,41 @@ class Escena:
         """Imagen de 288x160 píxeles de arte (la sala completa sin puertas ni antorchas)."""
         r = self.recursos
         ancho, alto = SALA_ANCHO // K, SALA_ALTO // K              # 288 x 160
-        img = Image.new("RGBA", (ancho, alto), (8, 8, 10, 255))
+        img = Image.new("RGBA", [ancho, alto], (8, 8, 10, 255))
         lado, arriba_suelo, abajo_suelo = MURO_LADO // K, MURO_FONDO // K, alto - MURO_ABAJO // K
         columnas = SUELO_ANCHO // T
         for i, indice in enumerate(suelo):                          # suelo
             fila, col = divmod(i, columnas)
             pa.componer(img, r.img_baldosas[indice], lado + col * 16, arriba_suelo + fila * 16)
         for i, alfa in enumerate([110, 70, 40, 18]):                 # sombra del muro del fondo
-            pa.sombra(img, (lado, arriba_suelo + i * 3, ancho - lado - 1, arriba_suelo + i * 3 + 2), alfa)
+            pa.sombra(img, [lado, arriba_suelo + i * 3, ancho - lado - 1, arriba_suelo + i * 3 + 2], alfa)
         for col in range(ancho // 16):                               # muro del fondo
             for fila in range(2):
                 pa.componer(img, r.img_ladrillos[(col * 3 + fila) % 4], col * 16, 8 + fila * 16)
             pa.componer(img, r.img_borde[col % 4], col * 16, 0)
         for x in range(ancho):
-            img.putpixel((x, 8), (40, 35, 27, 255))
+            img.putpixel([x, 8], (40, 35, 27, 255))
         for centro in [38, 98, 190, 250]:                            # columnas
             pa.componer(img, r.img_pilar, centro - 6, 0)
         for i, y in enumerate(range(abajo_suelo - 16, -16, -16)):    # muros laterales
             pa.componer(img, r.img_muro[i % 4], 0, y)
             pa.componer(img, r.img_muro[(i + 2) % 4], ancho - lado, y)
-        pa.sombra(img, (lado, arriba_suelo, lado, abajo_suelo - 1), 150)
-        pa.sombra(img, (ancho - lado - 1, arriba_suelo, ancho - lado - 1, abajo_suelo - 1), 150)
-        pa.sombra(img, (0, abajo_suelo, ancho - 1, alto - 1), 255)    # muro inferior
+        pa.sombra(img, [lado, arriba_suelo, lado, abajo_suelo - 1], 150)
+        pa.sombra(img, [ancho - lado - 1, arriba_suelo, ancho - lado - 1, abajo_suelo - 1], 150)
+        pa.sombra(img, [0, abajo_suelo, ancho - 1, alto - 1], 255)    # muro inferior
         for col in range(ancho // 16):
             pa.componer(img, r.img_borde[(col + 1) % 4], col * 16, abajo_suelo + 3)
         for x in range(lado, ancho - lado):
-            img.putpixel((x, abajo_suelo), (150, 135, 100, 255))
+            img.putpixel([x, abajo_suelo], (150, 135, 100, 255))
         for indice, x, y in ordenar(decoracion.copy(), key=lambda d: -d[2]):  # atrás primero
             figura = r.img_decoracion[indice]
             ax, ay = int((x - SALA_X) / K), int(alto - (y - SALA_Y) / K)
             pa.sombra_ovalada(img, ax, ay, int(figura.width * 0.9), 3)
             pa.componer(img, figura, ax - figura.width // 2, ay - figura.height)
         for i, alfa in enumerate([70, 45, 25]):                      # viñeta
-            pa.sombra(img, (lado + i * 3, arriba_suelo, lado + i * 3 + 2, abajo_suelo - 1), alfa)
-            pa.sombra(img, (ancho - lado - 3 - i * 3, arriba_suelo, ancho - lado - 1 - i * 3, abajo_suelo - 1), alfa)
-            pa.sombra(img, (lado, abajo_suelo - 3 - i * 3, ancho - lado - 1, abajo_suelo - 1 - i * 3), alfa)
+            pa.sombra(img, [lado + i * 3, arriba_suelo, lado + i * 3 + 2, abajo_suelo - 1], alfa)
+            pa.sombra(img, [ancho - lado - 3 - i * 3, arriba_suelo, ancho - lado - 1 - i * 3, abajo_suelo - 1], alfa)
+            pa.sombra(img, [lado, abajo_suelo - 3 - i * 3, ancho - lado - 1, abajo_suelo - 1 - i * 3], alfa)
         return img
 
     def sala(self, vista, p, cuadro):
@@ -195,6 +201,67 @@ class Escena:
             l.imagen(r.resplandores[(cuadro // 2 + i) % 3], x - 48, y_cara - 30, 96, 96)
             l.imagen(r.antorchas[(cuadro + i) % 4], x - 16, y_cara + 12, 32, 32)
         self.puertas(vista, p)
+        self.trampas(vista, p)
+
+    #  Trampas
+
+    HUECOS_TRAMPA = [SALA_X + 174, SALA_X + 356, SALA_X + 60, SALA_X + 470]
+
+    def trampas(self, vista, p):
+        """Lanzadardos en el muro y placa de presión en el suelo por cada trampa de la sala.
+
+        Solo lee el estado: cuando una trampa pasa de armada a disparada, lanza
+        la animación de los dardos (no toca la simulación).
+        """
+        l, r = self.lienzo, self.recursos
+        clave = [p.cripta_id, p.semilla]
+        if clave != self._clave_trampas:
+            self._clave_trampas = clave
+            self._disparadas = []
+            self._dardos = []
+        y_muro = SUELO_Y + SUELO_ALTO + 24
+        for i, trampa in enumerate(getattr(p, "trampas", []) or []):
+            x = self.HUECOS_TRAMPA[i % len(self.HUECOS_TRAMPA)]
+            if not trampa.activa and trampa.id not in self._disparadas:
+                self._disparadas.append(trampa.id)
+                self._dardos.append([x, y_muro + 9, vista.animacion])
+            elif trampa.activa and trampa.id in self._disparadas:
+                self._disparadas.remove(trampa.id)            # se rearmó
+            estado = 1 if trampa.activa else 0
+            l.imagen(r.lanzadardos[estado], x - 14, y_muro, 28, 18)
+            l.imagen(r.placa_presion[estado], x - 16, SUELO_Y + SUELO_ALTO - 26, 32, 16)
+            if trampa.activa and int(vista.animacion * 2) % 2 == 0:
+                l.elipse(x, y_muro + 9, 34, 22, (204, 52, 46, 40))   # brillo de amenaza
+            nombre = trampa.tipo.split("_", 1)[-1].replace("_", " ") if trampa.tipo else "trampa"
+            ayuda = (f"Trampa de {nombre} · armada · daño {trampa.dano}" if trampa.activa
+                     else f"Trampa de {nombre} · disparada, se rearma sola")
+            if l.bajo_raton(x - 16, SUELO_Y + SUELO_ALTO - 26, 32, 70):
+                l.ayuda = ayuda                     # solo informa: no es clickeable
+
+    def dardos_en_vuelo(self, vista):
+        """Tres dardos que salen del muro hacia el jugador (0.45 s, solo visual)."""
+        l = self.lienzo
+        px, py = self.posicion_jugador(vista)
+        vigentes = []
+        for x0, y0, inicio in self._dardos:
+            t = vista.animacion - inicio
+            if t > 0.6:
+                continue
+            vigentes.append([x0, y0, inicio])
+            for k, dx in enumerate([-6, 0, 6]):
+                avance = min(1.0, max(0.0, (t - k * 0.06) / 0.35))
+                if avance <= 0 or avance >= 1:
+                    continue
+                x = x0 + dx + (px - x0) * avance
+                y = y0 + (py + 22 - y0) * avance
+                distancia = max(1.0, math.hypot(px - x0, py + 22 - y0))
+                ux = (px - x0) / distancia
+                uy = (py + 22 - y0) / distancia
+                for paso in range(8):                   # punta, astil y plumas rojas
+                    color = (220, 220, 230) if paso < 2 else (130, 90, 52) if paso < 6 else (200, 40, 36)
+                    tam = 3 if paso < 2 or paso >= 6 else 2
+                    l.rect(x - ux * paso * 2, y - uy * paso * 2, tam, tam, color)
+        self._dardos = vigentes
 
     @staticmethod
     def rect_puerta(direccion):
@@ -258,9 +325,9 @@ class Escena:
         Returns:
             Altura del cuerpo dibujado (para ubicar la barra de vida).
         """
-        caja = referencia.image.getbbox() or (0, 0, referencia.width, referencia.height)
+        caja = referencia.image.getbbox() or [0, 0, referencia.width, referencia.height]
         if izquierda:
-            caja = (referencia.width - caja[2], caja[1], referencia.width - caja[0], caja[3])
+            caja = [referencia.width - caja[2], caja[1], referencia.width - caja[0], caja[3]]
         ancho_cuerpo = (caja[2] - caja[0]) * K
         x = cx - ancho_cuerpo / 2 - caja[0] * K
         y = pies - (referencia.height - caja[3]) * K
@@ -292,15 +359,67 @@ class Escena:
             else:
                 progreso = (transcurrido - 0.325) / 0.325 if accion == 2 else transcurrido / 0.65
                 accion = 3
-        animacion = (r.soldado_izquierda[accion] if izquierda else
-                     [r.soldado_idle, r.soldado_correr, r.soldado_atacar, r.soldado_herido, r.soldado_morir][accion])
+        arma, armadura, antorcha = self.equipo_jugador(p)
+        animaciones = r.heroe(arma, armadura, antorcha, izquierda)
+        referencia = r.heroe(arma, armadura, antorcha)[0][0]
+        animacion = animaciones[accion]
         indice = cuadro % len(animacion)
         if accion in [2, 3, 4]:
             indice = min(len(animacion) - 1, int(max(0, progreso) * len(animacion)))
         self.lienzo.elipse(px, py + 1, 24, 7, (0, 0, 0, 110))
-        alto = self.personaje(animacion[indice], r.soldado_idle[0], px, py, izquierda=izquierda)
+        envenenado = any(str(e).startswith("Envenenado") for e in (p.efectos or []))
+        if envenenado:
+            self.burbujas_veneno(vista, px, py, detras=True)
+        if antorcha:                                   # la antorcha ilumina alrededor
+            mano_x = px + (14 if izquierda else -14)
+            halo = r.resplandores[int(vista.animacion * 3) % 3]
+            self.lienzo.imagen(halo, mano_x - 70, py - 10, 140, 140)
+            self.lienzo.imagen(halo, mano_x - 40, py + 20, 80, 80)
+        alto = self.personaje(animacion[indice], referencia, px, py, izquierda=izquierda)
+        if envenenado:
+            self.burbujas_veneno(vista, px, py, detras=False)
         if vista.pausa_visual and vista.cambio_vida:
             self.numero(vista.cambio_vida, px, py + alto + 4, vista.pausa_visual, vista.duracion_visual)
+
+    def equipo_jugador(self, p):
+        """[arma, armadura, antorcha] visibles: lo equipado en el inventario y la antorcha encendida."""
+        arma = ""
+        armadura = ""
+        inventario = getattr(self, "_inventario", None)
+        for item in (inventario.items() if inventario is not None else []):
+            if getattr(item, "equipado", False):
+                texto = f"{getattr(item, 'tipo_id', '')} {getattr(item, 'nombre', '')}"
+                if item.clase == "arma":
+                    arma = texto
+                elif item.clase == "armadura":
+                    armadura = texto
+        antorcha = any(str(e).startswith("Antorcha encendida") for e in (p.efectos or []))
+        return [arma, armadura, antorcha]
+
+    def burbujas_veneno(self, vista, px, py, detras):
+        """Aura y burbujas verdes que suben y revientan alrededor del jugador envenenado."""
+        l = self.lienzo
+        t = vista.animacion
+        if detras:
+            pulso = 0.5 + 0.5 * math.sin(t * 4)
+            l.elipse(px, py + 2, 40 + 8 * pulso, 12 + 3 * pulso, (60, 200, 70, int(60 + 50 * pulso)))
+            l.elipse(px, py + 22, 30 + 6 * pulso, 46, (60, 220, 70, int(18 + 22 * pulso)))   # halo tóxico
+        for k in range(14):
+            fase = (t * 0.5 + k * 0.29) % 1.0
+            atras = k % 2 == 0                      # mitad por detrás, mitad por delante
+            if atras != detras:
+                continue
+            x = px + math.sin(k * 2.3 + t * 1.7) * (9 + k % 4 * 4)
+            y = py + 2 + fase * 58
+            radio = 2.5 + (k % 3) * 1.2 + (1.5 if fase > 0.85 else 0)
+            alfa = int(220 * (1 - fase) ** 0.6)
+            if fase > 0.92:                         # revienta
+                for dx, dy in [[-4, 0], [4, 0], [0, 4], [0, -4], [-3, 3], [3, 3]]:
+                    l.rect(x + dx, y + dy, 2, 2, (150, 255, 140, max(alfa, 90)))
+                continue
+            l.elipse(x, y, radio * 2 + 2, radio * 2 + 2, (20, 70, 24, alfa))
+            l.elipse(x, y, radio * 2, radio * 2, (80, 220, 70, alfa))
+            l.elipse(x - radio * 0.35, y + radio * 0.35, radio * 0.7, radio * 0.7, (210, 255, 200, alfa))
 
     def numero(self, valor, x, y, pausa, duracion=0.65):
         """Cambio de vida flotante con signo y color de daño o curación."""
@@ -313,7 +432,10 @@ class Escena:
         l, r = self.lienzo, self.recursos
         jugador_x = self.posicion_jugador(vista)[0]
         transcurrido = max(0, vista.duracion_visual - vista.pausa_visual)
-        for enemigo in p.enemigos + (vista.enemigos_muertos if vista.pausa_visual else []):
+        visibles = p.enemigos + (vista.enemigos_muertos if vista.pausa_visual else [])
+        # Los de atrás primero: los monstruos grandes se superponen bien.
+        visibles = ordenar(visibles, key=lambda e: -self.posicion(p, "enemigo", e.id)[1])
+        for enemigo in visibles:
             cx, pies = self.posicion(p, "enemigo", enemigo.id)
             atacando = vista.pausa_visual > 0 and enemigo.id in vista.atacantes
             muerto = enemigo in vista.enemigos_muertos
@@ -341,7 +463,7 @@ class Escena:
             l.rect(cx - 12, barra_y, 24 * enemigo.vida / max(1, enemigo.vida_max), 4, ROJO)
             if atacando:
                 l.rect(cx - 12, pies - 4, 24, 2, ROJO)
-            zona = l.zona(cx - 16, pies - 4, 32, alto + 14, "seleccionar", enemigo.id,
+            zona = l.zona(cx - 22, pies - 4, 44, alto + 14, "seleccionar", enemigo.id,
                           f"{enemigo.nombre} · {enemigo.vida}/{enemigo.vida_max} · doble clic: atacar")
             if seleccionado or zona.contiene(*l.raton):
                 nombre = fp.recortar(enemigo.nombre, 120)
