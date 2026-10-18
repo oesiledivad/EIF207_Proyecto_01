@@ -343,7 +343,7 @@ def main():
     _bench_simulacion()
     _bench_referencia()
     print("\n=== Ciclo completo sintético (sin red, disco ni renderizado) ===")
-    for enemigos in [20, 200, 500]:
+    for enemigos in [20, 200, 500, 1000]:
         _bench_ciclo_completo(enemigos)
     with tempfile.TemporaryDirectory(prefix="cripta-bench-") as carpeta:
         _bench_estructuras_y_persistencia(carpeta)
