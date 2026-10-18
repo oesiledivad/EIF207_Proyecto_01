@@ -12,6 +12,15 @@ from cripta.estructuras.Guardado_Binario import Guardado_Binario
 
 
 class PruebasBench(unittest.TestCase):
+    def test_ciclo_completo_mide_acciones_reales_sin_red_ni_vista(self):
+        from cripta.bench import _bench_ciclo_completo
+        with patch("requests.get", side_effect=AssertionError("No debe consultar red")), \
+                patch("builtins.open", side_effect=AssertionError("No debe abrir archivos")), \
+                patch("builtins.print"):
+            medidas = _bench_ciclo_completo(5, 3)
+        self.assertEqual(len(medidas), 3)
+        self.assertTrue(all(tiempo >= 0 for tiempo in medidas))
+
     def test_bench_no_construye_fuente_ni_vista(self):
         vista_antes = sys.modules.get("cripta.vista.grafica.ventana")
         with patch("cripta.bootstrap._construir_data_source") as fuente:

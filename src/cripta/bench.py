@@ -261,9 +261,52 @@ def _comprobar_sala(guardado, sala):
     assert guardado.cargar_sala(sala.sala_id) == sala.bytes_
 
 
+def _bench_ciclo_completo(n_enemigos=500, repeticiones=100):
+    """Mide acciones reales con combate, historial y sincronización, sin E/S ni vista."""
+    from types import SimpleNamespace
+    from cripta.controlador.Aplicacion import Aplicacion
+    from cripta.dto.Partida_dto import SalaModelo
+    from cripta.modelo.Jugador import Jugador
+    from cripta.modelo.Simulacion import Simulacion
+    from cripta.modelo.enemigos.Guardian import Guardian
+
+    app = Aplicacion(SimpleNamespace(requests_made=0))
+    app._salas = _construir_cripta_sintetica(20)
+    app._gestor.reiniciar_inventario(10)
+    estado = app.estado_partida()
+    estado.activa = True
+    estado.salas_conocidas = [SalaModelo(s.id, s.nombre, "") for s in app._salas._datos if s is not None]
+    vida = max(1, n_enemigos * repeticiones * 10)
+    app._jugador = Jugador("jugador", vida, vida, 6, 100, 100, 0, 0, 10)
+    app._simulacion = Simulacion(42, app._gestor.historial)
+    app._simulacion.agenda.reprogramar(app._jugador, 0, "accion_actor")
+    ficha = SimpleNamespace(id="enemigo-bench", nombre="Guardián sintético")
+    app._cripta_service._cache_fichas.insertar(ficha.id, ficha)
+    sala = app._salas.obtener(0)
+    for i in range(n_enemigos):
+        enemigo = Guardian(str(i), 10, 10, 3, 0, 150, 0, None)
+        enemigo.tipo = ficha.id
+        sala.agregar_enemigo(enemigo)
+    app._combate.activar_sala(sala, app._simulacion)
+    medidas = []
+    for _ in range(repeticiones):
+        inicio = time.perf_counter()
+        resultado = app.esperar()
+        medidas.append((time.perf_counter() - inicio) * 1000)
+        assert resultado.ok, resultado.motivo
+    peor = max(medidas)
+    print(f"ciclo completo: enemigos={n_enemigos} n={repeticiones} "
+          f"media={sum(medidas)/len(medidas):.3f}ms maximo={peor:.3f}ms "
+          f"limite=20ms {'CUMPLE' if peor < 20 else 'EXCEDE'}")
+    return medidas
+
+
 def main():
     import tempfile
     _bench_simulacion()
+    print("\n=== Ciclo completo sintético (sin red, disco ni renderizado) ===")
+    for enemigos in [20, 200, 500]:
+        _bench_ciclo_completo(enemigos)
     with tempfile.TemporaryDirectory(prefix="cripta-bench-") as carpeta:
         _bench_estructuras_y_persistencia(carpeta)
 
