@@ -7,6 +7,7 @@ import arcade
 from .escena import Escena, PANEL_X, FONDO
 from .lienzo import Lienzo, cargar_fuentes, tamano_ventana_inicial
 from .recursos import Recursos
+from .musica import Musica
 from .sonidos import Sonidos
 
 
@@ -60,6 +61,37 @@ class VentanaCripta(arcade.Window):
         self.lienzo = Lienzo()
         self.escena = Escena(Recursos(), self.lienzo)
         self.sonidos = Sonidos(activo=visible)   # en las pruebas (ventana oculta) no suena
+        self.musica = Musica(activo=visible)
+        self._ultimo_enemigo = -10.0             # para no saltar de pista en cada golpe
+
+    #  Música de ambientación (solo decora: depende de la pantalla y del estado visible)
+
+    def pista_actual(self):
+        """Qué pista corresponde: menú, exploración, combate o silencio (pantalla final)."""
+        from .carga import PantallaCarga
+        from .fin import PantallaFin
+        from .menu import MenuPrincipal
+        vista = self.current_view
+        if isinstance(vista, MenuPrincipal):
+            return "menu"
+        if isinstance(vista, PantallaCarga):
+            return self.musica.actual or "menu"      # se mantiene la que venía sonando
+        if isinstance(vista, PantallaFin):
+            return ""                                # suenan victoria/derrota
+        p = self.controlador.estado_partida()
+        if not p.activa:
+            return self.musica.actual
+        if p.enemigos:
+            self._ultimo_enemigo = self.animacion
+        return "combate" if self.animacion - self._ultimo_enemigo < 2.5 else "cripta"
+
+    def show_view(self, new_view):
+        super().show_view(new_view)
+        self.musica.poner(self.pista_actual())
+
+    def hide_view(self):
+        super().hide_view()
+        self.musica.poner(self.pista_actual())
 
     @property
     def raton(self):
@@ -288,7 +320,7 @@ class VentanaCripta(arcade.Window):
                      ". : esperar · P: pergamino de retroceso\n"
                      "Tab: siguiente objeto · U: usar · E: equipar · S/D: soltar\n"
                      "Alt+P/V/N/R: ordenar el inventario por peso/valor/nombre/real\n"
-                     "I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido\n"
+                     "I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido · F3: música\n"
                      "Minimapa: dorado = salida, rojo = cerrada.")
             self.show_view(Panel(self, "AYUDA", texto=texto))
             return
@@ -392,6 +424,7 @@ class VentanaCripta(arcade.Window):
         """Avanza solo las animaciones y muestra el resultado cuando terminan."""
         self.animacion += delta_time
         self.pausa_visual = max(0, self.pausa_visual - delta_time)
+        self.musica.poner(self.pista_actual())
         if self.current_view is None and self.controlador.estado_partida().terminada and not self.pausa_visual:
             from .fin import PantallaFin
             self.show_view(PantallaFin(self))
@@ -436,6 +469,9 @@ class VentanaCripta(arcade.Window):
             return
         if symbol == arcade.key.F2:
             self.mensaje = "Sonido activado." if self.sonidos.alternar() else "Sonido silenciado."
+            return
+        if symbol == arcade.key.F3:
+            self.mensaje = "Música activada." if self.musica.alternar() else "Música silenciada."
             return
         if self.current_view is not None:
             return

@@ -81,7 +81,10 @@ versiones). Si una sala nunca se descargó, el juego no deja entrar en ella.
   ventana, así se ve con las mismas proporciones en cualquier computadora.
 - La precarga de salas corre en segundo plano: cruzar una puerta no congela la
   ventana mientras llega la respuesta de la red.
-- **F11**: pantalla completa. **Esc**: menú. **F1** o **/**: ayuda con todos los controles. **F2**: sonido.
+- Música de ambientación propia (menú, exploración y combate), generada con
+  `herramientas/generar_musica.py`; el jugador muestra el arma, la armadura y la
+  antorcha que lleva puestas (sin arma pelea a puñetazos).
+- **F11**: pantalla completa. **Esc**: menú. **F1** o **/**: ayuda con todos los controles. **F2**: efectos de sonido. **F3**: música.
 
 ## Documentación adicional
 
