@@ -17,7 +17,7 @@ _PISTAS = [
 class Musica:
     """Una pista en bucle a la vez; cambiar de pista corta la anterior."""
 
-    def __init__(self, activo=True, volumen=0.35):
+    def __init__(self, activo=True, volumen=0.8):
         self.activo = activo
         self.volumen = volumen
         self.actual = ""
