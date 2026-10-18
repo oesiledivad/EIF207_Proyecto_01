@@ -78,8 +78,15 @@ class InicioPartidaControlador:
             return ResultadoInicio(ok=False, motivo="No se pudo cargar la cripta: el contenido de la "
                                                     "sala inicial no está disponible.")
         sala_inicial.ultimo_tiempo_visita = 0             # §2.9
-        app._combate.activar_sala(sala_inicial, app._simulacion)  # §2.4: enemigos de la sala inicial en t=0
-        app._avisar(app._cripta_service.fijar_contenido_visible(sala_inicial))  # §4.4
+        try:
+            tipos = app._cripta_service.tipos_visibles(sala_inicial)
+            tipos.extend(e.tipo for e in sala_inicial.enemigos if e.vida > 0)
+            app._cripta_service.validar_capacidad(tipos)
+            app._combate.activar_sala(sala_inicial, app._simulacion)
+            app._cripta_service.fijar_fichas(app._cripta_service.tipos_visibles(sala_inicial))
+        except (RuntimeError, OSError, ValueError) as error:
+            app._gestor.estado.activa = False
+            return ResultadoInicio(ok=False, motivo=f"No se pudo preparar la sala inicial: {error}")
         app._gestor.refrescar_sala_actual()
         app._sincronizar_estado()
 

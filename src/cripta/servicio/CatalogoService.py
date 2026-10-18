@@ -92,7 +92,21 @@ class CatalogoService:
 
     def fijar_fichas(self, ids: list[str]) -> None:
         """Marca fichas como en uso (una referencia por aparición). Trae las que falten."""
+        necesarias = list(ids)
+        nodo = self._servicio._cache_fichas._cabeza_lru
+        while nodo is not None:
+            if nodo.referencias:
+                necesarias.append(nodo.clave)
+            nodo = nodo.siguiente_lru
+        self.validar_capacidad(necesarias)
         self.asegurar_fichas(ids, fijar=True)
+
+    def validar_capacidad(self, tipos: list[str]) -> None:
+        """Rechaza un estado que no permite mantener todas sus fichas en uso."""
+        requeridas = len(_sin_repetidos(tipos))
+        if requeridas > self._servicio._cache_fichas.capacidad:
+            raise RuntimeError(f"Caché insuficiente: se necesitan {requeridas} fichas en uso. "
+                               f"Aumenta --cache-size a {requeridas} o más.")
 
     def liberar_fichas(self, ids: list[str]) -> None:
         """Quita una referencia por aparición; con 0 vuelven a ser desalojables."""

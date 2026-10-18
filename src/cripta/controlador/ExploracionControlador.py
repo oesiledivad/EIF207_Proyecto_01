@@ -175,6 +175,14 @@ class ExploracionControlador:
         if error is not None:
             return ResultadoAccion.fallo(f"No se pudo cargar la sala destino: {error}")
 
+        destino = self.salas.obtener(destino_id)
+        tipos = self._servicio.tipos_activos(self._gestor.inventario, self.salas, destino)
+        tipos.extend(e.tipo for e in destino.enemigos if e.vida > 0 and e._proximo_evento is None)
+        try:
+            self._servicio.validar_capacidad(tipos)
+        except RuntimeError as error:
+            return ResultadoAccion.fallo(str(error))
+
         resultado = app._accion_jugador(
             "mover", lambda: self._ejecutar_movimiento(destino_id, direccion), direccion)
         if resultado.ok and app._partida_en_curso():
@@ -193,7 +201,7 @@ class ExploracionControlador:
         self._simulacion.agenda.cambiar(self._jugador, "sala", destino_id)
         self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # §2.9
         app._combate.activar_sala(sala_destino, self._simulacion)   # §2.4
-        app._avisar(self._servicio.fijar_contenido_visible(sala_destino))
+        self._servicio.fijar_fichas(self._servicio.tipos_visibles(sala_destino))
         self._estado.objetos_suelo = sala_destino.objetos
         self._bitacora.append(Mensaje("jugador", f"Te mueves al {direccion}: {sala_destino.nombre}."))
         marca = sala_origen.ultimo_tiempo_visita

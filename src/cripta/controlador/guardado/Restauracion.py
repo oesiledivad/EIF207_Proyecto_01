@@ -143,4 +143,4 @@ def restaurar_partida(app, datos: DatosGuardado) -> None:
     app._gestor.historial.limpiar()
     app._gestor.refrescar_sala_actual()
     app._sincronizar_estado()
-    app._avisar(app._cripta_service.fijar_seguro(app._tipos_activos()))
+    app._cripta_service.fijar_fichas(app._tipos_activos())

@@ -140,6 +140,9 @@ class CriptaService:
     def fijar_fichas(self, ids: list[str]) -> None:
         self._catalogo.fijar_fichas(ids)
 
+    def validar_capacidad(self, tipos: list[str]) -> None:
+        self._catalogo.validar_capacidad(tipos)
+
     def liberar_fichas(self, ids: list[str]) -> None:
         self._catalogo.liberar_fichas(ids)
 

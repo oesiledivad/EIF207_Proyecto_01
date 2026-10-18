@@ -125,6 +125,4 @@ class CombateControlador:
     #  Interno
 
     def _fijar(self, tipos: list[str]) -> None:
-        error = self._servicio.fijar_seguro(tipos)
-        if error is not None:
-            self._bitacora.append(Mensaje("sistema", error))
+        self._servicio.fijar_fichas(tipos)
