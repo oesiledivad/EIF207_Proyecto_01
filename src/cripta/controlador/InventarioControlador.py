@@ -7,6 +7,7 @@ historial los cambios invertibles.
 
 from __future__ import annotations
 
+from cripta.replay.reproductor import ErrorRegistro
 from cripta.controlador.GestorPartida import GestorPartida
 from cripta.adaptadores.Crypt_Data_Source import PresupuestoAgotado
 from cripta.servicio.CriptaService import CriptaService
@@ -158,6 +159,19 @@ class InventarioControlador:
         jugador.defensa -= item.defensa_bonus
 
     #  Recorrido
+
+    def recorrer(self, recorrer, nombre: str, registrar) -> ResultadoAccion:
+        """Cambia la selección y la restaura si falla el registro de replay."""
+        anterior = self._gestor.inventario.item_actual()
+        resultado = recorrer()
+        if resultado.ok:
+            try:
+                registrar(nombre)
+            except ErrorRegistro:
+                if anterior is not None:
+                    self._gestor.inventario.seleccionar(anterior.instancia_id)
+                raise
+        return resultado
 
     def siguiente(self) -> ResultadoAccion:
         if self._gestor.inventario is None:

@@ -387,16 +387,7 @@ class Aplicacion:
     def _recorrer_inventario(self, recorrer, nombre: str) -> ResultadoAccion:
         if not self._partida_en_curso():
             return ResultadoAccion.fallo("La partida no está activa.")
-        anterior = self._gestor.inventario.item_actual()
-        resultado = recorrer()
-        if resultado.ok:
-            try:
-                self._partida.registrar_accion(nombre)
-            except ErrorRegistro:
-                if anterior is not None:
-                    self._gestor.inventario.seleccionar(anterior.instancia_id)
-                raise
-        return resultado
+        return self._inventario.recorrer(recorrer, nombre, self._partida.registrar_accion)
 
     def vista_inventario(self, criterio: str) -> list:
         return self._inventario.vista_ordenada(criterio)
