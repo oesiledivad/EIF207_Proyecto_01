@@ -5,7 +5,7 @@ import arcade
 
 from . import heroe
 from . import monstruos
-from . import pixelart as pa
+from .assets import imagen
 from .packs import animacion, armas
 
 RECURSOS = Path(__file__).resolve().parents[1] / "recursos"
@@ -31,24 +31,22 @@ class Recursos:
 
     def _sala(self):
         # Imágenes PIL: la escena compone con ellas una sola textura por sala.
-        self.img_baldosas = [pa.baldosa(i) for i in range(10)]
-        self.img_ladrillos = [pa.ladrillos(i) for i in range(4)]
-        self.img_muro = [pa.bloque_muro(i) for i in range(4)]
-        self.img_borde = [pa.bloque_muro(i, 16, 8) for i in range(4)]
-        self.img_pilar = pa.pilar(40)
-        self.img_decoracion = [pa.dibujo(d) for d in [pa.BARRIL, pa.VASIJA, pa.ROCAS, pa.CALAVERA]]
+        self.img_baldosas = [imagen(f"baldosa_{i}") for i in range(10)]
+        self.img_ladrillos = [imagen(f"ladrillos_{i}") for i in range(4)]
+        self.img_muro = [imagen(f"muro_{i}") for i in range(4)]
+        self.img_borde = [imagen(f"borde_{i}") for i in range(4)]
+        self.img_pilar = imagen("pilar")
+        self.img_decoracion = [imagen(n) for n in ["barril", "vasija", "rocas", "calavera"]]
         # Tres intensidades del halo: el parpadeo alterna texturas (sin transparencia variable).
-        self.resplandores = [_tex(pa.resplandor(48, fuerza=f)) for f in [0.7, 0.85, 1.0]]
-        self.resplandor_oro = _tex(pa.resplandor(32, (255, 210, 110)))
+        self.resplandores = [_tex(imagen(f"resplandor_{i}")) for i in range(3)]
+        self.resplandor_oro = _tex(imagen("resplandor_oro"))
         carpeta = RECURSOS / "catacombs"
         self.antorchas = [arcade.load_texture(carpeta / f"torch_{i}.png") for i in range(1, 5)]
         # Puertas: [direccion, abierta, cerrada, abierta-salida, cerrada-salida]
         self.puertas = []
-        for direccion, fabrica in [["N", pa.puerta_norte], ["S", pa.puerta_sur],
-                                   ["O", pa.puerta_lateral], ["E", pa.puerta_lateral]]:
-            imagenes = [fabrica(cerrada, salida) for salida in [False, True] for cerrada in [False, True]]
-            if direccion == "E":
-                imagenes = [i.transpose(0) for i in imagenes]   # reflejo horizontal
+        for direccion in ["N", "S", "O", "E"]:
+            imagenes = [imagen(f"puerta_{direccion}_{int(cerrada)}_{int(salida)}")
+                        for salida in [False, True] for cerrada in [False, True]]
             self.puertas.append([direccion, [_tex(i) for i in imagenes]])
 
     def puerta(self, direccion, cerrada, salida):
@@ -58,31 +56,31 @@ class Recursos:
     #  Interfaz
 
     def _interfaz(self):
-        self.corazon = _tex(pa.dibujo(pa.CORAZON))
-        self.candado = _tex(pa.dibujo(pa.CANDADO))
-        self.icono_mover = _tex(pa.dibujo(pa.CRUCETA))
-        self.icono_atacar = _tex(pa.dibujo(pa.ESPADA))
-        self.icono_esperar = _tex(pa.dibujo(pa.RELOJ))
-        self.icono_pergamino = _tex(pa.dibujo(pa.PERGAMINO))
-        self.icono_salir = _tex(pa.dibujo(pa.PUERTA_SALIR))
+        self.corazon = _tex(imagen("corazon"))
+        self.candado = _tex(imagen("candado"))
+        self.icono_mover = _tex(imagen("cruceta"))
+        self.icono_atacar = _tex(imagen("espada"))
+        self.icono_esperar = _tex(imagen("reloj"))
+        self.icono_pergamino = _tex(imagen("pergamino"))
+        self.icono_salir = _tex(imagen("puerta_salir"))
         # Trampas: [desarmada, armada]
-        self.lanzadardos = [_tex(pa.lanzadardos(False)), _tex(pa.lanzadardos(True))]
-        self.placa_presion = [_tex(pa.placa_presion(False)), _tex(pa.placa_presion(True))]
+        self.lanzadardos = [_tex(imagen("lanzadardos_0")), _tex(imagen("lanzadardos_1"))]
+        self.placa_presion = [_tex(imagen("placa_presion_0")), _tex(imagen("placa_presion_1"))]
 
     #  Objetos
 
     def _objetos(self):
-        self.pocion_roja = _tex(pa.dibujo(pa.POCION))
-        self.pocion_azul = _tex(pa.con_color(pa.POCION, "B"))
-        self.pocion_violeta = _tex(pa.con_color(pa.POCION, "U"))
-        self.antidoto = _tex(pa.con_color(pa.POCION, "V"))
-        self.llave = _tex(pa.dibujo(pa.LLAVE))
-        self.antorcha = _tex(pa.dibujo(pa.ANTORCHA))
-        self.pergamino = _tex(pa.dibujo(pa.PERGAMINO))
-        self.armadura = _tex(pa.dibujo(pa.ARMADURA))
-        self.gema = _tex(pa.dibujo(pa.GEMA))
-        self.gema_azul = _tex(pa.con_color(pa.GEMA, "B"))
-        self.cofre = _tex(pa.dibujo(pa.COFRE))
+        self.pocion_roja = _tex(imagen("pocion"))
+        self.pocion_azul = _tex(imagen("pocion_B"))
+        self.pocion_violeta = _tex(imagen("pocion_U"))
+        self.antidoto = _tex(imagen("pocion_V"))
+        self.llave = _tex(imagen("llave"))
+        self.antorcha = _tex(imagen("antorcha"))
+        self.pergamino = _tex(imagen("pergamino"))
+        self.armadura = _tex(imagen("armadura"))
+        self.gema = _tex(imagen("gema"))
+        self.gema_azul = _tex(imagen("gema_B"))
+        self.cofre = _tex(imagen("cofre"))
         iconos = armas()
         if iconos:
             self.espada, self.hacha, self.daga, self.baston, self.lanza = iconos
@@ -150,7 +148,7 @@ class Recursos:
     def heroe(self, arma="ninguna", armadura="ninguna", antorcha=False, izquierda=False):
         """Animaciones del jugador con ese equipo: [reposo, caminar, atacar, herido, muerte].
 
-        Se generan la primera vez que aparece cada combinación y se reutilizan
+        Se cargan la primera vez que aparece cada combinación y se reutilizan
         (lista de [clave, derecha, izquierda]; sin dict).
         """
         clave = [heroe.tipo_arma(arma) if arma not in heroe_TIPOS else arma,

@@ -19,6 +19,23 @@ class PruebasHeroe(unittest.TestCase):
                             ["Pechera rara", "malla"]]:
             self.assertEqual(heroe.tipo_armadura(texto), tipo, texto)
 
+    def test_spritesheets_exportados_contienen_todos_los_cuadros(self):
+        import json
+        from cripta.vista.grafica.assets import CARPETA, animaciones, imagen
+
+        with (CARPETA / "animaciones.json").open(encoding="utf-8") as archivo:
+            indice = json.load(archivo)
+        self.assertEqual(len(indice), 76)
+        for nombre, ancho, alto, cantidades in indice:
+            hoja = imagen(nombre)
+            self.assertEqual(list(hoja.size), [max(cantidades) * ancho, len(cantidades) * alto], nombre)
+            grupos = animaciones(nombre)
+            self.assertEqual([len(g) for g in grupos], cantidades, nombre)
+            for grupo in grupos:
+                for cuadro in grupo:
+                    self.assertEqual(list(cuadro.size), [ancho, alto], nombre)
+                    self.assertIsNotNone(cuadro.getbbox(), nombre)
+
     def test_animaciones_comparten_lienzo_y_el_equipo_cambia_el_dibujo(self):
         sin_nada = heroe.animaciones()
         equipado = heroe.animaciones("espada", "placas", True)

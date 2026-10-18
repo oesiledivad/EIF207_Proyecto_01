@@ -12,7 +12,7 @@ Todo está en coordenadas del lienzo virtual de 800x450 (ver lienzo.py):
 import math
 import random
 
-from PIL import Image
+from PIL import Image, ImageDraw
 from cripta.estructuras.Ordenamientos import ordenar
 
 from . import fuente_pixel as fp
@@ -155,7 +155,7 @@ class Escena:
         """Imagen de 288x160 píxeles de arte (la sala completa sin puertas ni antorchas)."""
         r = self.recursos
         ancho, alto = [SALA_ANCHO // K, SALA_ALTO // K]              # 288 x 160
-        img = Image.new("RGBA", [ancho, alto], (8, 8, 10, 255))
+        img = Image.new("RGBA", [ancho, alto], "#08080aff")
         lado, arriba_suelo, abajo_suelo = [MURO_LADO // K, MURO_FONDO // K, alto - MURO_ABAJO // K]
         columnas = SUELO_ANCHO // T
         for i, indice in enumerate(suelo):                          # suelo
@@ -167,8 +167,7 @@ class Escena:
             for fila in range(2):
                 pa.componer(img, r.img_ladrillos[(col * 3 + fila) % 4], col * 16, 8 + fila * 16)
             pa.componer(img, r.img_borde[col % 4], col * 16, 0)
-        for x in range(ancho):
-            img.putpixel([x, 8], (40, 35, 27, 255))
+        ImageDraw.Draw(img).line([0, 8, ancho - 1, 8], fill="#28231bff")
         for centro in [38, 98, 190, 250]:                            # columnas
             pa.componer(img, r.img_pilar, centro - 6, 0)
         for i, y in enumerate(range(abajo_suelo - 16, -16, -16)):    # muros laterales
@@ -179,8 +178,7 @@ class Escena:
         pa.sombra(img, [0, abajo_suelo, ancho - 1, alto - 1], 255)    # muro inferior
         for col in range(ancho // 16):
             pa.componer(img, r.img_borde[(col + 1) % 4], col * 16, abajo_suelo + 3)
-        for x in range(lado, ancho - lado):
-            img.putpixel([x, abajo_suelo], (150, 135, 100, 255))
+        ImageDraw.Draw(img).line([lado, abajo_suelo, ancho - lado - 1, abajo_suelo], fill="#968764ff")
         for indice, x, y in ordenar(decoracion.copy(), key=lambda d: -d[2]):  # atrás primero
             figura = r.img_decoracion[indice]
             ax, ay = [int((x - SALA_X) / K), int(alto - (y - SALA_Y) / K)]
