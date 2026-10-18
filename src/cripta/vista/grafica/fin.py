@@ -44,6 +44,8 @@ class PantallaFin(arcade.View):
             l.texto(linea, ANCHO / 2, ALTO - 122 - i * 12, 1, TEXTO_SUAVE, ancla="centro")
         self.tabla(ALTO - 170)
         aviso = self.error or v.controlador.error_puntaje
+        if not aviso and v.controlador.trucos_activos:
+            aviso = "Modo cheats: esta partida no registra puntaje."
         if aviso:
             l.texto(fp.recortar(aviso, ANCHO - 60), ANCHO / 2, 66, 1, ROJO, ancla="centro")
         for i, (accion, etiqueta) in enumerate([["reintentar", "OTRA PARTIDA [R]"],

@@ -116,7 +116,7 @@ def main(argv: list[str] | None = None) -> int:
     # En --offline los datos ya vienen de disco: no hace falta la caché persistente.
     almacen = None if args.offline else AlmacenDisco(args.cache_dir)
     controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen,
-                             carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes)
+                             carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes, offline_dir=args.offline_dir)
 
     # Import diferido: arcade solo se carga si de verdad se abre la ventana.
     from cripta.vista.grafica import iniciar

@@ -52,6 +52,152 @@ def avanzar_carga(vista):
 
 class PruebasGrafica(unittest.TestCase):
     @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_continuar_y_confirmar_reemplazo(self):
+        """Continuar carga el guardado; cancelar conserva la partida en curso."""
+        _ejecutar(self, COMUN + r'''
+from cripta.controlador.Aplicacion import Aplicacion
+from cripta.vista.grafica.menu import MenuPrincipal
+from cripta.vista.grafica.panel import Panel
+from pruebas.test_replay import FuenteReplay
+from pruebas.test_guardado import preparar_partida, huella
+from pyglet.event import EventDispatcher
+with tempfile.TemporaryDirectory() as carpeta:
+    ruta = Path(carpeta) / 'partida.bin'
+    app = Aplicacion(FuenteReplay(), ruta_guardado=ruta, carpeta_logs=Path(carpeta) / 'sesion')
+    vista = VentanaCripta(app, visible=False, tamano=[1100, 620])
+    try:
+        menu = MenuPrincipal(vista)
+        vista.show_view(menu)
+        menu.on_draw()
+        zonas_dentro(vista)
+        arcade.get_image().save(Path(tempfile.gettempdir()) / 'cripta-continuar.png')
+        continuar = next(z for z in vista.lienzo.zonas if z.accion == 'continuar')
+        clic(vista, continuar, menu)
+        avanzar_carga(vista)
+        selector = vista.current_view
+        assert isinstance(selector, Panel) and not selector.opciones
+        selector.on_draw()
+        EventDispatcher.dispatch_event(vista, 'on_key_press', arcade.key.ESCAPE, 0)
+        assert vista.current_view is menu
+        assert not app.estado_partida().activa
+
+        guardada = preparar_partida(ruta)
+        assert guardada.guardar().ok
+        esperado = huella(guardada)
+        segunda = Path(carpeta) / 'sesion' / 'guardadas' / 'ana.bin'
+        ana = Aplicacion(FuenteReplay(), ruta_guardado=segunda)
+        assert ana.iniciar_partida('Ana', '33', 'cripta-01').ok
+        assert ana.guardar().ok
+        menu.on_draw()
+        continuar = next(z for z in vista.lienzo.zonas if z.accion == 'continuar')
+        clic(vista, continuar, menu)
+        assert isinstance(vista.current_view, PantallaCarga)
+        avanzar_carga(vista)
+        selector = vista.current_view
+        assert isinstance(selector, Panel) and len(selector.opciones) == 2
+        selector.on_draw()
+        arcade.get_image().save(Path(tempfile.gettempdir()) / 'cripta-elegir-guardado.png')
+        zonas_dentro(vista)
+        elegir = next(z for z in vista.lienzo.zonas if z.accion == 'elegir'
+                      and selector.opciones[int(z.argumento)][0].startswith('Jugador'))
+        clic(vista, elegir, selector)
+        avanzar_carga(vista)
+        assert vista.current_view is None and huella(app) == esperado
+        assert vista.item == app.inventario().item_actual().instancia_id
+
+        assert app.esperar().ok
+        antes = huella(app)
+        with patch.object(app, 'cargar', wraps=app.cargar) as cargar:
+            vista.cargar_partida()
+            assert isinstance(vista.current_view, Panel)
+            EventDispatcher.dispatch_event(vista, 'on_key_press', arcade.key.ESCAPE, 0)
+            assert vista.current_view is None and huella(app) == antes
+            vista.cargar_partida()
+            panel = vista.current_view
+            panel.on_draw()
+            cancelar = next(z for z in vista.lienzo.zonas if z.accion == 'elegir'
+                            and int(z.argumento) == 0)
+            clic(vista, cancelar, panel)
+            assert vista.current_view is None and huella(app) == antes
+            cargar.assert_not_called()
+
+        vista.cargar_partida()
+        panel = vista.current_view
+        panel.on_draw()
+        confirmar = next(z for z in vista.lienzo.zonas if z.accion == 'elegir'
+                         and int(z.argumento) == 1)
+        clic(vista, confirmar, panel)
+        avanzar_carga(vista)
+        assert vista.current_view is None and huella(app) == esperado
+        assert vista.item == app.inventario().item_actual().instancia_id
+
+        ruta.write_bytes(b'guardado incompleto')
+        antes = huella(app)
+        vista.cargar_partida(confirmar=False)
+        avanzar_carga(vista)
+        assert vista.current_view is None and huella(app) == antes
+        assert vista.mensaje
+        vista.on_draw()
+        vista.elegir_guardado()
+        avanzar_carga(vista)
+        selector = vista.current_view
+        selector.on_draw()
+        elegir = next(z for z in vista.lienzo.zonas if z.accion == 'elegir'
+                      and selector.opciones[int(z.argumento)][0].startswith('Ana'))
+        clic(vista, elegir, selector)
+        assert isinstance(vista.current_view, Panel)
+        panel = vista.current_view
+        panel.on_draw()
+        confirmar = next(z for z in vista.lienzo.zonas if z.accion == 'elegir' and int(z.argumento) == 1)
+        clic(vista, confirmar, panel)
+        avanzar_carga(vista)
+        assert vista.current_view is None and app.estado_partida().nombre_jugador == 'Ana'
+        tiempo = app.estado_partida().reloj_virtual
+        ataque = app.estado_partida().jugador_ataque
+        vista.ejecutar('cheats')
+        panel = vista.current_view
+        panel.on_draw()
+        aumentar = next(z for z in vista.lienzo.zonas if z.accion == 'elegir' and int(z.argumento) == 1)
+        clic(vista, aumentar, panel)
+        assert vista.current_view is None and app.trucos_activos
+        assert app.estado_partida().jugador_ataque == ataque + 50
+        assert app.estado_partida().reloj_virtual == tiempo
+        assert 'CHEATS' in vista.indicador_red()
+        vista.ejecutar('cheats')
+        panel = vista.current_view
+        assert len(panel.opciones) == 7
+        panel.on_draw()
+        zonas_dentro(vista)
+        activar = next(z for z in vista.lienzo.zonas if z.accion == 'elegir' and int(z.argumento) == 3)
+        clic(vista, activar, panel)
+        assert app.truco_activo('god_mode')
+        vista.ejecutar('cheats')
+        panel = vista.current_view
+        assert any('God Mode: ON' in opcion[0] for opcion in panel.opciones)
+        panel.on_draw()
+        arcade.get_image().save(Path(tempfile.gettempdir()) / 'cripta-cheats.png')
+        activar = next(z for z in vista.lienzo.zonas if z.accion == 'elegir' and int(z.argumento) == 4)
+        clic(vista, activar, panel)
+        assert app.truco_activo('insta_kill')
+
+        from pruebas.test_guardados import AdaptadorOffline as FuenteLocal
+        local = Aplicacion(FuenteLocal(), ruta_guardado=Path(carpeta) / 'offline.bin')
+        assert local.iniciar_partida('Local', '42', 'cripta-custom').ok
+        assert local.guardar().ok
+        with patch('cripta.controlador.GuardadoControlador.AdaptadorOffline', return_value=FuenteLocal()), \
+             patch('cripta.controlador.GuardadoControlador.NetworkAdapter') as red:
+            vista.cargar_partida(confirmar=False, ruta=local.ruta_guardado)
+            avanzar_carga(vista)
+            red.assert_not_called()
+        assert vista.current_view is None and vista.controlador is not app
+        assert vista.controlador.estado_partida().nombre_jugador == 'Local'
+        assert vista.modo == 'OFFLINE' and not vista.controlador.trucos_activos
+        vista.on_draw()
+    finally:
+        vista.close()
+''')
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
     def test_menu_carga_fin_y_escalado(self):
         _ejecutar(self, COMUN + r'''
 from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline

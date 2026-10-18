@@ -125,7 +125,8 @@ class VentanaCripta(arcade.Window):
     def indicador_red(self):
         """Devuelve el modo y las solicitudes usadas frente al presupuesto."""
         p = self.controlador.estado_partida()
-        return f"{self.modo} · RED {self.controlador.solicitudes_usadas()}/{p.presupuesto_solicitudes}"
+        cheats = " · CHEATS" if self.controlador.trucos_activos else ""
+        return f"{self.modo}{cheats} · RED {self.controlador.solicitudes_usadas()}/{p.presupuesto_solicitudes}"
 
     def iniciar_partida(self, nombre, semilla, cripta_id, retorno):
         """Inicia con pantalla de carga y regresa al origen si la validación falla."""
@@ -167,7 +168,7 @@ class VentanaCripta(arcade.Window):
             criterios = ["real", "peso", "valor", "nombre"]
             self.criterio = criterios[(criterios.index(self.criterio) + 1) % 4]
             return
-        if accion in ["ayuda", "terminar", "informacion", "menu"]:
+        if accion in ["ayuda", "terminar", "informacion", "menu", "cheats"]:
             self.abrir_panel(accion)
             return
         if accion == "seleccionar_item":
@@ -293,12 +294,26 @@ class VentanaCripta(arcade.Window):
         if accion == "terminar":
             self.show_view(Panel(self, "¿TERMINAR LA PARTIDA?", [["Sí, terminar la partida", self.controlador.terminar]]))
             return
+        if accion == "cheats":
+            self.show_view(Panel(self, "CHEATS · SOLO PRUEBAS", [
+                ["Recuperar toda la vida", lambda: self.aplicar_truco("curar")],
+                ["Aumentar ataque (+50)", lambda: self.aplicar_truco("ataque")],
+                ["Aumentar defensa (+50)", lambda: self.aplicar_truco("defensa")],
+                [f"God Mode: {'ON' if self.controlador.truco_activo('god_mode') else 'OFF'} · invulnerabilidad",
+                 lambda: self.aplicar_truco("god_mode")],
+                [f"Insta Kill: {'ON' if self.controlador.truco_activo('insta_kill') else 'OFF'} · matar de un golpe",
+                 lambda: self.aplicar_truco("insta_kill")],
+                ["Eliminar veneno", lambda: self.aplicar_truco("antidoto")],
+                ["Aumentar vida máxima (+100) y curar", lambda: self.aplicar_truco("vida")],
+            ]))
+            return
         if accion == "menu":
             self.show_view(Panel(self, "MENÚ", [
                 ["Continuar", lambda: None],
                 ["Información de la sala (I)", lambda: self.abrir_panel("informacion")],
                 ["Guardar partida", self.guardar_partida],                 # <- NUEVA
-                ["Cargar partida guardada", self.cargar_partida],
+                ["Cargar partida guardada", self.elegir_guardado],
+                ["Cheats (sin puntajes, guardado ni replay)", lambda: self.abrir_panel("cheats")],
                 ["Ayuda y controles", lambda: self.abrir_panel("ayuda")],
                 ["Pantalla completa (F11)", self.alternar_pantalla_completa],
                 ["Terminar la partida", lambda: self.abrir_panel("terminar")],
@@ -311,18 +326,62 @@ class VentanaCripta(arcade.Window):
         self.mensaje = resultado.motivo or "Partida guardada."
         self.sonidos.tocar("recoger" if resultado.ok else "error")
 
-    def cargar_partida(self):
-        """Reemplaza la partida por la guardada, con pantalla de carga (reconstruye desde la red o la caché)."""
-        def terminado(resultado):
+    def aplicar_truco(self, nombre):
+        """Aplica una ayuda y comunica que la sesión queda marcada como prueba."""
+        resultado = self.controlador.aplicar_truco(nombre)
+        if resultado.ok:
+            self.preparar_partida()
+        self.mensaje = resultado.motivo or "Cheats activos: sin puntajes, guardado ni replay."
+        self.sonidos.tocar("recoger" if resultado.ok else "error")
+
+    def elegir_guardado(self):
+        """Muestra los guardados identificados por jugador, cripta y progreso."""
+        from .panel import Panel
+        retorno = self.current_view
+        def terminado(guardados):
+            """Construye la selección en el hilo gráfico al terminar la lectura."""
+            opciones = [[descripcion, lambda ruta=ruta: self.cargar_partida(ruta=ruta)]
+                        for ruta, descripcion in guardados]
+            self.show_view(Panel(self, "ELEGIR PARTIDA GUARDADA", opciones,
+                                 texto="No hay partidas guardadas." if not opciones else "", retorno=retorno))
+        self.cargar("Buscando partidas guardadas", self.controlador.listar_guardados, terminado)
+
+    def cargar_partida(self, confirmar=True, ruta=None):
+        """Carga desde el menú o solicita permiso para reemplazar una partida activa.
+
+        Args:
+            confirmar: Pide confirmación si hay una partida en curso.
+            ruta: Archivo elegido en la lista de partidas guardadas.
+        """
+        if confirmar and self.controlador.estado_partida().activa:
+            from .panel import Panel
+            self.show_view(Panel(self, "¿REEMPLAZAR LA PARTIDA ACTUAL?", [
+                ["Cancelar y seguir jugando", lambda: None],
+                ["Sí, cargar la partida guardada", lambda: self.cargar_partida(confirmar=False, ruta=ruta)],
+            ]))
+            return
+        retorno = self.current_view
+        def terminado(carga):
             """Aplica el resultado en el hilo gráfico y vuelve a la partida."""
-            self.hide_view()
+            resultado, controlador = carga
             if resultado.ok:
+                self.controlador = controlador
+                self.modo = "OFFLINE" if controlador.estado_partida().modo == "offline" else "EN RED"
+                self.escena.distribucion.partida = None
                 self.preparar_partida()
+                actual = self.controlador.inventario().item_actual()
+                self.item = actual.instancia_id if actual else ""
                 self.mensaje = "Partida cargada."
+                self.hide_view()
             else:
                 self.mensaje = resultado.motivo
                 self.sonidos.tocar("error")
-        self.cargar("Cargando partida", self.controlador.cargar, terminado)
+                if retorno is not None:
+                    retorno.error = resultado.motivo
+                    self.show_view(retorno)
+                else:
+                    self.hide_view()
+        self.cargar("Cargando partida", lambda: self.controlador.cargar_compatible(ruta), terminado)
 
 
     def alternar_pantalla_completa(self):
