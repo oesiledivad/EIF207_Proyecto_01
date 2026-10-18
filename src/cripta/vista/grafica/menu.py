@@ -88,10 +88,10 @@ class MenuPrincipal(arcade.View):
         l.texto(v.modo, ANCHO - 10, ALTO - 16, 1, TEXTO_SUAVE, ancla="derecha")
 
         # Lista de criptas
-        x0, arriba = 40, ALTO - 120
+        x0, arriba = [40, ALTO - 120]
         l.panel(x0 - 10, 70, 360, arriba - 60)
-        l.texto("CRIPTAS", x0, arriba - 22, 2, (210, 200, 176), negrita=True)
-        l.rect(x0, arriba - 28, 340, 2, (70, 64, 56))
+        l.texto("CRIPTAS", x0, arriba - 22, 2, [210, 200, 176], negrita=True)
+        l.rect(x0, arriba - 28, 340, 2, [70, 64, 56])
         for i, cripta in enumerate(self.criptas[self.inicio_lista:self.inicio_lista + self.VISIBLES]):
             indice = self.inicio_lista + i
             elegido = indice == self.seleccion
@@ -118,7 +118,7 @@ class MenuPrincipal(arcade.View):
             y = arriba - 128 - i * 52
             l.texto(etiqueta, x1, y + 30, 1, ORO, negrita=True)
             enfocado = campo is self.foco
-            l.panel(x1, y, ANCHO - x1 - 40, 24, resaltado=enfocado, fondo=(14, 13, 16))
+            l.panel(x1, y, ANCHO - x1 - 40, 24, resaltado=enfocado, fondo=[14, 13, 16])
             cursor = "_" if enfocado and int(self.tiempo * 2) % 2 == 0 else ""
             l.texto(fp.recortar(campo.text, ANCHO - x1 - 60, 2) + cursor, x1 + 8, y + 7, 2, TEXTO)
             l.zona(x1, y, ANCHO - x1 - 40, 24, "foco", str(i), "Escribe aquí")

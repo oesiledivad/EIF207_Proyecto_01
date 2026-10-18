@@ -45,7 +45,7 @@ class PantallaCarga(arcade.View):
         else:
             l.texto("Cargando" + "." * (int(self.tiempo * 3) % 4), ANCHO / 2, ALTO / 2 - 20, 1,
                     TEXTO_SUAVE, ancla="centro")
-            l.rect(ANCHO / 2 - 150, ALTO / 2 - 44, 300, 6, (40, 36, 32))
+            l.rect(ANCHO / 2 - 150, ALTO / 2 - 44, 300, 6, [40, 36, 32])
             l.rect(ANCHO / 2 - 150 + 240 * (self.tiempo % 1), ALTO / 2 - 44, 60, 6, ORO)
         l.texto(v.modo, ANCHO - 10, ALTO - 16, 1, TEXTO_SUAVE, ancla="derecha")
         l.bandas(v)
