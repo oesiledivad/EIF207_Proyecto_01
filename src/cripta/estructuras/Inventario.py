@@ -150,8 +150,7 @@ class Inventario:
         # Desenlazamos.
         nodo.ant.sig = nodo.sig
         nodo.sig.ant = nodo.ant
-        nodo.sig = None
-        nodo.ant = None
+        # El historial puede conservar este nodo como ancla de una extracción.
         self._tamano -= 1
         self._actual = nuevo_actual
         return item
@@ -176,10 +175,33 @@ class Inventario:
                 self._actual = nodo.sig if nodo.sig is not self._centinela else nodo.ant
         nodo.ant.sig = nodo.sig
         nodo.sig.ant = nodo.ant
-        nodo.sig = None
-        nodo.ant = None
         self._tamano -= 1
         return item
+
+    def ancla_actual(self):
+        """Predecesor del objeto observado; registrar su extracción cuesta O(1)."""
+        return self._actual.ant if self._actual is not None else self._centinela
+
+    def reinsertar_tras(self, item: ItemInventario, ancla) -> bool:
+        """Restaura una extracción; omite pergaminos consumidos fuera del historial."""
+        if self.esta_lleno():
+            return False
+        anterior = self._centinela
+        while ancla is not self._centinela:
+            encontrado = self._buscar_nodo(ancla.item.instancia_id)
+            if encontrado is not None:
+                anterior = encontrado
+                break
+            ancla = ancla.ant
+        nuevo = _Nodo(item)
+        nuevo.ant = anterior
+        nuevo.sig = anterior.sig
+        anterior.sig.ant = nuevo
+        anterior.sig = nuevo
+        self._tamano += 1
+        if self._actual is None:
+            self._actual = nuevo
+        return True
 
     def equipar_actual(self) -> ItemInventario | None:
         """Mueve el item actual al frente y lo marca como equipado.

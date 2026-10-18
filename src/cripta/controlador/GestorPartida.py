@@ -124,6 +124,10 @@ class GestorPartida:
             self._revertir_inventario_agregado(datos)
         elif etiqueta == "inventario_quitado":
             self._revertir_inventario_quitado(datos)
+        elif etiqueta == "inventario_extraido":
+            item, ancla = datos
+            if not self.inventario.reinsertar_tras(item, ancla):
+                raise RuntimeError("No se pudo restaurar el objeto del inventario.")
         elif etiqueta == "item_equipado":
             self._revertir_item_equipado(datos)
         elif etiqueta == "item_suelo_agregado":

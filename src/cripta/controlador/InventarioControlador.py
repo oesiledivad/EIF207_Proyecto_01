@@ -76,23 +76,22 @@ class InventarioControlador:
         if inv is None:
             return ResultadoAccion.fallo("Inventario no inicializado.")
 
-        posicion = inv.posicion_de(instancia_id)
-        if posicion is None:
-            return ResultadoAccion.fallo("No tienes ese objeto.")
-
-        item = inv.buscar_por_id(instancia_id)
-        if item is None:
+        item = inv.item_actual()
+        if item is None or item.instancia_id != instancia_id:
+            inv.seleccionar(instancia_id)
+            item = inv.item_actual()
+        if item is None or item.instancia_id != instancia_id:
             return ResultadoAccion.fallo("No tienes ese objeto.")
 
         if item.clase != "pergamino_retroceso":
-            self._gestor.registrar_cambio("inventario_quitado", [item, posicion])
+            self._gestor.registrar_cambio("inventario_extraido", [item, inv.ancla_actual()])
             self._gestor.registrar_cambio("item_suelo_agregado", [self._gestor.estado.objetos_suelo, item.instancia_id])
         if item.equipado:
             self._quitar_bonus(item, jugador)
             self._gestor.registrar_cambio("atributo", [item, "equipado", True])
             item.equipado = False
 
-        inv.soltar_por_id(instancia_id)
+        inv.soltar_actual()
         self._gestor.estado.objetos_suelo.append(
             ObjetoSuelo(id=item.instancia_id, nombre=item.nombre, tipo_id=item.tipo_id)
         )

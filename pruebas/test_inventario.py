@@ -3,6 +3,7 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -42,6 +43,30 @@ class FuentePrueba(AdaptadorOffline):
 
 
 class InventarioPruebas(unittest.TestCase):
+    def test_soltar_actual_no_busca_por_id_ni_posicion(self):
+        self.gestor.reiniciar_inventario(10)
+        inv = self.gestor.inventario
+        for i in range(10):
+            inv.agregar(ItemInventario(str(i), "tipo", "Objeto", "pocion", 1, 1))
+        orden = [item.instancia_id for item in inv.items()]
+        for id_ in ["0", "4", "9"]:
+            inv.seleccionar(id_)
+            with patch.object(inv, "posicion_de", side_effect=AssertionError("Búsqueda de posición")), \
+                    patch.object(inv, "_buscar_nodo", side_effect=AssertionError("Búsqueda por id")):
+                self.assertTrue(self.accion(lambda: self.control.soltar(id_, self.jugador)).ok)
+            self.assertTrue(self.gestor.deshacer())
+            self.assertEqual([item.instancia_id for item in inv.items()], orden)
+
+    def test_reinsercion_omite_ancla_pergamino_consumida(self):
+        inv = self.gestor.inventario
+        for id_, clase in [["a", "pocion"], ["p", "pergamino_retroceso"], ["b", "pocion"]]:
+            inv.agregar(ItemInventario(id_, "tipo", id_, clase, 1, 1))
+        inv.seleccionar("a")
+        self.assertTrue(self.accion(lambda: self.control.soltar("a", self.jugador)).ok)
+        inv.soltar_por_id("p")
+        self.assertTrue(self.gestor.deshacer())
+        self.assertEqual([item.instancia_id for item in inv.items()], ["b", "a"])
+
     def setUp(self):
         self.gestor = GestorPartida()
         self.gestor.reiniciar_inventario(4)
