@@ -301,9 +301,47 @@ def _bench_ciclo_completo(n_enemigos=500, repeticiones=100):
     return medidas
 
 
+def _bench_referencia(repeticiones=30):
+    """Mide movimiento y combate normales con la cripta de referencia ya cargada."""
+    from pathlib import Path
+    from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
+    from cripta.controlador.Aplicacion import Aplicacion
+
+    carpeta = Path(__file__).resolve().parents[2] / "datos_prueba"
+    if not (carpeta / "cripta_cripta-01.json").is_file():
+        print("Referencia: no está disponible el paquete datos_prueba.")
+        return []
+    medidas = []
+
+    def medir(accion):
+        inicio = time.perf_counter()
+        resultado = accion()
+        medidas.append((time.perf_counter() - inicio) * 1000)
+        assert resultado.ok, resultado.motivo
+
+    for semilla in range(repeticiones):
+        app = Aplicacion(AdaptadorOffline(carpeta))
+        resultado = app.iniciar_partida("Bench", str(semilla), "cripta-01")
+        assert resultado.ok, resultado.motivo
+        # La referencia cabe en el primer lote: ninguna acción medida solicita contenido.
+        assert not app.estado_partida().contenido_pendiente
+        puerta = next(s for s in app.estado_partida().vecindad if not s.cerrada)
+        medir(lambda: app.mover(puerta.direccion))
+        for _ in range(100):
+            estado = app.estado_partida()
+            if estado.terminada or not estado.enemigos:
+                break
+            medir(lambda: app.atacar(estado.enemigos[0].id))
+    peor = max(medidas)
+    print(f"referencia cripta-01: ciclos={len(medidas)} media={sum(medidas)/len(medidas):.3f}ms "
+          f"maximo={peor:.3f}ms limite=20ms {'CUMPLE' if peor < 20 else 'EXCEDE'}")
+    return medidas
+
+
 def main():
     import tempfile
     _bench_simulacion()
+    _bench_referencia()
     print("\n=== Ciclo completo sintético (sin red, disco ni renderizado) ===")
     for enemigos in [20, 200, 500]:
         _bench_ciclo_completo(enemigos)
