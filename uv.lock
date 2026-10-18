@@ -229,12 +229,14 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "arcade" },
+    { name = "pillow" },
     { name = "requests" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "arcade", specifier = ">=3.3,<4" },
+    { name = "pillow", specifier = ">=11.3.0" },
     { name = "requests", specifier = ">=2.34.2" },
 ]
 
