@@ -91,10 +91,16 @@ class HeapAgendaEventos:
         self._heap[i].indice = i
         self._heap[j].indice = j
 
+    @staticmethod
+    def _menor(a, b):
+        """Compara sin crear listas temporales en cada paso del heap."""
+        return (a.tiempo_siguiente < b.tiempo_siguiente
+                or a.tiempo_siguiente == b.tiempo_siguiente and a.secuencias < b.secuencias)
+
     def _ascender(self, i):
         while i > 0:
             padre = (i - 1) // 2
-            if self._heap[i].clave() >= self._heap[padre].clave():
+            if not self._menor(self._heap[i], self._heap[padre]):
                 break
             self._intercambiar(i, padre)
             i = padre
@@ -103,9 +109,9 @@ class HeapAgendaEventos:
         while True:
             menor = i
             izq, der = 2 * i + 1, 2 * i + 2
-            if izq < len(self._heap) and self._heap[izq].clave() < self._heap[menor].clave():
+            if izq < len(self._heap) and self._menor(self._heap[izq], self._heap[menor]):
                 menor = izq
-            if der < len(self._heap) and self._heap[der].clave() < self._heap[menor].clave():
+            if der < len(self._heap) and self._menor(self._heap[der], self._heap[menor]):
                 menor = der
             if menor == i:
                 return
