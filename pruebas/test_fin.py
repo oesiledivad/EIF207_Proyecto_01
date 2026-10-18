@@ -1,16 +1,17 @@
-"""Otra partida: nueva sesión de red y fichas renovadas."""
+"""Otra partida: presupuesto renovado y cliente estable durante la ejecución."""
 import unittest
 
 
 class PruebasFin(unittest.TestCase):
-    def test_nueva_sesion_renueva_cliente_y_presupuesto(self):
+    def test_nueva_sesion_conserva_cliente_y_renueva_presupuesto(self):
         from cripta.adaptadores.Network_Adapter import NetworkAdapter
         fuente = NetworkAdapter(timeout=3, max_reintentos_429=1)
         anterior = fuente.client_id
         fuente.fijar_presupuesto(9)
         fuente._requests_made = 9
         fuente.reiniciar_partida()
-        self.assertNotEqual(fuente.client_id, anterior)
+        self.assertEqual(fuente.client_id, anterior)
+        self.assertEqual(NetworkAdapter().client_id, anterior)
         self.assertEqual(fuente.headers["X-Cripta-Client-Id"], fuente.client_id)
         self.assertEqual(fuente.requests_made, 0)
         self.assertIsNone(fuente.solicitudes_restantes())
