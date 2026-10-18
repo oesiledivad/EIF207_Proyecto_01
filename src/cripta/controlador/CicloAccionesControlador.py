@@ -95,6 +95,7 @@ class CicloAccionesControlador:
         estado = app._gestor.estado
         app._actualizar_vecindad()
         app._partida.sincronizar_jugador(app._jugador, app._simulacion)
+        estado.rastro = app._exploracion.describir_rastro(estado.reloj_virtual)
         sala_actual = app._salas.obtener(app._jugador.sala)
         if sala_actual is not None:
             estado.enemigos = [

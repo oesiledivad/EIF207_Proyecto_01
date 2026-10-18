@@ -274,6 +274,7 @@ class VentanaCripta(arcade.Window):
                        + (f" · llave {v.llave}" if v.llave else "") for v in p.vecindad]
             lineas += [f"Trampa {t.tipo}: {'activa' if t.activa else 'inactiva'} · daño {t.dano}" for t in p.trampas]
             lineas += p.efectos or ["Sin efectos activos."]
+            lineas += p.rastro
             item = self.controlador.inventario().buscar_por_id(self.item)
             if item:
                 lineas.append(f"{item.nombre} · peso {item.peso} · valor {item.valor} · "

@@ -48,6 +48,8 @@ class Simulacion:
                 return mensajes  # jugador murió: no reprogramamos nada más
         elif tipo_accion == "mover":
             self._mover_enemigo(enemigo, destino, salas)
+            if enemigo.comportamiento == "rastreador" and enemigo.sala == jugador.sala:
+                mensajes.append(f"{enemigo.etiqueta} sigue tu rastro y entra en tu sala.")
 
         intervalo = calcular_intervalo(costo_accion(tipo_accion), enemigo.velocidad)
         self.agenda.reprogramar(enemigo, tiempo_actual + intervalo, "accion_actor")
