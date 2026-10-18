@@ -24,7 +24,9 @@ try:
     ajustes.on_draw()
     zonas_dentro(vista)
     arcade.get_image().save(Path(tempfile.gettempdir()) / 'cripta-configuracion.png')
-    clic(vista, next(z for z in vista.lienzo.zonas if z.argumento == '0'), ajustes)
+    x, y = vista.lienzo.a_ventana(ajustes.X + ajustes.ANCHO_SLIDER * 0.7, 297)
+    ajustes.on_mouse_press(x, y, arcade.MOUSE_BUTTON_LEFT, 0)
+    ajustes.on_mouse_release(x, y, arcade.MOUSE_BUTTON_LEFT, 0)
     assert vista.current_view is ajustes
     assert vista.musica.volumen == 0.7
     ajustes.on_key_press(arcade.key.ESCAPE, 0)
@@ -42,7 +44,9 @@ try:
     ajustes = vista.current_view
     assert isinstance(ajustes, Configuracion)
     ajustes.on_draw()
-    clic(vista, next(z for z in vista.lienzo.zonas if z.argumento == '4'), ajustes)
+    x, y = vista.lienzo.a_ventana(ajustes.X + ajustes.ANCHO_SLIDER * 0.6, 215)
+    ajustes.on_mouse_press(x, y, arcade.MOUSE_BUTTON_LEFT, 0)
+    ajustes.on_mouse_release(x, y, arcade.MOUSE_BUTTON_LEFT, 0)
     assert vista.sonidos.volumen == 0.6 and vista.current_view is ajustes
     with patch('arcade.load_sound'), patch('arcade.play_sound', return_value=SimpleNamespace(volume=0)):
         vista.musica.activo = True
@@ -57,7 +61,30 @@ try:
         audio.cambiar_volumen(2)
         assert audio.volumen == 1
     ajustes.on_draw()
-    assert '100%' in ajustes.opciones[0][0] and '100%' in ajustes.opciones[3][0]
+    x, y = vista.lienzo.a_ventana(ajustes.X + 100, 297)
+    ajustes.on_mouse_press(x, y, arcade.MOUSE_BUTTON_LEFT, 0)
+    for extremo, esperado in [[ajustes.X - 100, 0], [ajustes.X + ajustes.ANCHO_SLIDER + 100, 1]]:
+        x, y = vista.lienzo.a_ventana(extremo, 297)
+        ajustes.on_mouse_drag(x, y, 0, 0, arcade.MOUSE_BUTTON_LEFT, 0)
+        assert vista.musica.volumen == esperado
+    ajustes.on_mouse_release(x, y, arcade.MOUSE_BUTTON_LEFT, 0)
+    x, y = vista.lienzo.a_ventana(ajustes.X, 297)
+    ajustes.on_mouse_drag(x, y, 0, 0, arcade.MOUSE_BUTTON_LEFT, 0)
+    assert vista.musica.volumen == 1
+    ajustes.on_key_press(arcade.key.LEFT, 0)
+    assert vista.musica.volumen == 0.95
+    ajustes.on_key_press(arcade.key.TAB, 0)
+    ajustes.on_key_press(arcade.key.HOME, 0)
+    assert vista.sonidos.volumen == 0
+    ajustes.on_key_press(arcade.key.END, 0)
+    assert vista.sonidos.volumen == 1
+    ajustes.on_draw()
+    clic(vista, next(z for z in vista.lienzo.zonas if z.accion == 'silencio' and z.argumento == '1'), ajustes)
+    assert vista.sonidos.activo
+    for ancho, alto in [[640, 360], [1100, 740], [1920, 1080]]:
+        vista.set_size(ancho, alto)
+        ajustes.on_draw()
+        zonas_dentro(vista)
     ajustes.on_key_press(arcade.key.ESCAPE, 0)
     assert vista.current_view is None
     assert firma(app) == antes
