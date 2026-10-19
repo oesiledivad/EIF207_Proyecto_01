@@ -1,5 +1,7 @@
 """Replay determinista y limites de entrada, sin red ni TUI."""
 import json
+from contextlib import redirect_stdout
+from io import StringIO
 import sys
 import tempfile
 import unittest
@@ -94,6 +96,19 @@ class PruebasReplay(unittest.TestCase):
         self.assertEqual(cabecera.semilla, 42)
         self.assertEqual(cabecera.version_catalogo, "catalogo-prueba-1")
         self.assertEqual(acciones[-3:], [["retroceder", None], ["retroceder", None], ["terminar", None]])
+
+    def test_progreso_no_modifica_el_estado_reproducido(self):
+        app = self.iniciar()
+        self.assertTrue(app.esperar().ok)
+        app.terminar()
+        salida = StringIO()
+        with redirect_stdout(salida):
+            replay = reproducir(app._partida.registro.ruta, [FuenteReplay()], mostrar_progreso=True)
+        self.assertEqual(firma(replay), firma(app))
+        self.assertIn("Cargando replay: Jugador | cripta-01", salida.getvalue())
+        self.assertIn("[1/2] esperar", salida.getvalue())
+        self.assertIn("[2/2] terminar", salida.getvalue())
+        self.assertIn("sala=1 vida=30 tiempo=100", salida.getvalue())
 
     def test_version_incompatible_y_copia_local_compatible(self):
         app = self.iniciar()

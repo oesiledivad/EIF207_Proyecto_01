@@ -1,4 +1,4 @@
-"""Puertas: abrir con llave y cierre automático (§2.5, §2.10).
+"""Puertas: abrir con llave y cierre automático (2.5, 2.10).
 
 Una salida abierta se queda abierta, salvo que declare `cierre_automatico`:
 entonces se programa un evento "cierre_puerta" en la agenda. El "actor" del
@@ -11,7 +11,7 @@ from __future__ import annotations
 def buscar_llave(items: list, id_llave: str | None):
     """Devuelve el item del inventario cuya ficha coincide con la llave de la puerta.
 
-    La llave no se consume (§2.5). O(n), n = tamaño del inventario (pequeño).
+    La llave no se consume (2.5). O(n), n = tamaño del inventario (pequeño).
     """
     if not id_llave:
         return None

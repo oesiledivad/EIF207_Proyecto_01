@@ -9,7 +9,7 @@ Orden de lectura:
 Una cripta que está en la caché se juega SOLO con lo de la caché (nunca se
 mezclan versiones). Si falta una sala que nunca se descargó, esa sala no se
 devuelve y el juego no deja entrar en ella. Leer disco no cuenta como
-solicitud de red (§5.1).
+solicitud de red (5.1).
 El catálogo sigue el origen de la cripta seleccionada: caché o paquete local.
 """
 from .Crypt_Data_Source import CryptDataSource

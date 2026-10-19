@@ -81,7 +81,7 @@ class PartidaControlador:
             velocidad=detalles.jugador_velocidad, sala=detalles.sala_inicial,
             tiempo_siguiente=0, inventario_max=detalles.inventario_max,
         )
-        # §2.4: la primera acción del jugador está programada en t=0.
+        # 2.4: la primera acción del jugador está programada en t=0.
         evento_inicial = simulacion.agenda.insertar(0, jugador, "accion_actor")
         jugador._proximo_evento = evento_inicial
 

@@ -1,4 +1,4 @@
-"""Coordinación del guardado; reutiliza el formato y la restauración de P1."""
+"""Coordinación del guardado; reutiliza el formato y la restauración"""
 import struct
 from datetime import datetime
 from pathlib import Path

@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / "src" / "cripta"))
-from adaptadores.Network_Adapter import NetworkAdapter
-from adaptadores.Guardar_Llamadas_API import Guardar_Llamadas_API
+from  cripta.adaptadores.Network_Adapter import NetworkAdapter
+from cripta.adaptadores.Guardar_Llamadas_API import Guardar_Llamadas_API
 red = NetworkAdapter()
 guardador = Guardar_Llamadas_API(RAIZ / "datos_prueba")
 datos = red.crypta_list()

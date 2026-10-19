@@ -1,7 +1,4 @@
 """Guardado binario: guardar, cargar y seguir jugando da el mismo resultado (sin red ni vista).
-
-Ejecutar desde la raíz del proyecto:
-    python -m unittest pruebas.test_guardado
 """
 import sys
 import tempfile

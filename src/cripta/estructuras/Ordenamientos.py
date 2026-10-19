@@ -1,6 +1,6 @@
 """Algoritmos de ordenamiento propios con selección automática.
 
-Se implementaron insertion sort y merge sort porque §4.9 exige al menos
+Se implementaron insertion sort y merge sort porque 4.9 exige al menos
 dos algoritmos con características distintas y elección automática según
 propiedades medibles. Insertion sort es O(n) en datos casi ordenados;
 merge sort garantiza O(n log n) y es estable.

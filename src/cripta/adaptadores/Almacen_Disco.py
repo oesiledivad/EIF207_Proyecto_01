@@ -1,4 +1,4 @@
-"""Almacenamiento persistente en disco para la caché (§4.4).
+"""Almacenamiento persistente en disco para la caché (4.4).
 
 Guarda las respuestas crudas (JSON) del servicio para no volver a pedirlas
 por red mientras su versión siga vigente:
@@ -14,9 +14,9 @@ por red mientras su versión siga vigente:
 
 Un archivo por ficha: recuperar una ficha liberada de memoria cuesta una
 sola lectura de disco (abrir ese archivo), sin leer las demás. El sistema de
-archivos hace de índice; no se usa dict como caché (§7).
+archivos hace de índice; no se usa dict como caché (7).
 
-Es un adaptador (§6): el modelo no sabe que existe.
+Es un adaptador (6): el modelo no sabe que existe.
 """
 
 from __future__ import annotations

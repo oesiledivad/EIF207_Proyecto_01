@@ -27,7 +27,7 @@ class CatalogoService:
     def __init__(self, servicio) -> None:
         self._servicio = servicio
 
-    #  Catálogo (§4.3, §4.4)
+    #  Catálogo (4.3, 4.4)
 
     def asegurar_fichas(self, ids: list[str], fijar: bool = False,
                         descargadas: list[dict] | None = None) -> Catalogo_Lista:
@@ -121,7 +121,7 @@ class CatalogoService:
             return ficha
         return buscar_ficha(self.asegurar_fichas([id_]), id_)
 
-    #  Protección de fichas en uso (§4.4)
+    #  Protección de fichas en uso (4.4)
     #  En uso = enemigo activo, objeto en inventario, objeto en el suelo o
     #  trampa de la sala actual. Cada aparición suma una referencia.
 

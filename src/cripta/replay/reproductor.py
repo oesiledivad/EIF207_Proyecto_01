@@ -94,10 +94,13 @@ def leer_partida(ruta):
     return [cabecera, acciones]
 
 
-def reproducir(ruta, fuentes):
+def reproducir(ruta, fuentes, mostrar_progreso=False):
     from cripta.controlador.Aplicacion import Aplicacion
 
     cabecera, acciones = leer_partida(ruta)
+    if mostrar_progreso:
+        print(f"Cargando replay: {cabecera.nombre_jugador} | {cabecera.cripta_id} | "
+              f"semilla={cabecera.semilla} | {len(acciones)} acciones", flush=True)
     app = None
     errores = []
     for fuente in fuentes:
@@ -121,6 +124,12 @@ def reproducir(ruta, fuentes):
     if app is None:
         raise ValueError("No se puede garantizar una reproduccion fiel: " + "; ".join(errores))
     for linea, (nombre, argumento) in enumerate(acciones, 2):
+        if mostrar_progreso:
+            estado = app.estado_partida()
+            print(f"[{linea - 1}/{len(acciones)}] {nombre}"
+                  f"{' ' + argumento if argumento is not None else ''} | "
+                  f"sala={estado.sala_actual_id} vida={estado.jugador_vida} "
+                  f"tiempo={estado.reloj_virtual} (antes de la accion)", flush=True)
         match nombre:
             case "retroceder":
                 resultado = app.usar_pergamino()

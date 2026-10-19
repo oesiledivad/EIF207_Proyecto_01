@@ -18,7 +18,7 @@ from cripta.dto.FactoryDto_Partida import (
     parsear_detalles, parsear_sala, parsear_contenido,
 )
 
-MAX_POR_LOTE = 10  # §3.4: contenido y catálogo aceptan hasta 10 por solicitud
+MAX_POR_LOTE = 10  # 3.4: contenido y catálogo aceptan hasta 10 por solicitud
 
 
 class _FuenteSincronizada:
@@ -48,7 +48,7 @@ class CriptaService:
         self._data_source = data_source
         self._cache_fichas = cache_fichas if cache_fichas is not None else Cache_Fichas()
         self._detalles: DetallesCripta | None = None  # evita pedir 2 veces los datos generales
-        # Persistencia (§4.4). Solo se usa lo del disco si su versión fue validada.
+        # Persistencia (4.4). Solo se usa lo del disco si su versión fue validada.
         self._almacen = almacen
         self._catalogo_en_disco = False
         self._cripta_en_disco = False
@@ -57,7 +57,7 @@ class CriptaService:
         self._catalogo = CatalogoService(self)
         self._precarga = PrecargaService(self)
 
-    #  Precarga en segundo plano (§4.2)
+    #  Precarga en segundo plano (4.2)
 
     def activar_precarga_en_segundo_plano(self) -> None:
         """La vista interactiva la activa: la red ya no congela la ventana al cruzar
@@ -99,7 +99,7 @@ class CriptaService:
             self._version_catalogo = version
         return self._version_catalogo
 
-    #  Persistencia (§4.4)
+    #  Persistencia (4.4)
 
     def preparar_persistencia(self, detalles: DetallesCripta) -> str:
         """Valida lo guardado en disco contra las versiones actuales.
@@ -254,7 +254,7 @@ class CriptaService:
         return salas_conocidas
 
     def cargar_contenido_salas(self, cripta_id: str, sala_ids: list[int]) -> list[list]:
-        """Pide el contenido de varias salas en lotes de hasta 10 (§4.2).
+        """Pide el contenido de varias salas en lotes de hasta 10 (4.2).
 
         Por cada lote: 1 solicitud de contenido + las de catálogo que falten
         (también en lotes de 10). El resultado sigue el orden de `sala_ids`,
@@ -318,7 +318,7 @@ class CriptaService:
             if entrada is not None:
                 resultado.append([sala_id, parsear_contenido(entrada, catalogo)])
             # Sin respuesta (p. ej. --offline sin esa sala descargada) la sala queda
-            # sin cargar: nunca se entra a una sala cuyo contenido no se conoce (§4.2).
+            # sin cargar: nunca se entra a una sala cuyo contenido no se conoce (4.2).
         return resultado
 
     def descargar_contenido(self, cripta_id: str, lote: list[int]) -> list[list]:
@@ -345,7 +345,7 @@ class CriptaService:
                 fichas.append(bruto)
         return [entradas, fichas]
 
-    #  Presupuesto y estadísticas (§5.1)
+    #  Presupuesto y estadísticas (5.1)
 
     def fijar_presupuesto(self, presupuesto: int) -> None:
         self._data_source.fijar_presupuesto(presupuesto)

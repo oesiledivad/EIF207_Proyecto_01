@@ -288,9 +288,10 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 | `src/cripta/replay/`                         | Registro y reproducción de acciones                                  |
 | `datos_prueba/`, `pruebas/`, `herramientas/` | Datos offline, pruebas y utilidades de generación de recursos        |
 
-- [Decisiones de diseño y análisis de estructuras](docs/desiciones.md).
+- [Decisiones de diseño y análisis de estructuras](docs/decisiones.md).
+- [Estructuras de datos: operaciones y complejidades](docs/estructuras.md).
 - [Contrato de la API](docs/api.md).
-- [Bitácora de uso de LLM](PROMPTS_LLM.md).
+- [Bitácora de uso de LLM](docs/PROMPTS_LLM.md).
 - [Procedencia de los packs gráficos](src/cripta/vista/recursos/PACKS.md) y [términos de las antorchas de Szadi art](src/cripta/vista/recursos/catacombs/PROCEDENCIA.md).
 - [Fuente Cripta Pixel](src/cripta/vista/recursos/fuente/PROCEDENCIA.md), [música](src/cripta/vista/recursos/musica/PROCEDENCIA.md) y [efectos de sonido propios](src/cripta/vista/recursos/sonidos/PROCEDENCIA.md). El arte propio del juego se distribuye exportado a PNG en `src/cripta/vista/recursos/propios/`; los recursos externos conservan sus respectivos términos de uso.
 

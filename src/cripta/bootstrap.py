@@ -41,7 +41,7 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
         "--cache-size",
         type=int,
         default=25,
-        help="Tope de fichas de catálogo en memoria (§4.4). Por defecto 25.",
+        help="Tope de fichas de catálogo en memoria (4.4). Por defecto 25.",
     )
     parser.add_argument(
         "--cache-dir",
@@ -105,7 +105,7 @@ def main(argv: list[str] | None = None) -> int:
         # El paquete se valida por separado: una caché incompleta no lo oculta.
         fuentes = [data_source, AdaptadorOffline(args.offline_dir)]
         try:
-            controlador = reproducir(args.replay, fuentes)
+            controlador = reproducir(args.replay, fuentes, mostrar_progreso=True)
         except (OSError, RuntimeError, ValueError) as error:
             print(str(error), file=sys.stderr)
             return 2

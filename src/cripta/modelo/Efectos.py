@@ -1,4 +1,4 @@
-"""Efectos temporales (§2.10): veneno, cambio de velocidad, regeneración."""
+"""Efectos temporales (2.10): veneno, cambio de velocidad, regeneración."""
 
 INTERVALO_VENENO = 80
 DURACION_VENENO = 400
@@ -14,7 +14,7 @@ def aplicar_veneno(actor, dano_por_pulso: int, tiempo_actual: int, agenda) -> No
 
 
 def cancelar_veneno(actor, agenda) -> None:
-    """Antídoto: cancela pulsos futuros (§2.10, Apéndice B)."""
+    """Antídoto: cancela pulsos futuros (2.10, Apéndice B)."""
     if actor.evento_veneno is not None:
         agenda.cancelar(actor.evento_veneno)
         agenda.cambiar(actor, "evento_veneno", None)

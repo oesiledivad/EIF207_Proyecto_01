@@ -36,7 +36,7 @@ class NetworkAdapter(CryptDataSource):
         url = f"{self.BASE_URL}{endpoint}"
         intentos = 0
         while True:
-            # Control estricto: se revisa ANTES de cada intento, reintentos incluidos (§5.1).
+            # Control estricto: se revisa ANTES de cada intento, reintentos incluidos (5.1).
             if self._presupuesto is not None and self._requests_made >= self._presupuesto:
                 raise PresupuestoAgotado(
                     f"Presupuesto de red agotado ({self._requests_made}/{self._presupuesto}) "

@@ -2,7 +2,7 @@
 
 Se usa en lugar de dict para devolver el estado de una operación a la
 vista, manteniendo consistencia con el resto de DTOs y evitando el uso
-de dict como estructura propia (§7).
+de dict como estructura propia (7).
 """
 
 from __future__ import annotations

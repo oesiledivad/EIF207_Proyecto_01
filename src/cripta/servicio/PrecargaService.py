@@ -16,7 +16,7 @@ class PrecargaService:
 
     def __init__(self, servicio) -> None:
         self._servicio = servicio
-        # Segundo plano (§4.2): la red no congela la ventana. El hilo solo hace E/S;
+        # Segundo plano (4.2): la red no congela la ventana. El hilo solo hace E/S;
         # el contenido se incorpora en el hilo del juego al inicio de la siguiente
         # acción, en el orden pedido, así el resultado es el mismo que sincrónico.
         self._segundo_plano = False
@@ -67,7 +67,7 @@ class PrecargaService:
         futuro = self._ejecutor.submit(self._servicio.descargar_contenido, cripta_id, ids)
         self._pendiente = [futuro, salas, ids, incorporar]
 
-    #  Precarga por lotes (§4.2)
+    #  Precarga por lotes (4.2)
 
     @staticmethod
     def planificar_precarga(salas, max_id: int, origen_id: int) -> list[int]:

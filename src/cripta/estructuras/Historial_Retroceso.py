@@ -1,6 +1,6 @@
 """Historial invertible de cambios entre acciones del jugador.
 
-Se eligió una pila de intervalos con listas de cambios porque §2.11
+Se eligió una pila de intervalos con listas de cambios porque 2.11
 prohíbe copias completas del estado. Cada intervalo agrupa los cambios
 ocurridos entre dos decisiones del jugador y se puede invertir en orden
 inverso.

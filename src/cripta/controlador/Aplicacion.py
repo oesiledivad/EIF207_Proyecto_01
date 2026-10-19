@@ -39,7 +39,7 @@ class Aplicacion:
 
     Args:
         data_source: Adaptador de datos (red u offline).
-        capacidad_cache: Tope de fichas en memoria (--cache-size, §4.4).
+        capacidad_cache: Tope de fichas en memoria (--cache-size, 4.4).
         almacen: Caché persistente en disco (None = desactivada).
     """
 
@@ -106,14 +106,14 @@ class Aplicacion:
         return self._cripta_service.tipos_activos(
             self._gestor.inventario, self._salas, self._salas.obtener(self._jugador.sala))
 
-    #  Ciclo de una acción del jugador (§2.3)
+    #  Ciclo de una acción del jugador (2.3)
 
     def _partida_en_curso(self) -> bool:
         return (self._simulacion is not None and self._jugador is not None
                 and self._gestor.estado.activa)
 
     def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None) -> ResultadoAccion:
-        # Punto fijo para incorporar la precarga en segundo plano (determinista, §4.2).
+        # Punto fijo para incorporar la precarga en segundo plano (determinista, 4.2).
         self._avisar(self._cripta_service.completar_precarga())
         return self._ciclo.ejecutar(nombre_costo, ejecutar, argumento)
 
@@ -156,7 +156,7 @@ class Aplicacion:
         return self._cripta_service.solicitudes_restantes() == 0
 
     def resumen_red(self) -> str:
-        """§5.1: solicitudes realizadas, presupuesto, aciertos y fallos de caché."""
+        """5.1: solicitudes realizadas, presupuesto, aciertos y fallos de caché."""
         s = self._cripta_service
         return (f"Red: {s.requests_made}/{self._gestor.estado.presupuesto_solicitudes} solicitudes · "
                 f"caché: {s.aciertos_cache} aciertos, {s.fallos_cache} fallos, "
@@ -258,7 +258,7 @@ class Aplicacion:
         return self._exploracion.mover(direccion)
 
     def abrir(self, direccion: str) -> ResultadoAccion:
-        """Abre la puerta de la sala actual en `direccion` (§2.5). Costo 50."""
+        """Abre la puerta de la sala actual en `direccion` (2.5). Costo 50."""
         return self._exploracion.abrir(direccion)
 
     abrir_puerta = abrir

@@ -20,7 +20,7 @@ class _ActorFalso:
         self._proximo_evento = None
 
 
-# --- 1. Agenda: heap propio vs. lista ordenada por inserción (§4.1) --------
+# 1. Agenda: heap propio vs. lista ordenada por inserción (4.1)
 
 def _bench_agenda_heap(n: int) -> list[float]:
     agenda = HeapAgendaEventos()
@@ -71,7 +71,7 @@ def _bench_lista_ordenada(n: int) -> list[float]:
     return [t_insertar, t_extraer]
 
 
-# --- 2. decidir_accion vs. tamaño de la cripta (§4.7) -----------------------
+# 2. decidir_accion vs. tamaño de la cripta (4.7)
 
 def _construir_cripta_sintetica(n_salas: int) -> IndiceSalas:
     salas = IndiceSalas()
@@ -103,7 +103,7 @@ def _bench_decidir_accion(n_salas: int, repeticiones: int) -> float:
     return time.perf_counter() - inicio
 
 
-# --- 3. Cache_Fichas: acierto vs. fallo (§4.4) ------------------------------
+# 3. Cache_Fichas: acierto vs. fallo (4.4)
 
 def _bench_cache(n_consultas: int) -> list[float]:
     cache = Cache_Fichas(capacidad=25)
@@ -123,20 +123,20 @@ def _bench_cache(n_consultas: int) -> list[float]:
 
 
 def _bench_simulacion() -> None:
-    print("=== Agenda: heap propio vs. lista ordenada (§4.1) ===")
+    print("=== Agenda: heap propio vs. lista ordenada (4.1) ===")
     for n in [100, 500, 2000]:
         ih, eh = _bench_agenda_heap(n)
         il, el = _bench_lista_ordenada(n)
         print(f"n={n:5d}  heap: insertar={ih*1000:.2f}ms extraer={eh*1000:.2f}ms"
               f"   |   lista: insertar={il*1000:.2f}ms extraer={el*1000:.2f}ms")
 
-    print("\n=== Rastreador.decidir_accion vs. tamaño de la cripta (§4.7) ===")
+    print("\n=== Rastreador.decidir_accion vs. tamaño de la cripta (4.7) ===")
     for n_salas in [20, 200, 2000]:
         t = _bench_decidir_accion(n_salas, repeticiones=10_000)
         print(f"cripta de {n_salas:5d} salas -> 10000 llamadas en {t*1000:.2f}ms "
               f"({t*1_000_000/10_000:.3f}µs por llamada)")
 
-    print("\n=== Cache_Fichas llena (25 fichas): acierto vs. fallo (§4.4) ===")
+    print("\n=== Cache_Fichas llena (25 fichas): acierto vs. fallo (4.4) ===")
     ta, tf = _bench_cache(50_000)
     print(f"50000 aciertos: {ta*1000:.2f}ms   |   50000 fallos: {tf*1000:.2f}ms")
 
