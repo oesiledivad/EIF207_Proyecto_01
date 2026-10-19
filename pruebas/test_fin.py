@@ -46,6 +46,43 @@ class PruebasFin(unittest.TestCase):
             self.assertEqual(app.previsualizar_cripta('cripta-02').id, 'cripta-02')
         self.assertEqual(fuente.requests_made, 1)
 
+    def test_agotar_presupuesto_permite_datos_cargados_y_guardar(self):
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from cripta.adaptadores.Network_Adapter import NetworkAdapter
+        from cripta.controlador.Aplicacion import Aplicacion
+        from pruebas.test_inventario import FuentePrueba
+        from pruebas.test_replay import firma
+
+        with tempfile.TemporaryDirectory() as carpeta:
+            ruta = Path(carpeta) / "partida.bin"
+            app = Aplicacion(FuentePrueba(), ruta_guardado=ruta)
+            self.assertTrue(app.iniciar_partida("Jugador", "42", "cripta-01").ok)
+            red = NetworkAdapter()
+            red.fijar_presupuesto(1)
+            red._requests_made = 1
+            app._cripta_service._data_source = red
+            self.assertTrue(app.presupuesto_agotado)
+            with patch("requests.get") as solicitar:
+                self.assertTrue(app.esperar().ok)
+                self.assertTrue(app.mover("N").ok)
+                self.assertTrue(app.mover("S").ok)
+                # Simula una sala del mapa cuyo contenido aún no se descargó.
+                app._salas.obtener(2).contenido_cargado = False
+                antes = firma(app)
+                resultado = app.mover("N")
+                self.assertFalse(resultado.ok)
+                self.assertIn("Presupuesto", resultado.motivo)
+                self.assertEqual(firma(app), antes)
+                self.assertTrue(app.estado_partida().activa)
+                self.assertFalse(app.estado_partida().derrota)
+                self.assertTrue(app.guardar().ok)
+                self.assertTrue(ruta.is_file())
+                app.terminar()
+                solicitar.assert_not_called()
+            self.assertEqual(red.requests_made, 1)
+
     def test_otra_partida_no_reutiliza_fichas_de_version_anterior(self):
         from pruebas.test_replay import FuenteReplay
         from cripta.controlador.Aplicacion import Aplicacion

@@ -271,6 +271,7 @@ Las pruebas gráficas requieren un entorno con pantalla y soporte OpenGL, aunque
 
 - **Rendimiento:** la referencia cargada cumple el objetivo de ciclos inferiores a 20 ms en el equipo de desarrollo, excluyendo red y renderizado. Las cargas de estrés, incluida la de 1000 enemigos, no garantizan ese límite. Influyen el equipo, los eventos simultáneos, la implementación y las pausas del recolector de memoria; ejecuta `--bench` para medir en tu entorno.
 - **Datos y red:** jugar en línea depende de la disponibilidad de la API y de su presupuesto de solicitudes. Offline y replay dependen de los datos y versiones disponibles en disco.
+- **Presupuesto agotado dentro de una cripta:** la partida sigue activa y la cabecera muestra `AGOTADO`. Puedes continuar con los datos ya disponibles; una acción que necesite descargar contenido se rechaza sin avanzar el reloj ni gastar una acción. Usa **I** para ver la explicación o **Esc** para guardar y volver al menú. No se renueva el presupuesto al reintentar ni se cambia automáticamente a offline. El guardado conserva el progreso; cargarlo exige datos y versiones compatibles.
 - **Caché:** las fichas en uso no se desalojan. Si una escena necesita más tipos protegidos que la capacidad configurada, aumenta `--cache-size` al iniciar.
 - **Restricciones académicas:** agenda, inventario, caché y demás estructuras evaluadas son propias. Los formatos internos exigidos por bibliotecas permitidas, como el estado nativo de `random`, no se utilizan para sustituir esas estructuras.
 

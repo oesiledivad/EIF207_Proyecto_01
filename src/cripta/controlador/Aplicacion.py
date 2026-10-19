@@ -150,6 +150,11 @@ class Aplicacion:
     def solicitudes_usadas(self) -> int:
         return self._cripta_service.requests_made
 
+    @property
+    def presupuesto_agotado(self) -> bool:
+        """Indica si la sesión ya no puede realizar solicitudes HTTP."""
+        return self._cripta_service.solicitudes_restantes() == 0
+
     def resumen_red(self) -> str:
         """§5.1: solicitudes realizadas, presupuesto, aciertos y fallos de caché."""
         s = self._cripta_service

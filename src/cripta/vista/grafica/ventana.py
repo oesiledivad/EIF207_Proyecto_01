@@ -48,6 +48,7 @@ class VentanaCripta(arcade.Window):
         self.criterio = "real"
         self.modo_mover = False
         self.mensaje = "Haz clic en una puerta, un enemigo o un objeto."
+        self._aviso_presupuesto = False
         self.zonas = []
         self.bitacora_desplazamiento = 0
         self.bitacora_limite = 0
@@ -133,6 +134,7 @@ class VentanaCripta(arcade.Window):
     def preparar_partida(self):
         """Limpia selecciones y animaciones antes de mostrar una nueva partida."""
         self.ultimo_click = None
+        self._aviso_presupuesto = False
         self.enemigo = self.item = self.accion_visual = ""
         self.atacantes = self.cambios_enemigos = []
         self.duracion_visual = 0.65
@@ -156,7 +158,8 @@ class VentanaCripta(arcade.Window):
         """Devuelve el modo y las solicitudes usadas frente al presupuesto."""
         p = self.controlador.estado_partida()
         cheats = " · CHEATS" if self.controlador.trucos_activos else ""
-        return f"{self.modo}{cheats} · RED {self.controlador.solicitudes_usadas()}/{p.presupuesto_solicitudes}"
+        limite = " AGOTADO" if self.controlador.presupuesto_agotado else ""
+        return f"{self.modo}{cheats} · RED {self.controlador.solicitudes_usadas()}/{p.presupuesto_solicitudes}{limite}"
 
     def iniciar_partida(self, nombre, semilla, cripta_id, retorno):
         """Inicia con pantalla de carga y regresa al origen si la validación falla."""
@@ -305,6 +308,10 @@ class VentanaCripta(arcade.Window):
             sala = next((s for s in p.salas_conocidas if s.id == p.sala_actual_id), None)
             lineas = [f"{p.sala_actual_nombre}" + (f": {sala.descripcion}" if sala and sala.descripcion else ""),
                       f"Ataque {p.jugador_ataque} · Defensa {p.jugador_defensa} · Velocidad {p.jugador_velocidad}"]
+            if self.controlador.presupuesto_agotado:
+                lineas += ["RED AGOTADA: puedes seguir con los datos disponibles.",
+                           "Las acciones que necesiten red se rechazan sin consumir tiempo.",
+                           "Esc: guardar partida o volver al menú."]
             lineas += [f"{v.direccion}: {v.nombre} · {'cerrada' if v.cerrada else 'abierta'}"
                        + (f" · llave {v.llave}" if v.llave else "") for v in p.vecindad]
             lineas += [f"Trampa {t.tipo}: {'activa' if t.activa else 'inactiva'} · daño {t.dano}" for t in p.trampas]
@@ -433,6 +440,10 @@ class VentanaCripta(arcade.Window):
         self.animacion += delta_time
         self.pausa_visual = max(0, self.pausa_visual - delta_time)
         self.musica.poner(self.pista_actual())
+        if (self.current_view is None and self.controlador.estado_partida().activa
+                and self.controlador.presupuesto_agotado and not self._aviso_presupuesto):
+            self._aviso_presupuesto = True
+            self.mensaje = "Red agotada: usa datos cargados. Esc: guardar o volver al menú."
         if self.current_view is None and self.controlador.estado_partida().terminada and not self.pausa_visual:
             from .fin import PantallaFin
             self.show_view(PantallaFin(self))

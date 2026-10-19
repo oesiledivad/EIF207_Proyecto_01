@@ -52,6 +52,35 @@ def avanzar_carga(vista):
 
 class PruebasGrafica(unittest.TestCase):
     @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_presupuesto_agotado_avisa_sin_interrumpir_la_partida(self):
+        _ejecutar(self, COMUN + r'''
+from cripta.adaptadores.Network_Adapter import NetworkAdapter
+from cripta.controlador.Aplicacion import Aplicacion
+from pruebas.test_inventario import FuentePrueba
+app = Aplicacion(FuentePrueba())
+assert app.iniciar_partida('Jugador', '42', 'cripta-01').ok
+red = NetworkAdapter()
+red.fijar_presupuesto(9)
+red._requests_made = 9
+app._cripta_service._data_source = red
+vista = VentanaCripta(app, visible=False, offline=False, tamano=[640, 360])
+try:
+    antes = app.estado_partida().reloj_virtual
+    vista.on_update(0.1)
+    assert vista.current_view is None and 'Red agotada' in vista.mensaje
+    assert 'AGOTADO' in vista.indicador_red()
+    vista.on_draw()
+    vista.mensaje = 'Otro mensaje'
+    vista.on_update(0.1)
+    assert vista.mensaje == 'Otro mensaje'  # El aviso no se repite en cada cuadro.
+    vista.abrir_panel('informacion')
+    assert any('RED AGOTADA' in linea for linea in vista.current_view.texto.splitlines())
+    assert app.estado_partida().reloj_virtual == antes
+finally:
+    vista.close()
+''')
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
     def test_error_de_red_permite_volver_reintentar_y_salir(self):
         _ejecutar(self, COMUN + r'''
 from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
