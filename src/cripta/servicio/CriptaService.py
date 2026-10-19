@@ -70,6 +70,11 @@ class CriptaService:
     def precarga_en_segundo_plano(self) -> bool:
         return self._precarga.en_segundo_plano
 
+    @property
+    def precarga_pendiente(self) -> bool:
+        """Indica si hay datos de segundo plano por incorporar."""
+        return self._precarga.tiene_pendiente
+
     def completar_precarga(self) -> str | None:
         """Incorpora lo que la precarga trajo (se llama al inicio de cada acción)."""
         return self._precarga.completar_pendiente()

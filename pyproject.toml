@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "arcade>=3.3,<4",
+    "fonttools>=4.67.0",
     "pillow>=11.3.0",
     "requests>=2.34.2",
 ]

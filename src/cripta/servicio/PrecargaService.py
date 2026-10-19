@@ -30,6 +30,11 @@ class PrecargaService:
     def en_segundo_plano(self) -> bool:
         return self._segundo_plano
 
+    @property
+    def tiene_pendiente(self) -> bool:
+        """Indica si queda una descarga por incorporar, sin esperarla."""
+        return self._pendiente is not None
+
     def completar_pendiente(self) -> str | None:
         """Espera (si hace falta) la precarga pendiente y la incorpora. Devuelve aviso o None."""
         if self._pendiente is None:

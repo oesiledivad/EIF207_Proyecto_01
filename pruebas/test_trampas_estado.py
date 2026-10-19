@@ -7,7 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
 from cripta.controlador.Aplicacion import Aplicacion
 
-DATOS = Path(__file__).resolve().parents[1] / "datos_prueba"
+DATOS = Path(__file__).resolve().parents[1] / "datos_offline"
 
 
 class PruebasTrampasEnEstado(unittest.TestCase):

@@ -40,7 +40,7 @@ class PruebasFin(unittest.TestCase):
         self.assertIsNone(fuente.solicitudes_restantes())
         self.assertEqual(fuente.client_id, cliente)
 
-        datos = AdaptadorOffline('datos_prueba').crypta_details('cripta-02')
+        datos = AdaptadorOffline('datos_offline').crypta_details('cripta-02')
         respuesta = SimpleNamespace(status_code=200, json=lambda: datos)
         with patch('requests.get', return_value=respuesta):
             self.assertEqual(app.previsualizar_cripta('cripta-02').id, 'cripta-02')

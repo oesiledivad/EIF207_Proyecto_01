@@ -307,9 +307,9 @@ def _bench_referencia(repeticiones=30):
     from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
     from cripta.controlador.Aplicacion import Aplicacion
 
-    carpeta = Path(__file__).resolve().parents[2] / "datos_prueba"
+    carpeta = Path(__file__).resolve().parents[2] / "datos_offline"
     if not (carpeta / "cripta_cripta-01.json").is_file():
-        print("Referencia: no está disponible el paquete datos_prueba.")
+        print("Referencia: no está disponible el paquete datos_offline.")
         return []
     medidas = []
 

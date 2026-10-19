@@ -9,7 +9,7 @@ from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.controlador.Aplicacion import Aplicacion
 
-DATOS = Path(__file__).resolve().parents[1] / "datos_prueba"
+DATOS = Path(__file__).resolve().parents[1] / "datos_offline"
 CRIPTA = "cripta-stormlight"
 
 

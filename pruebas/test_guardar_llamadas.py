@@ -5,7 +5,7 @@ sys.path.insert(0, str(RAIZ / "src" / "cripta"))
 from  cripta.adaptadores.Network_Adapter import NetworkAdapter
 from cripta.adaptadores.Guardar_Llamadas_API import Guardar_Llamadas_API
 red = NetworkAdapter()
-guardador = Guardar_Llamadas_API(RAIZ / "datos_prueba")
+guardador = Guardar_Llamadas_API(RAIZ / "datos_offline")
 datos = red.crypta_list()
 guardador.crypta_list(datos)
 cid = datos["criptas"][0]["id"]

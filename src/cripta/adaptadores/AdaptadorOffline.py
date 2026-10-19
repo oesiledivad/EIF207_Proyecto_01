@@ -3,7 +3,7 @@
 Orden de lectura:
     1. La caché persistente (--cache-dir): lo que se fue descargando al jugar
        en línea (lista de criptas, datos generales, esqueleto, contenido y fichas).
-    2. El paquete de respuestas del curso (--offline-dir, p. ej. datos_prueba),
+    2. El paquete de respuestas del curso (--offline-dir, p. ej. datos_offline),
        solo para lo que la caché no tenga.
 
 Una cripta que está en la caché se juega SOLO con lo de la caché (nunca se
@@ -23,7 +23,7 @@ MAX_POR_LOTE = 10
 class AdaptadorOffline(CryptDataSource):
     """Lee respuestas guardadas: primero la caché descargada, después el paquete del curso."""
 
-    def __init__(self, carpeta="datos_prueba", almacen=None):
+    def __init__(self, carpeta="datos_offline", almacen=None):
         self.carpeta = Path(carpeta)
         self.almacen = almacen   # AlmacenDisco de --cache-dir (None = solo el paquete)
         self._catalogo_del_paquete = False

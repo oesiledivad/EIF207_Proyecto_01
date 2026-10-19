@@ -19,7 +19,7 @@ from cripta.estructuras.Inventario import Inventario, ItemInventario
 class FuentePrueba(AdaptadorOffline):
     """Dos salas sintéticas; el catálogo local aporta fichas reales."""
     def __init__(self):
-        super().__init__(Path(__file__).resolve().parents[1] / "datos_prueba")
+        super().__init__(Path(__file__).resolve().parents[1] / "datos_offline")
 
     def crypta_details(self, cid):
         datos = super().crypta_details(cid)

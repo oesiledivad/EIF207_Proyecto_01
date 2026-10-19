@@ -53,7 +53,7 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
                        help="Reproduce acciones sin interfaz; exige versiones compatibles.")
     parser.add_argument("--puntajes", help="Archivo de puntajes (por defecto, dentro de --log-dir).")
     parser.add_argument("--log-dir", default="partidas", help="Carpeta de registros de partida.")
-    parser.add_argument("--offline-dir", default="datos_prueba", help="Paquete de respuestas del curso (respaldo de --offline).")
+    parser.add_argument("--offline-dir", default="datos_offline", help="Paquete de respuestas del curso (respaldo de --offline).")
     modos.add_argument("--bench", action="store_true",
                         help="Ejecuta cargas sinteticas sin red ni interfaz.")
     modos.add_argument("--grafica", action="store_true",

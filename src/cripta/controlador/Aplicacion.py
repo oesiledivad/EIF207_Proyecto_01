@@ -61,7 +61,7 @@ class Aplicacion:
         self._partida = PartidaControlador(self._gestor, self._bitacora, carpeta_logs, ruta_puntajes)
         self._guardado = GuardadoControlador(self, capacidad_cache, almacen, carpeta_logs, ruta_puntajes,
                                              ruta_guardado, offline_dir if offline_dir is not None
-                                             else getattr(data_source, "carpeta", "datos_prueba"))
+                                             else getattr(data_source, "carpeta", "datos_offline"))
         self._cheats = CheatsControlador(self)
         self._inicio = InicioPartidaControlador(self)
         self._ciclo = CicloAccionesControlador(self)
@@ -256,6 +256,15 @@ class Aplicacion:
 
     def mover(self, direccion: str) -> ResultadoAccion:
         return self._exploracion.mover(direccion)
+
+    @property
+    def precarga_pendiente(self) -> bool:
+        """Permite mostrar la espera antes de ejecutar una acción."""
+        return self._cripta_service.precarga_pendiente
+
+    def preparar_accion(self) -> None:
+        """Incorpora la precarga sin avanzar el reloj virtual."""
+        self._avisar(self._cripta_service.completar_precarga())
 
     def preparar_movimiento(self, direccion: str) -> None:
         """Prepara los datos de la puerta sin ejecutar una acción."""

@@ -52,6 +52,37 @@ def avanzar_carga(vista):
 
 class PruebasGrafica(unittest.TestCase):
     @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_precarga_pendiente_no_bloquea_accion_ni_oculta_animacion(self):
+        _ejecutar(self, COMUN + r'''
+from concurrent.futures import Future
+from cripta.controlador.Aplicacion import Aplicacion
+from pruebas.test_inventario import FuentePrueba
+app = Aplicacion(FuentePrueba())
+assert app.iniciar_partida('Jugador', '42', 'cripta-01').ok
+vista = VentanaCripta(app, visible=False, offline=True, tamano=[640, 360])
+try:
+    futuro = Future()
+    app._cripta_service._precarga._pendiente = [futuro, app._salas, [], lambda *_: None]
+    reloj = app.estado_partida().reloj_virtual
+    vista.ejecutar('esperar')
+    assert isinstance(vista.current_view, PantallaCarga)
+    assert not futuro.done()
+    assert app.estado_partida().reloj_virtual == reloj
+    futuro.set_result([[], []])
+    avanzar_carga(vista)
+    assert vista.current_view is None
+    assert app.estado_partida().reloj_virtual > reloj
+    pausa = vista.pausa_visual
+    vista.on_update(2)
+    assert vista.pausa_visual == pausa
+    vista.on_draw()
+    vista.on_update(0.05)
+    assert vista.pausa_visual < pausa
+finally:
+    vista.close()
+''')
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
     def test_puntajes_del_menu_y_carga_antes_de_cruzar(self):
         _ejecutar(self, COMUN + r'''
 from cripta.controlador.Aplicacion import Aplicacion
@@ -149,7 +180,7 @@ def finalizar_error(vista):
     zonas_dentro(vista)
     return carga
 
-app = Aplicacion(AdaptadorOffline('datos_prueba'))
+app = Aplicacion(AdaptadorOffline('datos_offline'))
 vista = VentanaCripta(app, visible=False, tamano=[640, 360])
 try:
     menu = MenuPrincipal(vista, 'cripta-01')
@@ -349,7 +380,7 @@ from cripta.estructuras.Bitacora import Mensaje
 from cripta.adaptadores.Puntajes import Puntaje
 from threading import Event
 with tempfile.TemporaryDirectory() as carpeta:
-    app = Aplicacion(AdaptadorOffline('datos_prueba'), carpeta_logs=carpeta)
+    app = Aplicacion(AdaptadorOffline('datos_offline'), carpeta_logs=carpeta)
     vista = VentanaCripta(app, visible=False, tamano=[1100, 620])
     try:
         menu = MenuPrincipal(vista, 'cripta-stormlight', 'Jugador', '42')
@@ -506,6 +537,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         warnings.simplefilter('error', PerformanceWarning)
         antes = firma(app)
         for _ in range(120):
+            vista.on_draw()
             vista.on_update(1 / 60)
         assert firma(app) == antes
         mensaje = 'Una puerta cerrada necesita la llave correcta para poder abrirse.'
@@ -526,6 +558,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert all(a is b for a, b in zip(etiquetas, vista.lienzo.textos))
         objetos = [[z.argumento, z.x, z.y, z.ancho, z.alto] for z in vista.zonas if z.accion == 'recoger']
         antes = firma(app)
+        vista.on_draw()
         vista.on_update(0.5)
         vista.on_draw()
         assert objetos == [[z.argumento, z.x, z.y, z.ancho, z.alto] for z in vista.zonas if z.accion == 'recoger']
@@ -603,6 +636,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         mover_raton(vista, objeto)
         vista.on_key_press(arcade.key.R, 0)                      # recoger lo que está bajo el cursor
         assert app.inventario().buscar_por_id('sala-1-objeto-9') is not None
+        vista.on_draw()
         vista.on_update(1)
         vista.on_draw()
         item = next(z for z in vista.zonas if z.accion == 'seleccionar_item')
@@ -612,6 +646,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert firma(app) == antes and vista.item == item.argumento
         vista.on_key_press(arcade.key.E, 0)
         assert app.inventario().buscar_por_id(vista.item).equipado
+        vista.on_draw()
         vista.on_update(1)
         vista.ejecutar('informacion')
         vista.current_view.on_draw()
@@ -619,8 +654,10 @@ with tempfile.TemporaryDirectory() as carpeta:
         vista.current_view.on_key_press(arcade.key.ESCAPE, 0)
         vista.on_key_press(arcade.key.D, 0)
         assert app.inventario().buscar_por_id(vista.item) is None
+        vista.on_draw()
         vista.on_update(1)
         vista.ejecutar('recoger', 'sala-1-objeto-8')
+        vista.on_draw()
         vista.on_update(1)
         vista.on_draw()
         puerta = next(z for z in vista.zonas if z.accion == 'mover_mapa')
@@ -642,9 +679,11 @@ with tempfile.TemporaryDirectory() as carpeta:
                 assert list(dibujar.call_args.args[2:4]) == [x, 200]
             assert firma(app) == antes_orientacion
         antes = firma(app)
+        vista.on_draw()
         vista.on_update(0.3)
         vista.on_draw()
         assert firma(app) == antes
+        vista.on_draw()
         vista.on_update(1)
         vista.on_draw()
         enemigo = next(z for z in vista.zonas if z.accion == 'seleccionar')
@@ -665,10 +704,12 @@ with tempfile.TemporaryDirectory() as carpeta:
         assert firma(app) == despues
         assert vista.accion_visual == 'atacar' and vista.pausa_visual == 0.65
         assert any(cambio < 0 for id_, cambio in vista.cambios_enemigos)
+        vista.on_draw()
         vista.on_update(0.4)
         with patch.object(recursos, 'enemigo', wraps=recursos.enemigo) as elegir:
             vista.on_draw()
             assert any(c.kwargs.get('estado') == 'herido' for c in elegir.call_args_list)
+        vista.on_draw()
         vista.on_update(1)
         vista.ejecutar('seleccionar_item', 'sala-1-objeto-8')
         vista.on_key_press(arcade.key.U, 0)
@@ -683,6 +724,7 @@ with tempfile.TemporaryDirectory() as carpeta:
             vista.on_draw()
             assert any(c.kwargs.get('estado') == 'muerto' for c in elegir.call_args_list)
             assert not any(z.accion == 'seleccionar' and z.argumento == 'caido' for z in vista.zonas)
+            vista.on_draw()
             vista.on_update(1.3)
             elegir.reset_mock()
             vista.on_draw()

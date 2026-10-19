@@ -164,7 +164,7 @@ uv run cripta
 
 ### Jugar offline
 
-Utiliza primero lo descargado en `.cripta_cache/` y después el paquete `datos_prueba/`, sin consultar la red.
+Utiliza primero lo descargado en `.cripta_cache/` y después el paquete `datos_offline/`, sin consultar la red.
 
 ```sh
 uv run cripta --offline
@@ -219,7 +219,7 @@ Puedes añadir estas opciones al comando de arranque para ajustar la capacidad d
 | `--cripta`, `--nombre`, `--semilla` | Preselección del menú; nombre `Jugador`, semilla aleatoria si está vacía |
 | `--cache-size 25`                   | Capacidad de fichas de catálogo en memoria; debe ser positiva            |
 | `--cache-dir .cripta_cache`         | Carpeta de caché persistente                                             |
-| `--offline-dir datos_prueba`        | Paquete local de respuestas de la API                                    |
+| `--offline-dir datos_offline`        | Paquete local de respuestas de la API                                    |
 | `--log-dir partidas`                | Carpeta de registros de partida                                          |
 | `--puntajes RUTA`                   | Archivo de puntajes; por defecto, `puntajes.json` dentro de `--log-dir`  |
 
@@ -236,7 +236,7 @@ uv run cripta --cache-size 50
 uv run cripta --cache-dir "cache_pruebas"
 
 # Usar el paquete local indicado para jugar offline
-uv run cripta --offline --offline-dir "datos_prueba"
+uv run cripta --offline --offline-dir "datos_offline"
 
 # Guardar registros y puntajes en otra carpeta
 uv run cripta --log-dir "partidas_prueba"
@@ -286,7 +286,7 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 | `src/cripta/servicio/` y `adaptadores/`      | Catálogo, precarga, red, caché persistente y fuente offline          |
 | `src/cripta/vista/`                          | Interfaz gráfica y recursos de imagen, fuente y audio                |
 | `src/cripta/replay/`                         | Registro y reproducción de acciones                                  |
-| `datos_prueba/`, `pruebas/`, `herramientas/` | Datos offline, pruebas y utilidades de generación de recursos        |
+| `datos_offline/`, `pruebas/`, `herramientas/` | Datos offline, pruebas y utilidades de generación de recursos        |
 
 - [Decisiones de diseño y análisis de estructuras](docs/decisiones.md).
 - [Estructuras de datos: operaciones y complejidades](docs/estructuras.md).
@@ -313,4 +313,4 @@ Para probar la reproducción desde una instalación limpia, sin conexión ni par
 uv run cripta --offline --replay ejemplos/replay/cripta_01_demo.log
 ```
 
-Usa los datos de `datos_prueba/` y muestra cada acción y el estado final en consola. Los puntajes se generan al jugar y pueden consultarse desde **Puntajes** en el menú de selección; no se incluyen resultados personales ni cachés en el repositorio.
+Usa los datos de `datos_offline/` y muestra cada acción y el estado final en consola. Los puntajes se generan al jugar y pueden consultarse desde **Puntajes** en el menú de selección; no se incluyen resultados personales ni cachés en el repositorio.

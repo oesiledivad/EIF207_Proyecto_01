@@ -12,7 +12,7 @@ from cripta.dto.FactoryDto_Ficha import parsear_ficha
 from cripta.replay.reproductor import reproducir
 from pruebas.test_replay import firma
 
-DATOS = Path(__file__).resolve().parents[1] / "datos_prueba"
+DATOS = Path(__file__).resolve().parents[1] / "datos_offline"
 CRIPTA = "cripta-stormlight"
 
 

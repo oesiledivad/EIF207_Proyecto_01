@@ -39,6 +39,7 @@ class VentanaCripta(arcade.Window):
         self.modo = "OFFLINE" if offline else "EN RED"
         self.animacion = 0.0
         self.pausa_visual = 0.0
+        self._accion_sin_dibujar = False
         self.duracion_visual = 0.65
         self.enemigos_muertos = []
         self.accion_visual = ""
@@ -116,6 +117,7 @@ class VentanaCripta(arcade.Window):
         if self.current_view is not None:
             return
         self.dibujar_juego()
+        self._accion_sin_dibujar = False
         self.zonas = self.lienzo.zonas
         self.lienzo.globo_ayuda()
         self.lienzo.bandas(self)
@@ -223,22 +225,29 @@ class VentanaCripta(arcade.Window):
             if not argumento:
                 self.mensaje = "Apunta al objeto o a la puerta con el cursor."
                 return
+        acciones = ["mover", "abrir", "recoger", "atacar", "esperar", "retroceder", "usar", "equipar", "soltar"]
+        destino_pendiente = False
         if accion == "mover":
             estado = self.controlador.estado_partida()
             vecina = next((v for v in estado.vecindad if v.direccion == argumento), None)
-            if vecina and not vecina.cerrada and vecina.sala_id not in estado.contenido_cargado:
-                from .panel import Panel
+            destino_pendiente = bool(vecina and not vecina.cerrada
+                                     and vecina.sala_id not in estado.contenido_cargado)
+        if accion in acciones and (destino_pendiente or self.controlador.precarga_pendiente):
+            from .panel import Panel
+            from .carga import PantallaCarga
 
-                def terminado(_):
-                    self.hide_view()
-                    self.ejecutar("mover", argumento)
+            def preparar():
+                self.controlador.preparar_accion()
+                if accion == "mover":
+                    self.controlador.preparar_movimiento(argumento)
 
-                retorno = Panel(self, "ENTRAR EN LA SALA", texto="La carga no consume tiempo virtual.")
-                from .carga import PantallaCarga
-                self.show_view(PantallaCarga(
-                    self, "Cargando sala", lambda: self.controlador.preparar_movimiento(argumento),
-                    terminado, retorno))
-                return
+            def terminado(_):
+                self.hide_view()
+                self.ejecutar(accion, argumento)
+
+            retorno = Panel(self, "PREPARAR ACCIÓN", texto="La carga no consume tiempo virtual.")
+            self.show_view(PantallaCarga(self, "Preparando sala", preparar, terminado, retorno))
+            return
         if accion == "atacar" and not self.enemigo:
             self.mensaje = "Selecciona un enemigo con un clic y pulsa A."
             return
@@ -288,6 +297,7 @@ class VentanaCripta(arcade.Window):
                                          or m.texto.startswith(f"{e.nombre} te ataca por ") for m in nuevos)]
                 self.duracion_visual = 1.2 if despues.derrota or self.enemigos_muertos else 0.65
                 self.pausa_visual = self.duracion_visual if accion == "atacar" or self.atacantes or self.cambio_vida else 0.18
+                self._accion_sin_dibujar = True
                 self.bitacora_desplazamiento = 0
             self._sonar(accion, resultado.ok)
         except (OSError, RuntimeError, ValueError) as error:
@@ -454,7 +464,8 @@ class VentanaCripta(arcade.Window):
     def on_update(self, delta_time):
         """Avanza solo las animaciones y muestra el resultado cuando terminan."""
         self.animacion += delta_time
-        self.pausa_visual = max(0, self.pausa_visual - delta_time)
+        if self.current_view is None and not self._accion_sin_dibujar:
+            self.pausa_visual = max(0, self.pausa_visual - delta_time)
         self.musica.poner(self.pista_actual())
         if (self.current_view is None and self.controlador.estado_partida().activa
                 and self.controlador.presupuesto_agotado and not self._aviso_presupuesto):
