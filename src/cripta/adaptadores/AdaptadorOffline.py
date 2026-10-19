@@ -10,6 +10,7 @@ Una cripta que está en la caché se juega SOLO con lo de la caché (nunca se
 mezclan versiones). Si falta una sala que nunca se descargó, esa sala no se
 devuelve y el juego no deja entrar en ella. Leer disco no cuenta como
 solicitud de red (§5.1).
+El catálogo sigue el origen de la cripta seleccionada: caché o paquete local.
 """
 from .Crypt_Data_Source import CryptDataSource
 from pathlib import Path
@@ -25,6 +26,7 @@ class AdaptadorOffline(CryptDataSource):
     def __init__(self, carpeta="datos_prueba", almacen=None):
         self.carpeta = Path(carpeta)
         self.almacen = almacen   # AlmacenDisco de --cache-dir (None = solo el paquete)
+        self._catalogo_del_paquete = False
 
     @property
     def requests_made(self) -> int:
@@ -71,9 +73,12 @@ class AdaptadorOffline(CryptDataSource):
         return {"criptas": criptas}
 
     def crypta_details(self, crypta_id: str) -> dict:
-        if self._en_cache(crypta_id):
-            return self.almacen.leer_detalles(crypta_id)
-        return self._leer(f"cripta_{crypta_id}.json")
+        en_cache = self._en_cache(crypta_id)
+        datos = (self.almacen.leer_detalles(crypta_id) if en_cache
+                 else self._leer(f"cripta_{crypta_id}.json"))
+        # El catálogo debe pertenecer al mismo origen que la cripta seleccionada.
+        self._catalogo_del_paquete = not en_cache
+        return datos
 
     def list_rooms(self, crypta_id: str, pagina: int) -> dict:
         if self._en_cache(crypta_id):
@@ -104,7 +109,8 @@ class AdaptadorOffline(CryptDataSource):
             raise ValueError(f"Máximo {MAX_POR_LOTE} ids por llamada")
         paquete = None
         elegidas = []
-        version_cache = self.almacen.leer_version_catalogo() if self.almacen is not None else None
+        version_cache = (self.almacen.leer_version_catalogo()
+                         if self.almacen is not None and not self._catalogo_del_paquete else None)
         for id_pedido in ids:
             ficha = self.almacen.leer_ficha(id_pedido) if version_cache else None
             if ficha is None and self._hay("catalogo.json"):
@@ -128,7 +134,8 @@ class AdaptadorOffline(CryptDataSource):
         return self._leer(f"cripta_{crypta_id}_version.json")
 
     def get_catalog_version(self) -> dict:
-        version = self.almacen.leer_version_catalogo() if self.almacen is not None else None
+        version = (self.almacen.leer_version_catalogo()
+                   if self.almacen is not None and not self._catalogo_del_paquete else None)
         if version:
             return {"version": version}
         return self._version_catalogo_paquete()
