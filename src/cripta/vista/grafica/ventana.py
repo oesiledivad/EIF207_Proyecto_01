@@ -223,6 +223,22 @@ class VentanaCripta(arcade.Window):
             if not argumento:
                 self.mensaje = "Apunta al objeto o a la puerta con el cursor."
                 return
+        if accion == "mover":
+            estado = self.controlador.estado_partida()
+            vecina = next((v for v in estado.vecindad if v.direccion == argumento), None)
+            if vecina and not vecina.cerrada and vecina.sala_id not in estado.contenido_cargado:
+                from .panel import Panel
+
+                def terminado(_):
+                    self.hide_view()
+                    self.ejecutar("mover", argumento)
+
+                retorno = Panel(self, "ENTRAR EN LA SALA", texto="La carga no consume tiempo virtual.")
+                from .carga import PantallaCarga
+                self.show_view(PantallaCarga(
+                    self, "Cargando sala", lambda: self.controlador.preparar_movimiento(argumento),
+                    terminado, retorno))
+                return
         if accion == "atacar" and not self.enemigo:
             self.mensaje = "Selecciona un enemigo con un clic y pulsa A."
             return

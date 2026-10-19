@@ -257,6 +257,10 @@ class Aplicacion:
     def mover(self, direccion: str) -> ResultadoAccion:
         return self._exploracion.mover(direccion)
 
+    def preparar_movimiento(self, direccion: str) -> None:
+        """Prepara los datos de la puerta sin ejecutar una acción."""
+        self._exploracion.preparar_movimiento(direccion)
+
     def abrir(self, direccion: str) -> ResultadoAccion:
         """Abre la puerta de la sala actual en `direccion` (2.5). Costo 50."""
         return self._exploracion.abrir(direccion)

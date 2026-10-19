@@ -52,6 +52,53 @@ def avanzar_carga(vista):
 
 class PruebasGrafica(unittest.TestCase):
     @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_puntajes_del_menu_y_carga_antes_de_cruzar(self):
+        _ejecutar(self, COMUN + r'''
+from cripta.controlador.Aplicacion import Aplicacion
+from pruebas.test_inventario import FuentePrueba
+from cripta.vista.grafica.menu import MenuPrincipal
+from cripta.vista.grafica.panel import Panel
+app = Aplicacion(FuentePrueba())
+assert app.iniciar_partida('Jugador', '42', 'cripta-01').ok
+vista = VentanaCripta(app, visible=False, offline=True, tamano=[640, 360])
+try:
+    menu = MenuPrincipal(vista)
+    vista.show_view(menu)
+    menu.on_draw()
+    assert any(z.accion == 'puntajes' for z in vista.lienzo.zonas)
+    menu.abrir_puntajes()
+    assert isinstance(vista.current_view, Panel)
+    assert vista.current_view.retorno is menu
+    assert 'Sin puntajes' in vista.current_view.texto
+    vista.hide_view()
+    estado = app.estado_partida()
+    vecina = next(v for v in estado.vecindad if not v.cerrada)
+    sala = app._salas.obtener(vecina.sala_id)
+    sala.contenido_cargado = False
+    sala.enemigos.clear()
+    sala.objetos.clear()
+    sala.trampas.clear()
+    estado.contenido_cargado.remove(sala.id)
+    reloj = estado.reloj_virtual
+    origen = estado.sala_actual_id
+    vista.ejecutar('mover', vecina.direccion)
+    assert isinstance(vista.current_view, PantallaCarga)
+    assert app.estado_partida().sala_actual_id == origen
+    assert app.estado_partida().reloj_virtual == reloj
+    carga = vista.current_view
+    carga.on_draw()
+    carga.on_update(0.1)
+    carga.futuro.result(timeout=30)
+    assert app.estado_partida().sala_actual_id == origen
+    assert app.estado_partida().reloj_virtual == reloj
+    carga.on_update(0.1)
+    assert vista.current_view is None
+    assert app.estado_partida().sala_actual_id == sala.id
+finally:
+    vista.close()
+''')
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
     def test_presupuesto_agotado_avisa_sin_interrumpir_la_partida(self):
         _ejecutar(self, COMUN + r'''
 from cripta.adaptadores.Network_Adapter import NetworkAdapter

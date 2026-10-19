@@ -304,3 +304,13 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 Proyecto académico · Universidad Nacional de Costa Rica
 
 </div>
+
+### Replay de ejemplo incluido
+
+Para probar la reproducción desde una instalación limpia, sin conexión ni partidas previas:
+
+```sh
+uv run cripta --offline --replay ejemplos/replay/cripta_01_demo.log
+```
+
+Usa los datos de `datos_prueba/` y muestra cada acción y el estado final en consola. Los puntajes se generan al jugar y pueden consultarse desde **Puntajes** en el menú de selección; no se incluyen resultados personales ni cachés en el repositorio.

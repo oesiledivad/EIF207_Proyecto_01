@@ -149,6 +149,18 @@ class ExploracionControlador:
 
     #  Movimiento (2.3)
 
+    def preparar_movimiento(self, direccion: str) -> None:
+        """Carga el destino sin mover al jugador ni avanzar el reloj virtual."""
+        actual = self.salas.obtener(self._jugador.sala)
+        salida = actual.salidas.obtener(direccion) if actual else None
+        if salida is None or salida.cerrada:
+            return
+        error = self._servicio.asegurar_sala_cargada(
+            self._estado.cripta_id, self.salas, self.max_id_sala,
+            salida.sala_destino, self.incorporar_contenido)
+        if error is not None:
+            raise RuntimeError(f"No se pudo cargar la sala destino: {error}")
+
     def mover(self, direccion: str) -> ResultadoAccion:
         app = self._app
         if not app._partida_en_curso():

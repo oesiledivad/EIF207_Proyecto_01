@@ -131,9 +131,23 @@ class MenuPrincipal(arcade.View):
         l.boton(200, 26, 220, 30, "CONTINUAR PARTIDA", "continuar",
                 ayuda="Elige el jugador y la cripta que quieres continuar")
         l.boton(440, 26, 180, 30, "CONFIGURACIÓN", "configuracion")
+        l.boton(640, 26, 120, 30, "PUNTAJES", "puntajes")
         l.texto("Tab: campos · Enter: iniciar", 440, 66, 1, TEXTO_SUAVE)
         l.globo_ayuda()
         l.bandas(v)
+
+    def abrir_puntajes(self):
+        """Consulta los resultados locales y permite regresar a la selección."""
+        from .panel import Panel
+        try:
+            registros = self.controlador.puntajes()
+            lineas = [f"{i + 1}. {p.nombre_jugador} | {p.cripta_id} | {p.resultado}\n"
+                      f"Enemigos: {p.enemigos_derrotados} | Acciones: {p.acciones} | Tiempo: {p.tiempo_final}"
+                      for i, p in enumerate(registros)]
+            texto = "\n\n".join(lineas) or "Sin puntajes guardados. Juega una partida para registrar tu resultado."
+        except (OSError, ValueError) as error:
+            texto = f"No se pudieron leer los puntajes: {error}"
+        self.window.show_view(Panel(self.window, "PUNTAJES", texto=texto, retorno=self))
 
     def comenzar(self):
         """Solicita el inicio usando el nombre, semilla y cripta elegidos."""
@@ -160,6 +174,8 @@ class MenuPrincipal(arcade.View):
                     self.comenzar()
                 elif zona.accion == "continuar":
                     self.window.elegir_guardado()
+                elif zona.accion == "puntajes":
+                    self.abrir_puntajes()
                 elif zona.accion == "configuracion":
                     self.window.abrir_configuracion(retorno=self)
                 elif zona.accion == "salir":
