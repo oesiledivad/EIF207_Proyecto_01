@@ -80,11 +80,13 @@ Vuelve a abrir la terminal y comprueba la instalación con `uv --version`. Hay o
 ### 3. Descargar y preparar el proyecto
 
 ```sh
-git clone https://github.com/oesiledivad/EIF207_Proyecto_01.git
+git clone --branch eliseo https://github.com/oesiledivad/EIF207_Proyecto_01.git
 cd EIF207_Proyecto_01
 uv python install 3.13
 uv sync --locked
 ```
+
+La rama `eliseo` contiene la versión descrita en este README.
 
 `uv sync --locked` crea `.venv` e instala las versiones de `uv.lock`: Arcade para la interfaz, Pillow para imágenes y Requests para HTTP, junto con sus dependencias. No necesitas configurar un IDE ni crear un archivo `.env`.
 
@@ -133,6 +135,8 @@ Al abrir `uv run cripta`, espera la pantalla de carga del catálogo online.
 5. Busca la llave de salida y entra por el acceso correspondiente para ganar. Si mueres, puedes reintentar o volver al menú principal.
 
 **Guardar y continuar:** abre **Esc → Guardar partida**. Para recuperarla, usa **Continuar partida** en el menú principal o **Cargar partida guardada** dentro del juego y elige el jugador y la cripta. Salir no sustituye el guardado manual.
+
+**Puntajes:** consulta los resultados locales desde **Puntajes** en el menú principal. Se generan al jugar; no se incluyen resultados personales en el repositorio.
 
 **Configuración:** permite ajustar música y efectos con sliders y alternar pantalla completa. Los ajustes se mantienen durante la sesión. El menú de **Cheats** es solo para pruebas: utilizarlo deshabilita puntajes, guardado y registro de replay para esa partida.
 
@@ -187,23 +191,17 @@ La misma semilla permite repetir el azar con los mismos datos y acciones. Omíte
 
 ### Reproducir una partida
 
-Ejecuta las acciones registradas en un `.log` sin abrir una ventana. Sustituye la ruta del ejemplo por un archivo existente:
-
-```sh
-uv run cripta --offline --replay partidas/cripta_01_partida_00001.log
-```
-
-Exige las versiones originales de la cripta y el catálogo. Quita `--offline` para permitir consultar la API si esos datos no están disponibles localmente. El replay reproduce un registro; para seguir jugando utiliza **Continuar partida** y un guardado binario.
-
-#### Replay de ejemplo incluido
-
-Para probar la reproducción desde una instalación limpia, sin conexión ni partidas previas:
+Ejecuta las acciones registradas en un `.log` sin abrir una ventana. Este ejemplo está incluido en el repositorio y funciona sin conexión ni partidas previas:
 
 ```sh
 uv run cripta --offline --replay ejemplos/replay/cripta_01_demo.log
 ```
 
-Usa los datos de `datos_offline/` y muestra cada acción y el estado final en consola. Los puntajes se generan al jugar y pueden consultarse desde **Puntajes** en el menú de selección; no se incluyen resultados personales ni cachés en el repositorio.
+Exige las versiones originales de la cripta y el catálogo. Para un registro online, quita `--offline` si necesitas consultar sus datos en la API; las versiones deben seguir coincidiendo. El replay reproduce un registro; para seguir jugando utiliza **Continuar partida** y un guardado binario.
+
+El ejemplo usa los datos de `datos_offline/` y muestra cada acción y el estado final en consola. Para los registros propios, se necesitan los datos y versiones con que se jugaron.
+
+Para reproducir una partida propia, sustituye la ruta por su archivo `.log` dentro de `partidas/`. Esos registros se generan al jugar y no se incluyen en Git.
 
 ### Medir rendimiento
 
