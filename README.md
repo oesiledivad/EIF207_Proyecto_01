@@ -80,13 +80,11 @@ Vuelve a abrir la terminal y comprueba la instalación con `uv --version`. Hay o
 ### 3. Descargar y preparar el proyecto
 
 ```sh
-git clone --branch eliseo https://github.com/oesiledivad/EIF207_Proyecto_01.git
+git clone https://github.com/oesiledivad/EIF207_Proyecto_01.git
 cd EIF207_Proyecto_01
 uv python install 3.13
 uv sync --locked
 ```
-
-La rama `eliseo` contiene la versión descrita en este README.
 
 `uv sync --locked` crea `.venv` e instala las versiones de `uv.lock`: Arcade para la interfaz, Pillow para imágenes y Requests para HTTP, junto con sus dependencias. No necesitas configurar un IDE ni crear un archivo `.env`.
 
@@ -264,7 +262,7 @@ Ejecuta solo el ejemplo que necesites. Las líneas que empiezan con `#` son come
 |----------------------------------------|-------------------------------------------------------------------------------------------|
 | `.venv/`                               | Entorno de Python y dependencias instaladas por uv                                        |
 | `.cripta_cache/`                       | Versiones, catálogo y datos de criptas descargados                                        |
-| `partidas/cripta_01_partida_00001.log` | Ejemplo de registro de acciones para replay; el nombre incluye la cripta y un consecutivo |
+| `partidas/*.log` | Registros generados al jugar; el nombre incluye la cripta y un consecutivo |
 | `partidas/puntajes.json`               | Resultados, jugador, versión de cripta, acciones, enemigos derrotados y tiempo virtual    |
 | `partidas/guardadas/*.bin`             | Guardados por jugador y partida, en formato binario propio                                |
 
