@@ -625,6 +625,23 @@ with tempfile.TemporaryDirectory() as carpeta:
             vista.on_draw()
             assert firma(app) == antes
         assert vista.criterio == 'real'
+        vista.on_draw()
+        sentido_inicial = next(z for z in vista.zonas if z.accion == 'sentido_orden')
+        assert sentido_inicial.ancho == PANEL_ANCHO - 24 and sentido_inicial.alto == 18
+        antes = firma(app)
+        clic(vista, sentido_inicial)
+        assert vista.criterio == 'peso' and vista.descendente and firma(app) == antes
+        vista.on_key_press(arcade.key.D, arcade.key.MOD_ALT)
+        vista.on_key_press(arcade.key.R, arcade.key.MOD_ALT)
+        vista.on_key_press(arcade.key.N, arcade.key.MOD_ALT)
+        vista.on_draw()
+        sentido = next(z for z in vista.zonas if z.accion == 'sentido_orden')
+        antes = firma(app)
+        clic(vista, sentido)
+        assert vista.descendente and firma(app) == antes
+        vista.on_key_press(arcade.key.D, arcade.key.MOD_ALT)
+        assert not vista.descendente and firma(app) == antes
+        vista.on_key_press(arcade.key.R, arcade.key.MOD_ALT)
         vecina = app.estado_partida().vecindad[0]
         cerrada = vecina.cerrada
         vecina.cerrada = True

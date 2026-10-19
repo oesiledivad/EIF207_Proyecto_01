@@ -14,11 +14,9 @@ Explora salas, administra tu inventario y encuentra las llaves para escapar con 
   <img src="https://img.shields.io/badge/Modo-online%20%7C%20offline-667744" alt="Modos online y offline">
 </p>
 
-[Instalación](#instalación-desde-cero) · [Cómo jugar](#primera-partida) · [Controles](#controles) · [Comandos](#comandos) · [Documentación](#arquitectura-y-documentación)
+[Instalación](#instalación) · [Cómo jugar](#primera-partida) · [Controles](#controles) · [Comandos](#comandos) · [Documentación](#arquitectura-y-documentación)
 
 </div>
-
-![Partida online: enemigos, inventario, bitácora, rastro y minimapa](docs/imagenes/partida.png)
 
 ## Qué incluye
 
@@ -29,6 +27,8 @@ Explora salas, administra tu inventario y encuentra las llaves para escapar con 
 - Guardado binario, puntajes, reproducción determinista de partidas y mediciones de rendimiento.
 
 La simulación avanza por **eventos y reloj virtual**, con tiempos según la acción y la velocidad de cada actor. Las animaciones y el tiempo que tardas en decidir no adelantan ese reloj.
+
+![Partida online: enemigos, inventario, bitácora, rastro y minimapa](docs/imagenes/partida.png)
 
 ## Instalación
 
@@ -88,6 +88,18 @@ uv sync --locked
 
 `uv sync --locked` crea `.venv` e instala las versiones de `uv.lock`: Arcade para la interfaz, Pillow para imágenes y Requests para HTTP, junto con sus dependencias. No necesitas configurar un IDE ni crear un archivo `.env`.
 
+### 4. Abrir el juego online
+
+```sh
+uv run cripta
+```
+
+Ejecuta los comandos desde la raíz del repositorio. El modo online es el predeterminado: consulta la API del curso y muestra las criptas disponibles. Necesitas conexión a Internet para instalar las dependencias y para jugar en este modo.
+
+Si quieres jugar sin conexión, utiliza la alternativa `uv run cripta --offline`, con los datos incluidos o descargados previamente.
+
+### Entorno virtual (opcional)
+
 **Activar el entorno virtual es opcional:** `uv run` lo utiliza automáticamente. Si prefieres ejecutar los comandos directamente, actívalo desde la raíz del proyecto:
 
 **Windows (PowerShell):**
@@ -109,16 +121,6 @@ source .venv/bin/activate
 ```
 
 Con el entorno activo puedes ejecutar `cripta` directamente; para salir del entorno, usa `deactivate`. Si PowerShell bloquea la activación, puedes seguir usando `uv run cripta` sin activar nada. Consulta también la [guía de entornos de uv](https://docs.astral.sh/uv/pip/environments/).
-
-### 4. Abrir el juego online
-
-```sh
-uv run cripta
-```
-
-Ejecuta los comandos desde la raíz del repositorio. El modo online es el predeterminado: consulta la API del curso y muestra las criptas disponibles. Necesitas conexión a Internet para instalar las dependencias y para jugar en este modo.
-
-Si quieres jugar sin conexión, utiliza la alternativa `uv run cripta --offline`, con los datos incluidos o descargados previamente.
 
 ## Primera partida
 
@@ -146,6 +148,7 @@ Al abrir `uv run cripta`, espera la pantalla de carga del catálogo online.
 | Usar / equipar / soltar objeto seleccionado               | **U** / **E** / **S** o **D**, o sus botones                 |
 | Esperar / usar pergamino de retroceso                     | **.** / **P**                                                |
 | Orden visual del inventario: peso / valor / nombre / real | **Alt + P / V / N / R**                                      |
+| Ascendente / descendente del inventario | Clic en **ASC/DESC** o **Alt + D** |
 | Información de la sala y del rastro                       | **I**                                                        |
 | Ayuda / menú / terminar con confirmación                  | **F1** o **/** / **Esc** / **Q**                             |
 | Pantalla completa / silenciar efectos / silenciar música  | **F11** / **F2** / **F3**                                    |
@@ -191,6 +194,16 @@ uv run cripta --offline --replay partidas/cripta_01_partida_00001.log
 ```
 
 Exige las versiones originales de la cripta y el catálogo. Quita `--offline` para permitir consultar la API si esos datos no están disponibles localmente. El replay reproduce un registro; para seguir jugando utiliza **Continuar partida** y un guardado binario.
+
+#### Replay de ejemplo incluido
+
+Para probar la reproducción desde una instalación limpia, sin conexión ni partidas previas:
+
+```sh
+uv run cripta --offline --replay ejemplos/replay/cripta_01_demo.log
+```
+
+Usa los datos de `datos_offline/` y muestra cada acción y el estado final en consola. Los puntajes se generan al jugar y pueden consultarse desde **Puntajes** en el menú de selección; no se incluyen resultados personales ni cachés en el repositorio.
 
 ### Medir rendimiento
 
@@ -261,6 +274,8 @@ Los archivos de ejecución están excluidos de Git. Los `.log` y los `.bin` cump
 
 ## Pruebas y límites conocidos
 
+### Pruebas
+
 Para ejecutar una selección de pruebas de partida, inventario, retroceso, guardado, replay, mediciones e interfaz:
 
 ```sh
@@ -268,6 +283,8 @@ uv run python -m unittest pruebas.test_partida pruebas.test_inventario pruebas.t
 ```
 
 Las pruebas gráficas requieren un entorno con pantalla y soporte OpenGL, aunque sus ventanas estén ocultas.
+
+### Límites conocidos
 
 - **Rendimiento:** la referencia cargada cumple el objetivo de ciclos inferiores a 20 ms en el equipo de desarrollo, excluyendo red y renderizado. Las cargas de estrés, incluida la de 1000 enemigos, no garantizan ese límite. Influyen el equipo, los eventos simultáneos, la implementación y las pausas del recolector de memoria; ejecuta `--bench` para medir en tu entorno.
 - **Datos y red:** jugar en línea depende de la disponibilidad de la API y de su presupuesto de solicitudes. Offline y replay dependen de los datos y versiones disponibles en disco.
@@ -304,13 +321,3 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 Proyecto académico · Universidad Nacional de Costa Rica
 
 </div>
-
-### Replay de ejemplo incluido
-
-Para probar la reproducción desde una instalación limpia, sin conexión ni partidas previas:
-
-```sh
-uv run cripta --offline --replay ejemplos/replay/cripta_01_demo.log
-```
-
-Usa los datos de `datos_offline/` y muestra cada acción y el estado final en consola. Los puntajes se generan al jugar y pueden consultarse desde **Puntajes** en el menú de selección; no se incluyen resultados personales ni cachés en el repositorio.

@@ -47,6 +47,7 @@ class VentanaCripta(arcade.Window):
         self.ultimo_click = None
         self.item = ""
         self.criterio = "real"
+        self.descendente = False
         self.modo_mover = False
         self.mensaje = "Haz clic en una puerta, un enemigo o un objeto."
         self._aviso_presupuesto = False
@@ -199,6 +200,11 @@ class VentanaCripta(arcade.Window):
                 self.mensaje = "Puerta cerrada: ábrela antes de moverte."
                 return
             accion = "mover"
+        if accion == "sentido_orden":
+            if self.criterio == "real":
+                self.criterio = "peso"
+            self.descendente = not self.descendente
+            return
         if accion == "ordenar":
             criterios = ["real", "peso", "valor", "nombre"]
             self.criterio = criterios[(criterios.index(self.criterio) + 1) % 4]
@@ -356,6 +362,7 @@ class VentanaCripta(arcade.Window):
                      ". : esperar · P: pergamino de retroceso\n"
                      "Tab: siguiente objeto · U: usar · E: equipar · S/D: soltar\n"
                      "Alt+P/V/N/R: ordenar el inventario por peso/valor/nombre/real\n"
+                     "Alt+D: alternar ascendente/descendente\n"
                      "I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido · F3: música\n"
                      "Minimapa: dorado = salida, rojo = cerrada.")
             self.show_view(Panel(self, "AYUDA", texto=texto))
@@ -527,6 +534,9 @@ class VentanaCripta(arcade.Window):
             else:
                 self.abrir_panel("menu")
         elif modifiers & arcade.key.MOD_ALT:
+            if symbol == arcade.key.D:
+                self.ejecutar("sentido_orden")
+                return
             for tecla, criterio in [[arcade.key.P, "peso"], [arcade.key.V, "valor"],
                                     [arcade.key.N, "nombre"], [arcade.key.R, "real"]]:
                 if symbol == tecla:

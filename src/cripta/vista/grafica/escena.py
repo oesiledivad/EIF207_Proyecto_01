@@ -543,12 +543,17 @@ class Escena:
         l.texto(orden, x_orden + 4, tope - 32, 1, ORO if encima else TEXTO_SUAVE)
         l.zona(x_orden, tope - 35, ancho_orden, 12, "ordenar", "", "Cambiar el orden de la vista")
 
-        items = getattr(inventario, f"vista_por_{criterio}")() if criterio != "real" else inventario.items()
+        sentido = "DESCENDENTE" if vista.descendente else "ASCENDENTE"
+        l.boton(x0, tope - 60, PANEL_ANCHO - 24, 18,
+                sentido if criterio != "real" else "ASC / DESC", "sentido_orden",
+                ayuda="Alternar sentido (Alt+D); en orden real, selecciona peso")
+        items = (inventario.vista_ordenada(lambda item: getattr(item, criterio), vista.descendente)
+                 if criterio != "real" else inventario.items())
         columnas = 4 if inventario.capacidad <= 12 else 5
         filas = max(1, math.ceil(inventario.capacidad / columnas))
         hueco = 4
         lado = min(40, (PANEL_ANCHO - 24 - (columnas - 1) * hueco) / columnas, (112 - (filas - 1) * hueco) / filas)
-        arriba = tope - 42
+        arriba = tope - 66
         for i in range(inventario.capacidad):
             x = x0 + (i % columnas) * (lado + hueco)
             y = arriba - lado - (i // columnas) * (lado + hueco)

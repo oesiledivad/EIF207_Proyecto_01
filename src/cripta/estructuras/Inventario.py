@@ -349,17 +349,18 @@ class Inventario:
             i += 1
         return None
 
-    def vista_ordenada(self, clave: Callable[[ItemInventario], object]) -> list[ItemInventario]:
+    def vista_ordenada(self, clave: Callable[[ItemInventario], object], descendente: bool = False) -> list[ItemInventario]:
         """Devuelve una vista ordenada sin alterar el orden real.
 
         Args:
             clave: Función que extrae el campo de ordenamiento.
+            descendente: True para mostrar de mayor a menor.
 
         Returns:
             Nueva lista ordenada con referencias a los mismos items.
         """
         copia = self.items()
-        return ordenar(copia, key=clave)
+        return ordenar(copia, key=clave, reverse=descendente)
 
     def vista_por_peso(self) -> list[ItemInventario]:
         return self.vista_ordenada(lambda i: i.peso)

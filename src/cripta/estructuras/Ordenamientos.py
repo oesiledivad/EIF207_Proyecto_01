@@ -21,11 +21,12 @@ from typing import Any, Callable
 Key = Callable[[Any], Any] | None
 
 
-def insertion_sort(lista: list, key: Key = None) -> list:
+def insertion_sort(lista: list, key: Key = None, reverse: bool = False) -> list:
     """Ordena con insertion sort, estable.
 
     Args:
         lista: Lista a ordenar (se modifica in place).
+        reverse: True para ordenar de mayor a menor.
         key: Función que extrae la clave de comparación. Si es None,
             se compara el elemento directamente.
 
@@ -37,18 +38,19 @@ def insertion_sort(lista: list, key: Key = None) -> list:
         actual = lista[i]
         clave_actual = f(actual)
         j = i - 1
-        while j >= 0 and f(lista[j]) > clave_actual:
+        while j >= 0 and (f(lista[j]) < clave_actual if reverse else f(lista[j]) > clave_actual):
             lista[j + 1] = lista[j]
             j -= 1
         lista[j + 1] = actual
     return lista
 
 
-def merge_sort(lista: list, key: Key = None) -> list:
+def merge_sort(lista: list, key: Key = None, reverse: bool = False) -> list:
     """Ordena con merge sort, estable.
 
     Args:
         lista: Lista a ordenar (se modifica in place).
+        reverse: True para ordenar de mayor a menor.
         key: Función que extrae la clave de comparación. Si es None,
             se compara el elemento directamente.
 
@@ -61,7 +63,7 @@ def merge_sort(lista: list, key: Key = None) -> list:
         resultado = []
         i = j = 0
         while i < len(a) and j < len(b):
-            if f(a[i]) <= f(b[j]):
+            if f(a[i]) >= f(b[j]) if reverse else f(a[i]) <= f(b[j]):
                 resultado.append(a[i])
                 i += 1
             else:
@@ -84,7 +86,7 @@ def merge_sort(lista: list, key: Key = None) -> list:
     return lista
 
 
-def _casi_ordenado(lista: list, key: Key, muestra: int = 64) -> bool:
+def _casi_ordenado(lista: list, key: Key, muestra: int = 64, reverse: bool = False) -> bool:
     """Heurística: cuenta inversiones en una muestra pequeña."""
     f = key if key is not None else (lambda x: x)
     n = len(lista)
@@ -95,16 +97,17 @@ def _casi_ordenado(lista: list, key: Key, muestra: int = 64) -> bool:
     comparaciones = 0
     for i in range(0, n - paso, paso):
         comparaciones += 1
-        if f(lista[i]) > f(lista[i + paso]):
+        if f(lista[i]) < f(lista[i + paso]) if reverse else f(lista[i]) > f(lista[i + paso]):
             inversiones += 1
     return comparaciones > 0 and inversiones / comparaciones < 0.1
 
 
-def ordenar(lista: list, key: Key = None) -> list:
+def ordenar(lista: list, key: Key = None, reverse: bool = False) -> list:
     """Elige el algoritmo según n y grado de orden.
 
     Args:
         lista: Lista a ordenar (se modifica in place).
+        reverse: True para ordenar de mayor a menor.
         key: Función que extrae la clave de comparación.
 
     Returns:
@@ -112,7 +115,7 @@ def ordenar(lista: list, key: Key = None) -> list:
     """
     n = len(lista)
     if n <= 16:
-        return insertion_sort(lista, key)
-    if _casi_ordenado(lista, key):
-        return insertion_sort(lista, key)
-    return merge_sort(lista, key)
+        return insertion_sort(lista, key, reverse=reverse)
+    if _casi_ordenado(lista, key, reverse=reverse):
+        return insertion_sort(lista, key, reverse=reverse)
+    return merge_sort(lista, key, reverse=reverse)
