@@ -28,11 +28,11 @@ class PantallaFin(arcade.View):
 
     def on_draw(self):
         """Dibuja el resultado sobre la sala oscurecida y los controles de salida."""
-        v, p = self.window, self.estado
+        v, p = [self.window, self.estado]
         v.dibujar_juego(interactivo=False)
         l = v.lienzo
         l.zonas = []
-        l.rect(0, 0, ANCHO, ALTO, (6, 5, 8, 215))
+        l.rect(0, 0, ANCHO, ALTO, [6, 5, 8, 215])
         titulo = "HAS MUERTO" if p.derrota else "HAS ESCAPADO" if p.victoria else "FIN DE LA INCURSIÓN"
         color = ROJO if p.derrota else ORO
         l.texto(titulo, ANCHO / 2, ALTO - 70, 5, color, negrita=True, ancla="centro", sombra=True)
@@ -57,7 +57,7 @@ class PantallaFin(arcade.View):
     def tabla(self, y):
         """Filas de puntajes que caben sobre los botones (rueda para recorrer)."""
         l = self.window.lienzo
-        x0, ancho = 120, 560
+        x0, ancho = [120, 560]
         l.panel(x0 - 12, 80, ancho + 24, y - 66)
         l.texto("PUNTAJES", x0, y - 6, 2, ORO, negrita=True)
         l.texto("rueda para recorrer", x0 + ancho, y - 6, 1, TEXTO_SUAVE, ancla="derecha")
@@ -71,7 +71,7 @@ class PantallaFin(arcade.View):
             valores = [puntaje.nombre_jugador, puntaje.cripta_id, puntaje.resultado,
                        puntaje.acciones, puntaje.enemigos_derrotados, puntaje.tiempo_final]
             if i % 2 == 0:
-                l.rect(x0 - 4, y - 42 - i * 13 - 3, ancho + 8, 13, (34, 31, 30))
+                l.rect(x0 - 4, y - 42 - i * 13 - 3, ancho + 8, 13, [34, 31, 30])
             for valor, (_, inicio, fin) in zip(valores, columnas):
                 l.texto(fp.recortar(str(valor), ancho * (fin - inicio) - 6), x0 + ancho * inicio, y - 40 - i * 13, 1, TEXTO)
         if not self.puntajes:
@@ -83,7 +83,7 @@ class PantallaFin(arcade.View):
 
     def ejecutar(self, accion):
         """Reintenta, vuelve al menú o cierra, mostrando errores sin perder la vista."""
-        v, p = self.window, self.estado
+        v, p = [self.window, self.estado]
         try:
             if accion == "menu":
                 v.volver_menu()

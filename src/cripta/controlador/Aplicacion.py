@@ -23,7 +23,6 @@ from cripta.dto.Partida_dto import (
     DetallesCripta,
     EstadoPartida,
     ResultadoInicio,
-    ContenidoSala,
     SalaModelo,
 )
 from cripta.dto.ResultadoAccion import ResultadoAccion
@@ -32,7 +31,6 @@ from cripta.estructuras.Cache_Fichas import Cache_Fichas
 from cripta.servicio.CriptaService import CriptaService
 from cripta.modelo.Simulacion import Simulacion
 from cripta.modelo.Jugador import Jugador
-from cripta.modelo.Sala import SalaJuego
 
 from cripta.estructuras.Indice_Salas import IndiceSalas
 
@@ -41,7 +39,7 @@ class Aplicacion:
 
     Args:
         data_source: Adaptador de datos (red u offline).
-        capacidad_cache: Tope de fichas en memoria (--cache-size, §4.4).
+        capacidad_cache: Tope de fichas en memoria (--cache-size, 4.4).
         almacen: Caché persistente en disco (None = desactivada).
     """
 
@@ -63,7 +61,7 @@ class Aplicacion:
         self._partida = PartidaControlador(self._gestor, self._bitacora, carpeta_logs, ruta_puntajes)
         self._guardado = GuardadoControlador(self, capacidad_cache, almacen, carpeta_logs, ruta_puntajes,
                                              ruta_guardado, offline_dir if offline_dir is not None
-                                             else getattr(data_source, "carpeta", "datos_prueba"))
+                                             else getattr(data_source, "carpeta", "datos_offline"))
         self._cheats = CheatsControlador(self)
         self._inicio = InicioPartidaControlador(self)
         self._ciclo = CicloAccionesControlador(self)
@@ -94,22 +92,11 @@ class Aplicacion:
     def _salas(self, valor: IndiceSalas) -> None:
         self._exploracion.salas = valor
 
-    @property
-    def _max_id_sala(self) -> int:
-        return self._exploracion.max_id_sala
-
-    @_max_id_sala.setter
-    def _max_id_sala(self, valor: int) -> None:
-        self._exploracion.max_id_sala = valor
-
     def _crear_salas_desde_esqueleto(self, esqueleto: list[SalaModelo]) -> None:
         self._exploracion.ensamblar_salas(esqueleto)
 
     def _cargar_lote(self, origen_id: int) -> None:
         self._exploracion.cargar_lote(origen_id)
-
-    def _incorporar_contenido(self, sala: SalaJuego | None, contenido: ContenidoSala) -> None:
-        self._exploracion.incorporar_contenido(sala, contenido)
 
     def _avisar(self, mensaje: str | None) -> None:
         if mensaje is not None:
@@ -119,23 +106,20 @@ class Aplicacion:
         return self._cripta_service.tipos_activos(
             self._gestor.inventario, self._salas, self._salas.obtener(self._jugador.sala))
 
-    #  Ciclo de una acción del jugador (§2.3)
+    #  Ciclo de una acción del jugador (2.3)
 
     def _partida_en_curso(self) -> bool:
         return (self._simulacion is not None and self._jugador is not None
                 and self._gestor.estado.activa)
 
     def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None) -> ResultadoAccion:
-        # Punto fijo para incorporar la precarga en segundo plano (determinista, §4.2).
+        # Punto fijo para incorporar la precarga en segundo plano (determinista, 4.2).
         self._avisar(self._cripta_service.completar_precarga())
         return self._ciclo.ejecutar(nombre_costo, ejecutar, argumento)
 
     def activar_precarga_en_segundo_plano(self) -> None:
         """Solo la vista interactiva: replay, bench y pruebas quedan sincrónicos."""
         self._cripta_service.activar_precarga_en_segundo_plano()
-
-    def _consumir_tiempo_jugador(self, nombre_costo: str) -> None:
-        self._ciclo.consumir_tiempo(nombre_costo)
 
     def _despues_del_ciclo(self) -> None:
         self._ciclo.finalizar()
@@ -166,8 +150,13 @@ class Aplicacion:
     def solicitudes_usadas(self) -> int:
         return self._cripta_service.requests_made
 
+    @property
+    def presupuesto_agotado(self) -> bool:
+        """Indica si la sesión ya no puede realizar solicitudes HTTP."""
+        return self._cripta_service.solicitudes_restantes() == 0
+
     def resumen_red(self) -> str:
-        """§5.1: solicitudes realizadas, presupuesto, aciertos y fallos de caché."""
+        """5.1: solicitudes realizadas, presupuesto, aciertos y fallos de caché."""
         s = self._cripta_service
         return (f"Red: {s.requests_made}/{self._gestor.estado.presupuesto_solicitudes} solicitudes · "
                 f"caché: {s.aciertos_cache} aciertos, {s.fallos_cache} fallos, "
@@ -249,13 +238,15 @@ class Aplicacion:
     def anterior_item(self) -> ResultadoAccion:
         return self._recorrer_inventario(self._inventario.anterior, "anterior_item")
 
-    def _recorrer_inventario(self, recorrer, nombre: str) -> ResultadoAccion:
+    def seleccionar_item(self, instancia_id: str) -> ResultadoAccion:
+        """Registra una selección directa sin consumir tiempo virtual."""
+        return self._recorrer_inventario(lambda: self._inventario.seleccionar(instancia_id),
+                                        "seleccionar_item", instancia_id)
+
+    def _recorrer_inventario(self, recorrer, nombre: str, argumento=None) -> ResultadoAccion:
         if not self._partida_en_curso():
             return ResultadoAccion.fallo("La partida no está activa.")
-        return self._inventario.recorrer(recorrer, nombre, self._partida.registrar_accion)
-
-    def vista_inventario(self, criterio: str) -> list:
-        return self._inventario.vista_ordenada(criterio)
+        return self._inventario.recorrer(recorrer, nombre, self._partida.registrar_accion, argumento)
 
     def inventario(self):
         """Devuelve el inventario activo o None."""
@@ -266,8 +257,21 @@ class Aplicacion:
     def mover(self, direccion: str) -> ResultadoAccion:
         return self._exploracion.mover(direccion)
 
+    @property
+    def precarga_pendiente(self) -> bool:
+        """Permite mostrar la espera antes de ejecutar una acción."""
+        return self._cripta_service.precarga_pendiente
+
+    def preparar_accion(self) -> None:
+        """Incorpora la precarga sin avanzar el reloj virtual."""
+        self._avisar(self._cripta_service.completar_precarga())
+
+    def preparar_movimiento(self, direccion: str) -> None:
+        """Prepara los datos de la puerta sin ejecutar una acción."""
+        self._exploracion.preparar_movimiento(direccion)
+
     def abrir(self, direccion: str) -> ResultadoAccion:
-        """Abre la puerta de la sala actual en `direccion` (§2.5). Costo 50."""
+        """Abre la puerta de la sala actual en `direccion` (2.5). Costo 50."""
         return self._exploracion.abrir(direccion)
 
     abrir_puerta = abrir
@@ -289,3 +293,7 @@ class Aplicacion:
     def terminar(self) -> None:
         self._cripta_service.esperar_precarga()   # sus solicitudes entran en el resumen
         self._partida.terminar(self.resumen_red())
+
+    def preparar_seleccion(self):
+        """Prepara una nueva sesión antes de mostrar la selección de criptas."""
+        self._inicio.preparar_seleccion()

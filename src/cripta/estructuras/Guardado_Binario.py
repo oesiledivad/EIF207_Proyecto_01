@@ -1,7 +1,7 @@
 """Guardado binario con índice por sala.
 
 Se eligió un formato con header + índice + cuerpo de bytes opacos porque
-§4.10 exige recuperar una sala sin leer el archivo completo. El índice
+4.10 exige recuperar una sala sin leer el archivo completo. El índice
 guarda offsets, así que la carga selectiva no recorre el cuerpo.
 
 El cuerpo se almacena como bytes ya serializados por el llamador: esta

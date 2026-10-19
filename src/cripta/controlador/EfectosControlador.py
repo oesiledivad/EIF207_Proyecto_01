@@ -1,5 +1,5 @@
 """Controlador de efectos (P2): pociones, antídotos, antorchas, veneno,
-velocidad, regeneración y trampas (§2.7, §2.10).
+velocidad, regeneración y trampas (2.7, 2.10).
 
 No guarda estado del juego: recibe en cada llamada el jugador y la
 simulación que le pasa Aplicacion. Todos los cambios pasan por
@@ -100,7 +100,7 @@ class EfectosControlador:
                 return ResultadoAccion.fallo(f"No se puede usar un objeto de clase {otra}.")
         return ResultadoAccion.exito(datos=texto)
 
-    #  Trampas (§2.10)
+    #  Trampas (2.10)
 
     @staticmethod
     def crear_trampa(dto: TrampaPartida) -> TrampaJuego:
@@ -119,7 +119,7 @@ class EfectosControlador:
                 if not esta_vivo(jugador):
                     break
 
-    #  Regeneración (§2.10)
+    #  Regeneración (2.10)
 
     @staticmethod
     def iniciar_regeneracion(enemigo, simulacion) -> None:

@@ -43,14 +43,14 @@ class Panel(arcade.View):
             v.dibujar_juego(interactivo=False)
         l = v.lienzo
         l.zonas = []
-        l.rect(0, 0, ANCHO, ALTO, (6, 5, 8, 190))
+        l.rect(0, 0, ANCHO, ALTO, [6, 5, 8, 190])
         filas = min(self._capacidad(), max(1, len(self.opciones) or len(self._lineas())))
         alto_contenido = filas * (30 if self.opciones else 12)
         alto = 78 + alto_contenido
-        x, y = (ANCHO - self.ANCHO_CAJA) / 2, (ALTO - alto) / 2 + 10
+        x, y = [(ANCHO - self.ANCHO_CAJA) / 2, (ALTO - alto) / 2 + 10]
         l.panel(x, y, self.ANCHO_CAJA, alto)
         l.texto(self.titulo, ANCHO / 2, y + alto - 26, 2, ORO, negrita=True, ancla="centro")
-        l.rect(x + 16, y + alto - 34, self.ANCHO_CAJA - 32, 2, (70, 64, 56))
+        l.rect(x + 16, y + alto - 34, self.ANCHO_CAJA - 32, 2, [70, 64, 56])
         arriba = y + alto - 46
         for i, opcion in enumerate(self.opciones[self.inicio:self.inicio + self._capacidad()]):
             l.boton(x + 16, arriba - (i + 1) * 30 + 4, self.ANCHO_CAJA - 32, 26,
@@ -60,7 +60,7 @@ class Panel(arcade.View):
             l.texto(linea, x + 16, arriba - 10 - i * 12, 1, TEXTO)
         l.boton(x + 16, y + 10, 140, 22, "VOLVER [ESC]", "volver")
         if len(self.opciones) > self._capacidad() or len(self._lineas()) > self._capacidad():
-            l.texto("rueda: más", x + self.ANCHO_CAJA - 16, y + 17, 1, (150, 140, 120), ancla="derecha")
+            l.texto("rueda: más", x + self.ANCHO_CAJA - 16, y + 17, 1, [150, 140, 120], ancla="derecha")
         l.globo_ayuda()
         l.bandas(v)
 

@@ -59,6 +59,7 @@ class MenuPrincipal(arcade.View):
             self.error = "No hay criptas disponibles."
             return
         self.seleccion = max(0, min(len(self.criptas) - 1, indice))
+        self.detalles = None  # Un fallo no debe mostrar ni iniciar con los detalles anteriores.
 
         def terminado(detalles):
             """Aplica los detalles consultados desde el hilo gráfico."""
@@ -88,10 +89,10 @@ class MenuPrincipal(arcade.View):
         l.texto(v.modo, ANCHO - 10, ALTO - 16, 1, TEXTO_SUAVE, ancla="derecha")
 
         # Lista de criptas
-        x0, arriba = 40, ALTO - 120
+        x0, arriba = [40, ALTO - 120]
         l.panel(x0 - 10, 70, 360, arriba - 60)
-        l.texto("CRIPTAS", x0, arriba - 22, 2, (210, 200, 176), negrita=True)
-        l.rect(x0, arriba - 28, 340, 2, (70, 64, 56))
+        l.texto("CRIPTAS", x0, arriba - 22, 2, [210, 200, 176], negrita=True)
+        l.rect(x0, arriba - 28, 340, 2, [70, 64, 56])
         for i, cripta in enumerate(self.criptas[self.inicio_lista:self.inicio_lista + self.VISIBLES]):
             indice = self.inicio_lista + i
             elegido = indice == self.seleccion
@@ -118,7 +119,7 @@ class MenuPrincipal(arcade.View):
             y = arriba - 128 - i * 52
             l.texto(etiqueta, x1, y + 30, 1, ORO, negrita=True)
             enfocado = campo is self.foco
-            l.panel(x1, y, ANCHO - x1 - 40, 24, resaltado=enfocado, fondo=(14, 13, 16))
+            l.panel(x1, y, ANCHO - x1 - 40, 24, resaltado=enfocado, fondo=[14, 13, 16])
             cursor = "_" if enfocado and int(self.tiempo * 2) % 2 == 0 else ""
             l.texto(fp.recortar(campo.text, ANCHO - x1 - 60, 2) + cursor, x1 + 8, y + 7, 2, TEXTO)
             l.zona(x1, y, ANCHO - x1 - 40, 24, "foco", str(i), "Escribe aquí")
@@ -129,10 +130,24 @@ class MenuPrincipal(arcade.View):
         l.boton(40, 26, 140, 30, "SALIR", "salir", tam=2)
         l.boton(200, 26, 220, 30, "CONTINUAR PARTIDA", "continuar",
                 ayuda="Elige el jugador y la cripta que quieres continuar")
-        l.texto("Tab: campos · Enter: iniciar · F11: pantalla completa",
-                440, 36, 1, TEXTO_SUAVE)
+        l.boton(440, 26, 180, 30, "CONFIGURACIÓN", "configuracion")
+        l.boton(640, 26, 120, 30, "PUNTAJES", "puntajes")
+        l.texto("Tab: campos · Enter: iniciar", 440, 66, 1, TEXTO_SUAVE)
         l.globo_ayuda()
         l.bandas(v)
+
+    def abrir_puntajes(self):
+        """Consulta los resultados locales y permite regresar a la selección."""
+        from .panel import Panel
+        try:
+            registros = self.controlador.puntajes()
+            lineas = [f"{i + 1}. {p.nombre_jugador} | {p.cripta_id} | {p.resultado}\n"
+                      f"Enemigos: {p.enemigos_derrotados} | Acciones: {p.acciones} | Tiempo: {p.tiempo_final}"
+                      for i, p in enumerate(registros)]
+            texto = "\n\n".join(lineas) or "Sin puntajes guardados. Juega una partida para registrar tu resultado."
+        except (OSError, ValueError) as error:
+            texto = f"No se pudieron leer los puntajes: {error}"
+        self.window.show_view(Panel(self.window, "PUNTAJES", texto=texto, retorno=self))
 
     def comenzar(self):
         """Solicita el inicio usando el nombre, semilla y cripta elegidos."""
@@ -159,6 +174,10 @@ class MenuPrincipal(arcade.View):
                     self.comenzar()
                 elif zona.accion == "continuar":
                     self.window.elegir_guardado()
+                elif zona.accion == "puntajes":
+                    self.abrir_puntajes()
+                elif zona.accion == "configuracion":
+                    self.window.abrir_configuracion(retorno=self)
                 elif zona.accion == "salir":
                     self.window.on_close()
                 return True

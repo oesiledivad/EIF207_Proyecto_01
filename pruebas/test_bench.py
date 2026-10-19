@@ -12,6 +12,35 @@ from cripta.estructuras.Guardado_Binario import Guardado_Binario
 
 
 class PruebasBench(unittest.TestCase):
+    def test_ciclo_completo_mide_acciones_reales_sin_red_ni_vista(self):
+        from cripta.bench import _bench_ciclo_completo
+        with patch("requests.get", side_effect=AssertionError("No debe consultar red")), \
+                patch("builtins.open", side_effect=AssertionError("No debe abrir archivos")), \
+                patch("builtins.print"):
+            medidas = _bench_ciclo_completo(5, 3)
+        self.assertEqual(len(medidas), 3)
+        self.assertTrue(all(tiempo >= 0 for tiempo in medidas))
+
+    def test_referencia_mide_movimiento_y_combate_sin_io(self):
+        from cripta.bench import _bench_referencia
+        from cripta.controlador.Aplicacion import Aplicacion
+
+        mover, atacar = [Aplicacion.mover, Aplicacion.atacar]
+
+        def movimiento(app, direccion):
+            with patch("io.open", side_effect=AssertionError("E/S dentro del ciclo")):
+                return mover(app, direccion)
+
+        def ataque(app, identificador):
+            with patch("io.open", side_effect=AssertionError("E/S dentro del ciclo")):
+                return atacar(app, identificador)
+
+        with patch.object(Aplicacion, "mover", movimiento), patch.object(Aplicacion, "atacar", ataque), \
+                patch("requests.get", side_effect=AssertionError("Red en bench")), patch("builtins.print"):
+            medidas = _bench_referencia(3)
+        self.assertGreater(len(medidas), 3)
+        self.assertTrue(all(t >= 0 for t in medidas))
+
     def test_bench_no_construye_fuente_ni_vista(self):
         vista_antes = sys.modules.get("cripta.vista.grafica.ventana")
         with patch("cripta.bootstrap._construir_data_source") as fuente:

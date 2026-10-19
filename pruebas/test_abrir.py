@@ -7,7 +7,7 @@ from cripta.estructuras.Inventario import ItemInventario
 from cripta.modelo.Jugador import Jugador
 from cripta.modelo.Simulacion import Simulacion
 
-DATOS = str(Path(__file__).resolve().parent.parent / "datos_prueba")
+DATOS = str(Path(__file__).resolve().parent.parent / "datos_offline")
 
 servicio = CriptaService(AdaptadorOffline(DATOS))
 esqueleto = servicio.cargar_esqueleto_salas("cripta-01", 6)

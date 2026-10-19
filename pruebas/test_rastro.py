@@ -10,7 +10,7 @@ from cripta.modelo.Sala import SalaJuego
 from cripta.modelo.Simulacion import Simulacion
 from cripta.modelo.enemigos.Rastreador import Rastreador
 
-DATOS = str(Path(__file__).resolve().parent.parent / "datos_prueba")
+DATOS = str(Path(__file__).resolve().parent.parent / "datos_offline")
 
 
 def mundo(rastro_11, rastro_12, cerrada_12=False):

@@ -1,5 +1,7 @@
 """Replay determinista y limites de entrada, sin red ni TUI."""
 import json
+from contextlib import redirect_stdout
+from io import StringIO
 import sys
 import tempfile
 import unittest
@@ -47,6 +49,16 @@ def firma(app):
 
 
 class PruebasReplay(unittest.TestCase):
+    def test_seleccion_directa_y_soltar_se_reproducen_sin_busquedas(self):
+        app = self.iniciar()
+        self.assertTrue(app.recoger("sala-1-objeto-9").ok)
+        tiempo = app.estado_partida().reloj_virtual
+        self.assertTrue(app.seleccionar_item("sala-1-objeto-9").ok)
+        self.assertEqual(app.estado_partida().reloj_virtual, tiempo)
+        with patch.object(app.inventario(), "_buscar_nodo", side_effect=AssertionError("Búsqueda al soltar")):
+            self.assertTrue(app.soltar("sala-1-objeto-9").ok)
+        self.assertEqual(firma(reproducir(app._partida.registro.ruta, [FuenteReplay()])), firma(app))
+
     def setUp(self):
         self.temporal = tempfile.TemporaryDirectory(prefix="cripta-replay-test-")
         self.addCleanup(self.temporal.cleanup)
@@ -84,6 +96,19 @@ class PruebasReplay(unittest.TestCase):
         self.assertEqual(cabecera.semilla, 42)
         self.assertEqual(cabecera.version_catalogo, "catalogo-prueba-1")
         self.assertEqual(acciones[-3:], [["retroceder", None], ["retroceder", None], ["terminar", None]])
+
+    def test_progreso_no_modifica_el_estado_reproducido(self):
+        app = self.iniciar()
+        self.assertTrue(app.esperar().ok)
+        app.terminar()
+        salida = StringIO()
+        with redirect_stdout(salida):
+            replay = reproducir(app._partida.registro.ruta, [FuenteReplay()], mostrar_progreso=True)
+        self.assertEqual(firma(replay), firma(app))
+        self.assertIn("Cargando replay: Jugador | cripta-01", salida.getvalue())
+        self.assertIn("[1/2] esperar", salida.getvalue())
+        self.assertIn("[2/2] terminar", salida.getvalue())
+        self.assertIn("sala=1 vida=30 tiempo=100", salida.getvalue())
 
     def test_version_incompatible_y_copia_local_compatible(self):
         app = self.iniciar()
@@ -178,6 +203,7 @@ class PruebasReplay(unittest.TestCase):
 
     def test_cli_con_archivos_offline_reales(self):
         import subprocess
+        from cripta.adaptadores.Almacen_Disco import AlmacenDisco
         fuente = FuenteReplay()
         datos = self.carpeta / "datos"
         datos.mkdir()
@@ -191,8 +217,14 @@ class PruebasReplay(unittest.TestCase):
             (datos / nombre).write_text(json.dumps(respuesta), encoding="utf-8")
         app = self.iniciar()
         app.mover("N")
+        # Una descarga incompleta no debe ocultar un paquete compatible completo.
+        cache = self.carpeta / "cache"
+        almacen = AlmacenDisco(cache)
+        almacen.guardar_detalles("cripta-01", fuente.crypta_details("cripta-01"))
+        almacen.validar_catalogo(fuente.get_catalog_version()["version"])
         proceso = subprocess.run(
             [sys.executable, "-B", "-m", "cripta", "--offline", "--offline-dir", str(datos),
+             "--cache-dir", str(cache),
              "--replay", str(app._partida.registro.ruta)],
             capture_output=True, text=True,
         )

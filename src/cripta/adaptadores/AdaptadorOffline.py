@@ -3,13 +3,14 @@
 Orden de lectura:
     1. La caché persistente (--cache-dir): lo que se fue descargando al jugar
        en línea (lista de criptas, datos generales, esqueleto, contenido y fichas).
-    2. El paquete de respuestas del curso (--offline-dir, p. ej. datos_prueba),
+    2. El paquete de respuestas del curso (--offline-dir, p. ej. datos_offline),
        solo para lo que la caché no tenga.
 
 Una cripta que está en la caché se juega SOLO con lo de la caché (nunca se
 mezclan versiones). Si falta una sala que nunca se descargó, esa sala no se
 devuelve y el juego no deja entrar en ella. Leer disco no cuenta como
-solicitud de red (§5.1).
+solicitud de red (5.1).
+El catálogo sigue el origen de la cripta seleccionada: caché o paquete local.
 """
 from .Crypt_Data_Source import CryptDataSource
 from pathlib import Path
@@ -22,9 +23,10 @@ MAX_POR_LOTE = 10
 class AdaptadorOffline(CryptDataSource):
     """Lee respuestas guardadas: primero la caché descargada, después el paquete del curso."""
 
-    def __init__(self, carpeta="datos_prueba", almacen=None):
+    def __init__(self, carpeta="datos_offline", almacen=None):
         self.carpeta = Path(carpeta)
         self.almacen = almacen   # AlmacenDisco de --cache-dir (None = solo el paquete)
+        self._catalogo_del_paquete = False
 
     @property
     def requests_made(self) -> int:
@@ -71,9 +73,12 @@ class AdaptadorOffline(CryptDataSource):
         return {"criptas": criptas}
 
     def crypta_details(self, crypta_id: str) -> dict:
-        if self._en_cache(crypta_id):
-            return self.almacen.leer_detalles(crypta_id)
-        return self._leer(f"cripta_{crypta_id}.json")
+        en_cache = self._en_cache(crypta_id)
+        datos = (self.almacen.leer_detalles(crypta_id) if en_cache
+                 else self._leer(f"cripta_{crypta_id}.json"))
+        # El catálogo debe pertenecer al mismo origen que la cripta seleccionada.
+        self._catalogo_del_paquete = not en_cache
+        return datos
 
     def list_rooms(self, crypta_id: str, pagina: int) -> dict:
         if self._en_cache(crypta_id):
@@ -104,10 +109,15 @@ class AdaptadorOffline(CryptDataSource):
             raise ValueError(f"Máximo {MAX_POR_LOTE} ids por llamada")
         paquete = None
         elegidas = []
+        version_cache = (self.almacen.leer_version_catalogo()
+                         if self.almacen is not None and not self._catalogo_del_paquete else None)
         for id_pedido in ids:
-            ficha = self.almacen.leer_ficha(id_pedido) if self.almacen is not None else None
+            ficha = self.almacen.leer_ficha(id_pedido) if version_cache else None
             if ficha is None and self._hay("catalogo.json"):
                 if paquete is None:
+                    if version_cache and self._version_catalogo_paquete().get("version") != version_cache:
+                        raise RuntimeError(f"Ficha no descargada: {id_pedido}; el catálogo del paquete "
+                                           "tiene otra versión.")
                     paquete = self._leer("catalogo.json")["entidades"]
                 for candidata in paquete:
                     if candidata["id"] == id_pedido:
@@ -124,9 +134,14 @@ class AdaptadorOffline(CryptDataSource):
         return self._leer(f"cripta_{crypta_id}_version.json")
 
     def get_catalog_version(self) -> dict:
-        version = self.almacen.leer_version_catalogo() if self.almacen is not None else None
+        version = (self.almacen.leer_version_catalogo()
+                   if self.almacen is not None and not self._catalogo_del_paquete else None)
         if version:
             return {"version": version}
+        return self._version_catalogo_paquete()
+
+    def _version_catalogo_paquete(self) -> dict:
+        """Obtiene la versión del paquete sin sustituirla por la de la caché."""
         try:
             return self._leer("catalogo_version.json")
         except FileNotFoundError:

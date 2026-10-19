@@ -2,6 +2,8 @@
 
 
 class Evento:
+    __slots__ = ["tiempo_siguiente", "secuencias", "actor", "tipo", "valido", "indice"]
+
     def __init__(self, tiempo_siguiente: int, secuencias: int, actor, tipo: str):
         self.tiempo_siguiente = tiempo_siguiente
         self.secuencias = secuencias
@@ -91,31 +93,51 @@ class HeapAgendaEventos:
         self._heap[i].indice = i
         self._heap[j].indice = j
 
+    @staticmethod
+    def _menor(a, b):
+        """Compara sin crear listas temporales en cada paso del heap."""
+        return (a.tiempo_siguiente < b.tiempo_siguiente
+                or a.tiempo_siguiente == b.tiempo_siguiente and a.secuencias < b.secuencias)
+
     def _ascender(self, i):
         while i > 0:
             padre = (i - 1) // 2
-            if self._heap[i].clave() >= self._heap[padre].clave():
+            if not self._menor(self._heap[i], self._heap[padre]):
                 break
             self._intercambiar(i, padre)
             i = padre
 
     def _descender(self, i):
+        heap = self._heap
+        cantidad = len(heap)
+        evento = heap[i]
         while True:
-            menor = i
             izq, der = 2 * i + 1, 2 * i + 2
-            if izq < len(self._heap) and self._heap[izq].clave() < self._heap[menor].clave():
-                menor = izq
-            if der < len(self._heap) and self._heap[der].clave() < self._heap[menor].clave():
+            if izq >= cantidad:
+                break
+            menor = izq
+            if der < cantidad and self._menor(heap[der], heap[izq]):
                 menor = der
-            if menor == i:
-                return
-            self._intercambiar(i, menor)
+            if not self._menor(heap[menor], evento):
+                break
+            # Sube el hijo y deja un hueco: evita intercambiar dos nodos por nivel.
+            heap[i] = heap[menor]
+            heap[i].indice = i
             i = menor
+        heap[i] = evento
+        evento.indice = i
 
     def reprogramar(self, actor, nuevo_tiempo: int, tipo: str) -> Evento:
-        if actor._proximo_evento is not None:
-            self.cancelar(actor._proximo_evento)
-        evento = self.insertar(nuevo_tiempo, actor, tipo)
-        self.cambiar(actor, "_proximo_evento", evento)
-        self.cambiar(actor, "tiempo_siguiente", nuevo_tiempo)
+        """Reemplaza el evento del actor con un único delta reversible."""
+        anterior = actor._proximo_evento
+        evento = Evento(nuevo_tiempo, self._secuencia_actual + 1, actor, tipo)
+        self.registrar("actor_reprogramado", [self, evento, anterior,
+                       anterior.valido if anterior is not None else False,
+                       actor.tiempo_siguiente, self._secuencia_actual])
+        if anterior is not None:
+            anterior.valido = False
+        self._secuencia_actual += 1
+        self._agregar(evento)
+        actor._proximo_evento = evento
+        actor.tiempo_siguiente = nuevo_tiempo
         return evento

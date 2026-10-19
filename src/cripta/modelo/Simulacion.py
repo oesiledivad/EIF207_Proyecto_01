@@ -59,7 +59,7 @@ class Simulacion:
         """Cambia la pertenencia del enemigo: sale de su sala y entra a la destino.
 
         El enemigo sigue activo aunque el jugador nunca haya entrado a la
-        sala destino (§2.4). O(k) por quitar de la lista de la sala origen.
+        sala destino (2.4). O(k) por quitar de la lista de la sala origen.
         """
         sala_origen = salas.obtener(enemigo.sala)
         sala_destino = salas.obtener(destino_id)
@@ -75,7 +75,7 @@ class Simulacion:
 
         Al encontrar el evento del jugador NO lo extrae: solo adelanta el
         reloj a su instante. Así la siguiente acción del jugador se programa
-        desde el tiempo correcto (§2.3). Se detiene si el jugador muere.
+        desde el tiempo correcto (2.3). Se detiene si el jugador muere.
         """
         mensajes: list[str] = []
         while True:

@@ -124,7 +124,7 @@ def menu() -> None:
     for t, n in melodia:
         p.sumar(t, 2.5, campana(nota(n), 0.16))
     p.eco(0.42, 0.33)
-    p.bucle(0.55, DESTINO / "menu.wav")
+    p.bucle(0.9, DESTINO / "menu.wav")
 
 
 def cripta() -> None:
@@ -151,7 +151,7 @@ def cripta() -> None:
     for t, n in [[8, "A4"], [8.9, "F4"], [28, "G4"], [28.9, "E4"]]:
         p.sumar(t, 3, pad(nota(n), 3, 0.07, 0.1))
     p.eco(0.55, 0.38)
-    p.bucle(0.5, DESTINO / "cripta.wav")
+    p.bucle(0.9, DESTINO / "cripta.wav")
 
 
 def combate() -> None:
@@ -178,7 +178,7 @@ def combate() -> None:
                     * envolvente(x, 0.8, 7.5, 1.0)
                     * (math.sin(2 * math.pi * f * x) + 0.5 * math.sin(4 * math.pi * f * x)))
     p.eco(pulso * 0.75, 0.2)
-    p.bucle(0.6, DESTINO / "combate.wav")
+    p.bucle(0.9, DESTINO / "combate.wav")
 
 
 if __name__ == "__main__":

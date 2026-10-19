@@ -20,7 +20,7 @@ class _ActorFalso:
         self._proximo_evento = None
 
 
-# --- 1. Agenda: heap propio vs. lista ordenada por inserción (§4.1) --------
+# 1. Agenda: heap propio vs. lista ordenada por inserción (4.1)
 
 def _bench_agenda_heap(n: int) -> list[float]:
     agenda = HeapAgendaEventos()
@@ -71,7 +71,7 @@ def _bench_lista_ordenada(n: int) -> list[float]:
     return [t_insertar, t_extraer]
 
 
-# --- 2. decidir_accion vs. tamaño de la cripta (§4.7) -----------------------
+# 2. decidir_accion vs. tamaño de la cripta (4.7)
 
 def _construir_cripta_sintetica(n_salas: int) -> IndiceSalas:
     salas = IndiceSalas()
@@ -103,7 +103,7 @@ def _bench_decidir_accion(n_salas: int, repeticiones: int) -> float:
     return time.perf_counter() - inicio
 
 
-# --- 3. Cache_Fichas: acierto vs. fallo (§4.4) ------------------------------
+# 3. Cache_Fichas: acierto vs. fallo (4.4)
 
 def _bench_cache(n_consultas: int) -> list[float]:
     cache = Cache_Fichas(capacidad=25)
@@ -123,20 +123,20 @@ def _bench_cache(n_consultas: int) -> list[float]:
 
 
 def _bench_simulacion() -> None:
-    print("=== Agenda: heap propio vs. lista ordenada (§4.1) ===")
+    print("=== Agenda: heap propio vs. lista ordenada (4.1) ===")
     for n in [100, 500, 2000]:
         ih, eh = _bench_agenda_heap(n)
         il, el = _bench_lista_ordenada(n)
         print(f"n={n:5d}  heap: insertar={ih*1000:.2f}ms extraer={eh*1000:.2f}ms"
               f"   |   lista: insertar={il*1000:.2f}ms extraer={el*1000:.2f}ms")
 
-    print("\n=== Rastreador.decidir_accion vs. tamaño de la cripta (§4.7) ===")
+    print("\n=== Rastreador.decidir_accion vs. tamaño de la cripta (4.7) ===")
     for n_salas in [20, 200, 2000]:
         t = _bench_decidir_accion(n_salas, repeticiones=10_000)
         print(f"cripta de {n_salas:5d} salas -> 10000 llamadas en {t*1000:.2f}ms "
               f"({t*1_000_000/10_000:.3f}µs por llamada)")
 
-    print("\n=== Cache_Fichas llena (25 fichas): acierto vs. fallo (§4.4) ===")
+    print("\n=== Cache_Fichas llena (25 fichas): acierto vs. fallo (4.4) ===")
     ta, tf = _bench_cache(50_000)
     print(f"50000 aciertos: {ta*1000:.2f}ms   |   50000 fallos: {tf*1000:.2f}ms")
 
@@ -261,9 +261,90 @@ def _comprobar_sala(guardado, sala):
     assert guardado.cargar_sala(sala.sala_id) == sala.bytes_
 
 
+def _bench_ciclo_completo(n_enemigos=500, repeticiones=100):
+    """Mide acciones reales con combate, historial y sincronización, sin E/S ni vista."""
+    from types import SimpleNamespace
+    from cripta.controlador.Aplicacion import Aplicacion
+    from cripta.dto.Partida_dto import SalaModelo
+    from cripta.modelo.Jugador import Jugador
+    from cripta.modelo.Simulacion import Simulacion
+    from cripta.modelo.enemigos.Guardian import Guardian
+
+    app = Aplicacion(SimpleNamespace(requests_made=0))
+    app._salas = _construir_cripta_sintetica(20)
+    app._gestor.reiniciar_inventario(10)
+    estado = app.estado_partida()
+    estado.activa = True
+    estado.salas_conocidas = [SalaModelo(s.id, s.nombre, "") for s in app._salas._datos if s is not None]
+    vida = max(1, n_enemigos * repeticiones * 10)
+    app._jugador = Jugador("jugador", vida, vida, 6, 100, 100, 0, 0, 10)
+    app._simulacion = Simulacion(42, app._gestor.historial)
+    app._simulacion.agenda.reprogramar(app._jugador, 0, "accion_actor")
+    ficha = SimpleNamespace(id="enemigo-bench", nombre="Guardián sintético")
+    app._cripta_service._cache_fichas.insertar(ficha.id, ficha)
+    sala = app._salas.obtener(0)
+    for i in range(n_enemigos):
+        enemigo = Guardian(str(i), 10, 10, 3, 0, 150, 0, None)
+        enemigo.tipo = ficha.id
+        sala.agregar_enemigo(enemigo)
+    app._combate.activar_sala(sala, app._simulacion)
+    medidas = []
+    for _ in range(repeticiones):
+        inicio = time.perf_counter()
+        resultado = app.esperar()
+        medidas.append((time.perf_counter() - inicio) * 1000)
+        assert resultado.ok, resultado.motivo
+    peor = max(medidas)
+    print(f"ciclo completo: enemigos={n_enemigos} n={repeticiones} "
+          f"media={sum(medidas)/len(medidas):.3f}ms maximo={peor:.3f}ms "
+          f"limite=20ms {'CUMPLE' if peor < 20 else 'EXCEDE'}")
+    return medidas
+
+
+def _bench_referencia(repeticiones=30):
+    """Mide movimiento y combate normales con la cripta de referencia ya cargada."""
+    from pathlib import Path
+    from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
+    from cripta.controlador.Aplicacion import Aplicacion
+
+    carpeta = Path(__file__).resolve().parents[2] / "datos_offline"
+    if not (carpeta / "cripta_cripta-01.json").is_file():
+        print("Referencia: no está disponible el paquete datos_offline.")
+        return []
+    medidas = []
+
+    def medir(accion):
+        inicio = time.perf_counter()
+        resultado = accion()
+        medidas.append((time.perf_counter() - inicio) * 1000)
+        assert resultado.ok, resultado.motivo
+
+    for semilla in range(repeticiones):
+        app = Aplicacion(AdaptadorOffline(carpeta))
+        resultado = app.iniciar_partida("Bench", str(semilla), "cripta-01")
+        assert resultado.ok, resultado.motivo
+        # La referencia cabe en el primer lote: ninguna acción medida solicita contenido.
+        assert not app.estado_partida().contenido_pendiente
+        puerta = next(s for s in app.estado_partida().vecindad if not s.cerrada)
+        medir(lambda: app.mover(puerta.direccion))
+        for _ in range(100):
+            estado = app.estado_partida()
+            if estado.terminada or not estado.enemigos:
+                break
+            medir(lambda: app.atacar(estado.enemigos[0].id))
+    peor = max(medidas)
+    print(f"referencia cripta-01: ciclos={len(medidas)} media={sum(medidas)/len(medidas):.3f}ms "
+          f"maximo={peor:.3f}ms limite=20ms {'CUMPLE' if peor < 20 else 'EXCEDE'}")
+    return medidas
+
+
 def main():
     import tempfile
     _bench_simulacion()
+    _bench_referencia()
+    print("\n=== Ciclo completo sintético (sin red, disco ni renderizado) ===")
+    for enemigos in [20, 200, 500, 1000]:
+        _bench_ciclo_completo(enemigos)
     with tempfile.TemporaryDirectory(prefix="cripta-bench-") as carpeta:
         _bench_estructuras_y_persistencia(carpeta)
 

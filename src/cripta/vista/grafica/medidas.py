@@ -31,7 +31,7 @@ def tamano_ventana_inicial(pantalla_ancho: int, pantalla_alto: int) -> list[int,
 
     Si cabe un múltiplo entero de 800x450 se usa ese (pixel art nítido).
     """
-    limite_ancho, limite_alto = pantalla_ancho * 0.9, pantalla_alto * 0.85
+    limite_ancho, limite_alto = [pantalla_ancho * 0.9, pantalla_alto * 0.85]
     entero = int(min(limite_ancho / ANCHO, limite_alto / ALTO))
     if entero >= 2:
         return [ANCHO * entero, ALTO * entero]

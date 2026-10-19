@@ -2,10 +2,10 @@ from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
 from cripta.servicio.CriptaService import CriptaService
 from cripta.controlador.Aplicacion import Aplicacion
 
-servicio = CriptaService(AdaptadorOffline("datos_prueba"))
+servicio = CriptaService(AdaptadorOffline("datos_offline"))
 esqueleto = servicio.cargar_esqueleto_salas("cripta-01", 6)
 
-app = Aplicacion(AdaptadorOffline("datos_prueba"))
+app = Aplicacion(AdaptadorOffline("datos_offline"))
 app._crear_salas_desde_esqueleto(esqueleto)
 
 puerta = app._salas.obtener(2).salidas.obtener("E")

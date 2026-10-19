@@ -41,7 +41,7 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
         "--cache-size",
         type=int,
         default=25,
-        help="Tope de fichas de catálogo en memoria (§4.4). Por defecto 25.",
+        help="Tope de fichas de catálogo en memoria (4.4). Por defecto 25.",
     )
     parser.add_argument(
         "--cache-dir",
@@ -53,7 +53,7 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
                        help="Reproduce acciones sin interfaz; exige versiones compatibles.")
     parser.add_argument("--puntajes", help="Archivo de puntajes (por defecto, dentro de --log-dir).")
     parser.add_argument("--log-dir", default="partidas", help="Carpeta de registros de partida.")
-    parser.add_argument("--offline-dir", default="datos_prueba", help="Paquete de respuestas del curso (respaldo de --offline).")
+    parser.add_argument("--offline-dir", default="datos_offline", help="Paquete de respuestas del curso (respaldo de --offline).")
     modos.add_argument("--bench", action="store_true",
                         help="Ejecuta cargas sinteticas sin red ni interfaz.")
     modos.add_argument("--grafica", action="store_true",
@@ -102,11 +102,10 @@ def main(argv: list[str] | None = None) -> int:
     data_source = _construir_data_source(args)
     if args.replay:
         from cripta.replay.reproductor import reproducir
-        fuentes = [data_source]
-        if not args.offline:
-            fuentes.append(AdaptadorOffline(args.offline_dir))
+        # El paquete se valida por separado: una caché incompleta no lo oculta.
+        fuentes = [data_source, AdaptadorOffline(args.offline_dir)]
         try:
-            controlador = reproducir(args.replay, fuentes)
+            controlador = reproducir(args.replay, fuentes, mostrar_progreso=True)
         except (OSError, RuntimeError, ValueError) as error:
             print(str(error), file=sys.stderr)
             return 2

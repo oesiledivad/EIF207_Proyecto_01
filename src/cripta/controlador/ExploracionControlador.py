@@ -1,14 +1,12 @@
 """
 Responsabilidades:
     - Ensamblado de salas: crea todas las salas (vacías) desde el esqueleto y les
-      incorpora el contenido que llega de la red, por lotes (§4.2).
-    - Movimiento entre salas (§2.3).
-    - Apertura de puertas con llave y cierre automático (§2.5, §2.10).
-    - Rastro: marca el instante de la última visita de cada sala (§2.9, Apéndice B).
+      incorpora el contenido que llega de la red, por lotes (4.2).
+    - Movimiento entre salas (2.3).
+    - Apertura de puertas con llave y cierre automático (2.5, 2.10).
+    - Rastro: marca el instante de la última visita de cada sala (2.9, Apéndice B).
     - Vecindad: copia el estado vivo de las puertas y de las salas vecinas al DTO
       que lee la Vista.
-    - Aviso a P3 cuando se abre de forma válida el acceso a la sala de salida
-      (PartidaControlador.registrar_apertura_salida).
 
 Este controlador es el dueño del índice de salas. La plantilla común de una acción del
 jugador (transacción, historial, tiempo, replay) sigue en `Aplicacion`, que se le pasa
@@ -64,7 +62,7 @@ class ExploracionControlador:
     def _estado(self):
         return self._app._gestor.estado
 
-    #  Ensamblado de salas (§4.2)
+    #  Ensamblado de salas (4.2)
 
     def ensamblar_salas(self, esqueleto: list[SalaModelo]) -> None:
         """Crea TODAS las salas (vacías) apenas llega el esqueleto.
@@ -91,7 +89,7 @@ class ExploracionControlador:
                                    origen_id, self.incorporar_contenido)
 
     def incorporar_contenido(self, sala: SalaJuego | None, contenido: ContenidoSala) -> None:
-        """Incorporar NO activa enemigos (§2.4): quedan dormidos hasta que el jugador entre."""
+        """Incorporar NO activa enemigos (2.4): quedan dormidos hasta que el jugador entre."""
         if sala is None or sala.contenido_cargado:
             return  # una sala ya cargada no se vuelve a incorporar
         for dto in contenido.enemigos:
@@ -103,7 +101,7 @@ class ExploracionControlador:
         sala.contenido_cargado = True
         self._estado.contenido_cargado.append(sala.id)
 
-    #  Rastro (§2.9, Apéndice B)
+    #  Rastro (2.9, Apéndice B)
 
     def marcar_rastro(self, tiempo_actual: int) -> None:
         """El rastro de la sala actual se refresca en cada acción del jugador."""
@@ -127,7 +125,7 @@ class ExploracionControlador:
     #  Vecindad
 
     def actualizar_vecindad(self) -> None:
-     
+
         sala = self.salas.obtener(self._jugador.sala)
         if sala is None:
             return
@@ -149,7 +147,19 @@ class ExploracionControlador:
             v.tiene_enemigos = hay_enemigos
             v.tiene_objetos = len(vecina.objetos) > 0
 
-    #  Movimiento (§2.3)
+    #  Movimiento (2.3)
+
+    def preparar_movimiento(self, direccion: str) -> None:
+        """Carga el destino sin mover al jugador ni avanzar el reloj virtual."""
+        actual = self.salas.obtener(self._jugador.sala)
+        salida = actual.salidas.obtener(direccion) if actual else None
+        if salida is None or salida.cerrada:
+            return
+        error = self._servicio.asegurar_sala_cargada(
+            self._estado.cripta_id, self.salas, self.max_id_sala,
+            salida.sala_destino, self.incorporar_contenido)
+        if error is not None:
+            raise RuntimeError(f"No se pudo cargar la sala destino: {error}")
 
     def mover(self, direccion: str) -> ResultadoAccion:
         app = self._app
@@ -168,12 +178,20 @@ class ExploracionControlador:
             return ResultadoAccion.fallo("La puerta está cerrada.")
 
         destino_id = salida.sala_destino
-        # §4.2: el contenido debe estar ANTES de confirmar el movimiento.
+        # 4.2: el contenido debe estar ANTES de confirmar el movimiento.
         error = self._servicio.asegurar_sala_cargada(
             self._estado.cripta_id, self.salas, self.max_id_sala, destino_id,
             self.incorporar_contenido)
         if error is not None:
             return ResultadoAccion.fallo(f"No se pudo cargar la sala destino: {error}")
+
+        destino = self.salas.obtener(destino_id)
+        tipos = self._servicio.tipos_activos(self._gestor.inventario, self.salas, destino)
+        tipos.extend(e.tipo for e in destino.enemigos if e.vida > 0 and e._proximo_evento is None)
+        try:
+            self._servicio.validar_capacidad(tipos)
+        except RuntimeError as error:
+            return ResultadoAccion.fallo(str(error))
 
         resultado = app._accion_jugador(
             "mover", lambda: self._ejecutar_movimiento(destino_id, direccion), direccion)
@@ -191,9 +209,9 @@ class ExploracionControlador:
 
         self._servicio.liberar_contenido_visible(sala_origen)   # deja de ser la sala actual
         self._simulacion.agenda.cambiar(self._jugador, "sala", destino_id)
-        self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # §2.9
-        app._combate.activar_sala(sala_destino, self._simulacion)   # §2.4
-        app._avisar(self._servicio.fijar_contenido_visible(sala_destino))
+        self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # 2.9
+        app._combate.activar_sala(sala_destino, self._simulacion)   # 2.4
+        self._servicio.fijar_fichas(self._servicio.tipos_visibles(sala_destino))
         self._estado.objetos_suelo = sala_destino.objetos
         self._bitacora.append(Mensaje("jugador", f"Te mueves al {direccion}: {sala_destino.nombre}."))
         marca = sala_origen.ultimo_tiempo_visita
@@ -202,11 +220,11 @@ class ExploracionControlador:
             self._bitacora.append(Mensaje("rastro", f"Dejaste una marca en sala {sala_origen.id} "
                                           f"en t={marca}: rastreable {restante} u.t. más."))
 
-        # §2.10: cada trampa armada se activa al entrar, antes del siguiente evento.
+        # 2.10: cada trampa armada se activa al entrar, antes del siguiente evento.
         app._efectos.disparar_trampas(sala_destino, self._jugador, self._simulacion)
         return ResultadoAccion.exito()
 
-    #  Puertas (§2.5)
+    #  Puertas (2.5)
 
     def abrir(self, direccion: str) -> ResultadoAccion:
         """Abre la puerta de la sala actual en `direccion`. Costo 50 (abrir_puerta)."""
@@ -237,7 +255,7 @@ class ExploracionControlador:
         return ResultadoAccion.exito()
 
     def _comunicar_acceso_salida(self, sala_id: int, salida) -> None:
-        """Avisa a P3 (victoria) si esta puerta es el acceso válido a la sala de salida.
+        """Avisa a victoria si esta puerta es el acceso válido a la sala de salida.
 
         PartidaControlador lo anota solo si la puerta lleva a la sala de salida y se abrió
         con la llave de la salida; lo registra en el historial, así que el pergamino de

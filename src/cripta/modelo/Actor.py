@@ -35,7 +35,7 @@ class Actor:
     @property
     def etiqueta(self) -> str:
         """Cómo se muestra en mensajes. Un enemigo se ve como "Rata gigante (e-201)":
-        identificable aunque haya varios del mismo tipo (§2.6)."""
+        identificable aunque haya varios del mismo tipo (2.6)."""
         nombre = getattr(self, "nombre", None)
         if not nombre or nombre == self.identificador:
             return self.identificador

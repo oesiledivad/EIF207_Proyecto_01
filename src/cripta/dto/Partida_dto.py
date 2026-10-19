@@ -33,7 +33,7 @@ class EnemigoPartida:
     # EnemigoPartida sin pasar comportamiento, errante es el mas neutral
     regeneracion: int | None = None
     tipo: str = ""                                          # id de catálogo
-    suelta: list[str] = field(default_factory=list)         # botín (§2.6)
+    suelta: list[str] = field(default_factory=list)         # botín (2.6)
 
 @dataclass
 class ObjetoSuelo:

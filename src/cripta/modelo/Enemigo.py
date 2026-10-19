@@ -33,8 +33,8 @@ class Enemigo(Actor):
         self.comportamiento = comportamiento
         # Datos de la ficha que la instancia necesita después de creada:
         self.tipo: str | None = None              # id de catálogo (para proteger la ficha en caché)
-        self.suelta: list[str] = []               # botín al morir (§2.6)
-        self.regeneracion_objetivo: int | None = None  # None si no regenera (§2.10)
+        self.suelta: list[str] = []               # botín al morir (2.6)
+        self.regeneracion_objetivo: int | None = None  # None si no regenera (2.10)
         self.nombre: str = identificador          # nombre de la ficha (lo pone CombateControlador)
 
     def decidir_accion(self, sala_jugador_id, salas: IndiceSalas, tiempo_actual: int, azar):

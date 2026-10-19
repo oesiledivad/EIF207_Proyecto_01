@@ -1,4 +1,4 @@
-"""Guardado y carga binaria de la partida (extra de P1, §4.10).
+"""Guardado y carga binaria de la partida (4.10).
 
 Paquete con una responsabilidad por módulo:
     formato.py       constantes del formato (id global, versión de cuerpo, clases de actor)

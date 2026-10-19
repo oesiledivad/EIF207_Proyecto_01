@@ -1,7 +1,7 @@
 """Controlador de inventario.
 
 Coordina las operaciones sobre el inventario del jugador: recoger,
-soltar, equipar, usar, recorrer y ordenar vistas. Registra en el
+soltar, equipar, usar y recorrer. Registra en el
 historial los cambios invertibles.
 """
 
@@ -14,7 +14,7 @@ from cripta.servicio.CriptaService import CriptaService
 from cripta.dto.Partida_dto import ObjetoSuelo
 from cripta.dto.ResultadoAccion import ResultadoAccion
 from cripta.estructuras.Bitacora import Bitacora, Mensaje
-from cripta.estructuras.Inventario import Inventario, ItemInventario
+from cripta.estructuras.Inventario import ItemInventario
 
 
 class InventarioControlador:
@@ -76,23 +76,22 @@ class InventarioControlador:
         if inv is None:
             return ResultadoAccion.fallo("Inventario no inicializado.")
 
-        posicion = inv.posicion_de(instancia_id)
-        if posicion is None:
-            return ResultadoAccion.fallo("No tienes ese objeto.")
-
-        item = inv.buscar_por_id(instancia_id)
-        if item is None:
+        item = inv.item_actual()
+        if item is None or item.instancia_id != instancia_id:
+            inv.seleccionar(instancia_id)
+            item = inv.item_actual()
+        if item is None or item.instancia_id != instancia_id:
             return ResultadoAccion.fallo("No tienes ese objeto.")
 
         if item.clase != "pergamino_retroceso":
-            self._gestor.registrar_cambio("inventario_quitado", [item, posicion])
+            self._gestor.registrar_cambio("inventario_extraido", [item, inv.ancla_actual()])
             self._gestor.registrar_cambio("item_suelo_agregado", [self._gestor.estado.objetos_suelo, item.instancia_id])
         if item.equipado:
             self._quitar_bonus(item, jugador)
             self._gestor.registrar_cambio("atributo", [item, "equipado", True])
             item.equipado = False
 
-        inv.soltar_por_id(instancia_id)
+        inv.soltar_actual()
         self._gestor.estado.objetos_suelo.append(
             ObjetoSuelo(id=item.instancia_id, nombre=item.nombre, tipo_id=item.tipo_id)
         )
@@ -160,13 +159,19 @@ class InventarioControlador:
 
     #  Recorrido
 
-    def recorrer(self, recorrer, nombre: str, registrar) -> ResultadoAccion:
+    def seleccionar(self, instancia_id: str) -> ResultadoAccion:
+        """Selecciona antes de ejecutar una acción; buscar por ID es navegación."""
+        inv = self._gestor.inventario
+        item = inv.seleccionar(instancia_id) if inv is not None else None
+        return ResultadoAccion.exito(datos=item) if item else ResultadoAccion.fallo("No tienes ese objeto.")
+
+    def recorrer(self, recorrer, nombre: str, registrar, argumento=None) -> ResultadoAccion:
         """Cambia la selección y la restaura si falla el registro de replay."""
         anterior = self._gestor.inventario.item_actual()
         resultado = recorrer()
         if resultado.ok:
             try:
-                registrar(nombre)
+                registrar(nombre, argumento)
             except ErrorRegistro:
                 if anterior is not None:
                     self._gestor.inventario.seleccionar(anterior.instancia_id)
@@ -188,20 +193,6 @@ class InventarioControlador:
         if item is None:
             return ResultadoAccion.fallo("Inventario vacío.")
         return ResultadoAccion.exito(datos=item)
-
-    #  Vistas
-
-    def vista_ordenada(self, criterio: str) -> list[ItemInventario]:
-        inv = self._gestor.inventario
-        if inv is None:
-            return []
-        if criterio == "peso":
-            return inv.vista_por_peso()
-        if criterio == "valor":
-            return inv.vista_por_valor()
-        if criterio == "nombre":
-            return inv.vista_por_nombre()
-        return inv.items()
 
     #  Internos
 

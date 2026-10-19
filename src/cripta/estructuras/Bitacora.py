@@ -1,7 +1,7 @@
 """Bitácora de juego con buffer circular de tamaño fijo.
 
 Se eligió un buffer circular sobre `list` con índice de escritura porque
-§4.8 exige memoria constante y que agregar no desplace físicamente los
+4.8 exige memoria constante y que agregar no desplace físicamente los
 mensajes anteriores. Una `list` con `pop(0)` sería O(n) por mensaje.
 
 Complejidad:

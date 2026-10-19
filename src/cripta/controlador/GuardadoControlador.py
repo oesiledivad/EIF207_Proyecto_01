@@ -1,4 +1,4 @@
-"""Coordinación del guardado; reutiliza el formato y la restauración de P1."""
+"""Coordinación del guardado; reutiliza el formato y la restauración"""
 import struct
 from datetime import datetime
 from pathlib import Path
@@ -105,7 +105,8 @@ class GuardadoControlador:
             return ResultadoAccion.fallo(resultado.motivo)
         try:
             restaurar_partida(app, datos)
-        except (ValueError, KeyError) as error:
+        except (ValueError, KeyError, RuntimeError) as error:
+            app._gestor.estado.activa = False
             return ResultadoAccion.fallo(f"El guardado no coincide con la cripta: {error}")
         self.actual = origen
         app._bitacora.append(Mensaje("sistema", f"Partida cargada de {origen}."))

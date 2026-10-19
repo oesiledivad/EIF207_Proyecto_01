@@ -3,13 +3,15 @@ import time
 import requests
 from .Crypt_Data_Source import CryptDataSource, PresupuestoAgotado
 
+_CLIENT_ID = str(uuid.uuid4())
+
 
 class NetworkAdapter(CryptDataSource):
     def __init__(self, timeout: int = 10, max_reintentos_429: int = 5) -> None:
         self.BASE_URL = "https://cripta-api.kad06a0zhgs84.us-east-2.cs.amazonlightsail.com/v1"
         self.timeout = timeout
         self.max_reintentos_429 = max_reintentos_429
-        self.client_id = str(uuid.uuid4())  # uno por ejecución
+        self.client_id = _CLIENT_ID  # compartido por todas las partidas de esta ejecución
         self.headers = {"X-Cripta-Client-Id": self.client_id}
         self._requests_made = 0
         self._presupuesto: int | None = None  # se conoce al leer los datos generales
@@ -19,7 +21,8 @@ class NetworkAdapter(CryptDataSource):
         return self._requests_made
 
     def reiniciar_partida(self) -> None:
-        self.__init__(self.timeout, self.max_reintentos_429)
+        self._requests_made = 0
+        self._presupuesto = None
 
     def fijar_presupuesto(self, presupuesto: int) -> None:
         self._presupuesto = presupuesto
@@ -33,7 +36,7 @@ class NetworkAdapter(CryptDataSource):
         url = f"{self.BASE_URL}{endpoint}"
         intentos = 0
         while True:
-            # Control estricto: se revisa ANTES de cada intento, reintentos incluidos (§5.1).
+            # Control estricto: se revisa ANTES de cada intento, reintentos incluidos (5.1).
             if self._presupuesto is not None and self._requests_made >= self._presupuesto:
                 raise PresupuestoAgotado(
                     f"Presupuesto de red agotado ({self._requests_made}/{self._presupuesto}) "

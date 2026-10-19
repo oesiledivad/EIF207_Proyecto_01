@@ -17,7 +17,7 @@ _PISTAS = [
 class Musica:
     """Una pista en bucle a la vez; cambiar de pista corta la anterior."""
 
-    def __init__(self, activo=True, volumen=0.35):
+    def __init__(self, activo=True, volumen=0.8):
         self.activo = activo
         self.volumen = volumen
         self.actual = ""
@@ -57,6 +57,12 @@ class Musica:
             except Exception:
                 pass
         self._reproductor = None
+
+    def cambiar_volumen(self, volumen):
+        """Limita el volumen y lo aplica a la pista que ya está sonando."""
+        self.volumen = max(0, min(1, round(volumen, 2)))
+        if self._reproductor is not None:
+            self._reproductor.volume = self.volumen
 
     def alternar(self):
         """Silencia o reanuda la música (tecla F3)."""

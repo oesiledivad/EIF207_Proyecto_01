@@ -1,5 +1,5 @@
-"""Controlador de combate (P2): creación y activación de enemigos, ataques,
-muerte y botín (§2.4, §2.6).
+"""Controlador de combate: creación y activación de enemigos, ataques,
+muerte y botín (2.4, 2.6).
 
 No guarda estado del juego: recibe en cada llamada el jugador, la
 simulación y el índice de salas que le pasa Aplicacion.
@@ -30,11 +30,11 @@ class CombateControlador:
         self._servicio = servicio
         self._efectos = efectos
 
-    #  Creación y activación (§2.4)
+    #  Creación y activación (2.4)
 
     @staticmethod
     def crear_enemigo(dto: EnemigoPartida, sala_id: int):
-        """Instancia dormida: copia las estadísticas de la ficha (§2.2)."""
+        """Instancia dormida: copia las estadísticas de la ficha (2.2)."""
         match dto.comportamiento:
             case "guardián" | "guardian":
                 clase = Guardian
@@ -64,15 +64,15 @@ class CombateControlador:
     def activar_enemigo(self, enemigo, simulacion) -> None:
         agenda = simulacion.agenda
         tiempo_actual = simulacion.reloj.tiempo_actual
-        # §2.4: primera acción = acción base de costo 100 desde el reloj actual.
+        # 2.4: primera acción = acción base de costo 100 desde el reloj actual.
         intervalo = calcular_intervalo(costo_accion("esperar"), enemigo.velocidad)
         evento = agenda.insertar(tiempo_actual + intervalo, enemigo, "accion_actor")
         agenda.cambiar(enemigo, "_proximo_evento", evento)
         agenda.cambiar(enemigo, "tiempo_siguiente", evento.tiempo_siguiente)
-        self._fijar([enemigo.tipo])  # enemigo activo: su ficha está en uso (§4.4)
+        self._fijar([enemigo.tipo])  # enemigo activo: su ficha está en uso (4.4)
         self._efectos.iniciar_regeneracion(enemigo, simulacion)
 
-    #  Ataque, muerte y botín (§2.6)
+    #  Ataque, muerte y botín (2.6)
 
     def atacar(self, instancia_id: str, jugador, simulacion, salas) -> ResultadoAccion:
         sala_actual = salas.obtener(jugador.sala)
@@ -116,7 +116,7 @@ class CombateControlador:
                 id=f"botin-{enemigo.identificador}-{posicion}", nombre=nombre, tipo_id=tipo,
             )
             if ficha is not None and ficha.clase == "pergamino_retroceso":
-                sala.objetos.append(objeto)  # §2.11: los pergaminos quedan fuera del retroceso
+                sala.objetos.append(objeto)  # 2.11: los pergaminos quedan fuera del retroceso
             else:
                 historial.agregar(sala.objetos, objeto)
             nombres.append(nombre)
@@ -125,6 +125,4 @@ class CombateControlador:
     #  Interno
 
     def _fijar(self, tipos: list[str]) -> None:
-        error = self._servicio.fijar_seguro(tipos)
-        if error is not None:
-            self._bitacora.append(Mensaje("sistema", error))
+        self._servicio.fijar_fichas(tipos)

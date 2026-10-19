@@ -1,4 +1,4 @@
-"""Las salidas de una sala (§2.1): máximo N/S/E/O. Evita dict como tabla de búsqueda."""
+"""Las salidas de una sala (2.1): máximo N/S/E/O. Evita dict como tabla de búsqueda."""
 
 from __future__ import annotations
 from dataclasses import dataclass, field      #  CAMBIA: se agrega "field"

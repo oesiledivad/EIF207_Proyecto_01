@@ -15,12 +15,12 @@ import arcade
 from . import fuente_pixel as fp
 from .medidas import ALTO, ANCHO, calcular_escala, tamano_ventana_inicial  # noqa: F401
 
-FONDO = (18, 17, 22)
-TEXTO = (226, 214, 180)
-TEXTO_SUAVE = (150, 140, 120)
-ORO = (214, 170, 82)
-ROJO = (196, 52, 46)
-VERDE = (100, 210, 120)
+FONDO = [18, 17, 22]
+TEXTO = [226, 214, 180]
+TEXTO_SUAVE = [150, 140, 120]
+ORO = [214, 170, 82]
+ROJO = [196, 52, 46]
+VERDE = [100, 210, 120]
 
 _FUENTES = Path(__file__).resolve().parents[1] / "recursos" / "fuente"
 _FAMILIA = "Cripta Pixel"
@@ -112,11 +112,11 @@ class Lienzo:
         self.rect(x, y + grosor, grosor, alto - 2 * grosor, color)
         self.rect(x + ancho - grosor, y + grosor, grosor, alto - 2 * grosor, color)
 
-    def panel(self, x, y, ancho, alto, resaltado=False, fondo=(24, 23, 28)) -> None:
+    def panel(self, x, y, ancho, alto, resaltado=False, fondo=[24, 23, 28]) -> None:
         """Caja con doble borde como en el diseño de referencia."""
-        self.rect(x, y, ancho, alto, (8, 8, 10))
-        self.rect(x + 1, y + 1, ancho - 2, alto - 2, ORO if resaltado else (62, 58, 52))
-        self.rect(x + 2, y + 2, ancho - 4, alto - 4, (12, 12, 15))
+        self.rect(x, y, ancho, alto, [8, 8, 10])
+        self.rect(x + 1, y + 1, ancho - 2, alto - 2, ORO if resaltado else [62, 58, 52])
+        self.rect(x + 2, y + 2, ancho - 4, alto - 4, [12, 12, 15])
         self.rect(x + 3, y + 3, ancho - 6, alto - 6, fondo)
 
     def imagen(self, textura, x, y, ancho=None, alto=None) -> None:
@@ -150,7 +150,7 @@ class Lienzo:
         elif ancla == "derecha":
             x -= ancho
         if sombra:
-            self._etiqueta(texto, x + tam, y - tam, tam, (10, 9, 12), negrita)
+            self._etiqueta(texto, x + tam, y - tam, tam, [10, 9, 12], negrita)
         self._etiqueta(texto, x, y, tam, color, negrita)
         return ancho
 
@@ -170,8 +170,8 @@ class Lienzo:
                                     ["font_name", familia], ["color", color]]:
                 actual = getattr(etiqueta, atributo)
                 if atributo == "color":
-                    actual = tuple(actual)[:len(color)]
-                    valor = tuple(valor)
+                    actual = list(actual)[:len(color)]
+                    valor = list(valor)
                 if actual != valor:
                     setattr(etiqueta, atributo, valor)
         except (AttributeError, TypeError):
@@ -199,7 +199,7 @@ class Lienzo:
         """Botón con borde doble, icono opcional y resaltado al pasar el cursor."""
         encima = self.bajo_raton(x, y, ancho, alto)
         self.panel(x, y, ancho, alto, resaltado=encima or activo,
-                   fondo=(44, 38, 30) if (encima or activo) else (28, 27, 32))
+                   fondo=[44, 38, 30] if (encima or activo) else [28, 27, 32])
         margen = 0
         if icono is not None:
             lado = min(alto - 10, icono.height * 2)
@@ -229,8 +229,8 @@ class Lienzo:
         ancho = fp.ancho_texto(self.ayuda) + 10
         x = min(ANCHO - ancho - 2, max(2, self.raton[0] + 10))
         y = min(ALTO - 18, max(2, self.raton[1] + 12))
-        self.rect(x, y, ancho, 15, (8, 8, 10))
-        self.rect(x + 1, y + 1, ancho - 2, 13, (36, 33, 30))
+        self.rect(x, y, ancho, 15, [8, 8, 10])
+        self.rect(x + 1, y + 1, ancho - 2, 13, [36, 33, 30])
         self.texto(self.ayuda, x + 5, y + 4, 1, TEXTO)
 
     def bandas(self, ventana) -> None:
@@ -238,8 +238,8 @@ class Lienzo:
         ancho_lienzo = ANCHO * self.escala
         alto_lienzo = ALTO * self.escala
         if self.ox > 0:
-            arcade.draw_lbwh_rectangle_filled(0, 0, self.ox, ventana.height, (0, 0, 0))
-            arcade.draw_lbwh_rectangle_filled(self.ox + ancho_lienzo, 0, ventana.width, ventana.height, (0, 0, 0))
+            arcade.draw_lbwh_rectangle_filled(0, 0, self.ox, ventana.height, [0, 0, 0])
+            arcade.draw_lbwh_rectangle_filled(self.ox + ancho_lienzo, 0, ventana.width, ventana.height, [0, 0, 0])
         if self.oy > 0:
-            arcade.draw_lbwh_rectangle_filled(0, 0, ventana.width, self.oy, (0, 0, 0))
-            arcade.draw_lbwh_rectangle_filled(0, self.oy + alto_lienzo, ventana.width, ventana.height, (0, 0, 0))
+            arcade.draw_lbwh_rectangle_filled(0, 0, ventana.width, self.oy, [0, 0, 0])
+            arcade.draw_lbwh_rectangle_filled(0, self.oy + alto_lienzo, ventana.width, ventana.height, [0, 0, 0])

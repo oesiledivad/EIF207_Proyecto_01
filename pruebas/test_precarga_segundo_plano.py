@@ -1,4 +1,4 @@
-"""Precarga en segundo plano (§4.2): no congela la ventana y da el mismo resultado."""
+"""Precarga en segundo plano (4.2): no congela la ventana y da el mismo resultado."""
 import random
 import sys
 import time
@@ -10,12 +10,12 @@ from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
 from cripta.controlador.Aplicacion import Aplicacion
 from pruebas.test_replay import firma
 
-DATOS = Path(__file__).resolve().parents[1] / "datos_prueba"
+DATOS = Path(__file__).resolve().parents[1] / "datos_offline"
 CRIPTA = "cripta-stormlight"
 
 
 class FuenteLenta(AdaptadorOffline):
-    """Simula la latencia del servicio (~400 ms en el enunciado; aquí más corta)."""
+    """Simula la latencia del servicio (~400 ms en el enunciado aquí más corta)."""
 
     def __init__(self, espera=0.0):
         super().__init__(DATOS)

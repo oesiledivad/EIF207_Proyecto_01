@@ -7,7 +7,7 @@ class SalaJuego:
 
     Todas las salas del esqueleto se crean al iniciar la partida (vacías).
     Su contenido (enemigos dormidos, objetos, trampas) se incorpora después,
-    cuando llega por lotes desde la red (§4.2). `contenido_cargado` indica si
+    cuando llega por lotes desde la red (4.2). `contenido_cargado` indica si
     eso ya pasó.
     """
 

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 
 class PresupuestoAgotado(RuntimeError):
-    """Se lanzó una solicitud HTTP cuando ya no quedaba presupuesto (§5.1)."""
+    """Se lanzó una solicitud HTTP cuando ya no quedaba presupuesto (5.1)."""
 
 
 class CryptDataSource(ABC):

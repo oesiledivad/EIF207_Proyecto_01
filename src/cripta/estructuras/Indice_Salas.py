@@ -1,8 +1,8 @@
-"""Índice de salas ya ensambladas, por id (§4.2).
+"""Índice de salas ya ensambladas, por id (4.2).
 
 Direccionamiento directo con list: los ids de sala son enteros pequeños
 y secuenciales por cripta, así que list[id] es O(1) real sin necesidad
-de tabla hash. §7 permite list como almacenamiento contiguo de bajo nivel.
+de tabla hash. 7 permite list como almacenamiento contiguo de bajo nivel.
 """
 
 from __future__ import annotations

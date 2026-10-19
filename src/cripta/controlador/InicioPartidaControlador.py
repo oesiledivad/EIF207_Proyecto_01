@@ -15,6 +15,14 @@ class InicioPartidaControlador:
     def __init__(self, aplicacion) -> None:
         self._app = aplicacion
 
+    def preparar_seleccion(self):
+        """Cierra la sesión y renueva su presupuesto antes de consultar otras criptas."""
+        app = self._app
+        app.terminar()
+        app._cripta_service.reiniciar_partida()
+        app._jugador = None
+        app._simulacion = None
+
     def iniciar(
         self,
         nombre_jugador: str,
@@ -56,7 +64,7 @@ class InicioPartidaControlador:
         app._guardado.actual = None
         app._bitacora.append(Mensaje("sistema", f"Partida iniciada en {cripta_id}."))
         app._bitacora.append(Mensaje("sistema", f"Semilla: {semilla_efectiva}."))
-        # §4.4: validar lo persistido ANTES de cargar esqueleto, contenido o fichas.
+        # 4.4: validar lo persistido ANTES de cargar esqueleto, contenido o fichas.
         app._bitacora.append(Mensaje("sistema", app._cripta_service.preparar_persistencia(detalles)))
 
         app._jugador, app._simulacion = app._partida.preparar_actores(detalles, semilla_efectiva)
@@ -65,7 +73,7 @@ class InicioPartidaControlador:
             esqueleto = app._cripta_service.cargar_esqueleto_salas(cripta_id, detalles.sala_salida)
             app._gestor.estado.salas_conocidas = esqueleto
             app._crear_salas_desde_esqueleto(esqueleto)
-            # §2.4: el contenido de la sala inicial debe estar antes de la primera acción.
+            # 2.4: el contenido de la sala inicial debe estar antes de la primera acción.
             # Se pide en el mismo lote que las salas más cercanas (hasta 10).
             app._cargar_lote(detalles.sala_inicial)
         except (PresupuestoAgotado, RuntimeError, ValueError) as e:
@@ -77,9 +85,16 @@ class InicioPartidaControlador:
             app._gestor.estado.activa = False
             return ResultadoInicio(ok=False, motivo="No se pudo cargar la cripta: el contenido de la "
                                                     "sala inicial no está disponible.")
-        sala_inicial.ultimo_tiempo_visita = 0             # §2.9
-        app._combate.activar_sala(sala_inicial, app._simulacion)  # §2.4: enemigos de la sala inicial en t=0
-        app._avisar(app._cripta_service.fijar_contenido_visible(sala_inicial))  # §4.4
+        sala_inicial.ultimo_tiempo_visita = 0             # 2.9
+        try:
+            tipos = app._cripta_service.tipos_visibles(sala_inicial)
+            tipos.extend(e.tipo for e in sala_inicial.enemigos if e.vida > 0)
+            app._cripta_service.validar_capacidad(tipos)
+            app._combate.activar_sala(sala_inicial, app._simulacion)
+            app._cripta_service.fijar_fichas(app._cripta_service.tipos_visibles(sala_inicial))
+        except (RuntimeError, OSError, ValueError) as error:
+            app._gestor.estado.activa = False
+            return ResultadoInicio(ok=False, motivo=f"No se pudo preparar la sala inicial: {error}")
         app._gestor.refrescar_sala_actual()
         app._sincronizar_estado()
 

@@ -9,7 +9,7 @@ from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
 from cripta.controlador.Aplicacion import Aplicacion
 
-DATOS = Path(__file__).resolve().parents[1] / "datos_prueba"
+DATOS = Path(__file__).resolve().parents[1] / "datos_offline"
 CRIPTA = "cripta-stormlight"
 
 
@@ -90,6 +90,50 @@ class PruebasOfflineDesdeCache(unittest.TestCase):
         ids = [c["id"] for c in fuente.crypta_list()["criptas"]]
         self.assertEqual(ids[0], CRIPTA)
         self.assertEqual(len(ids), len(set(ids)))
+
+    def test_catalogo_no_completa_fichas_con_otra_version(self):
+        almacen = AlmacenDisco(self.cache)
+        almacen.validar_catalogo("otra-version")
+        fuente = AdaptadorOffline(DATOS, almacen=almacen)
+        with self.assertRaisesRegex(RuntimeError, "otra versión"):
+            fuente.catalog(["itm_daga_oxidada"])
+        almacen.validar_catalogo(AdaptadorOffline(DATOS).get_catalog_version()["version"])
+        self.assertEqual(fuente.catalog(["itm_daga_oxidada"])["entidades"][0]["id"],
+                         "itm_daga_oxidada")
+
+    def test_cripta_local_usa_su_catalogo_aunque_exista_cache_online(self):
+        almacen = AlmacenDisco(self.cache)
+        almacen.validar_catalogo("catalogo-online")
+        paquete = AdaptadorOffline(DATOS)
+        detalles = paquete.crypta_details("cripta-01")
+        almacen.guardar_detalles("cripta-01", detalles)
+        ficha = paquete.catalog(["itm_daga_oxidada"])["entidades"][0]
+        ficha["nombre"] = "Daga del catálogo online"
+        almacen.guardar_ficha(ficha)
+        fuente = AdaptadorOffline(DATOS, almacen=almacen)
+
+        with tempfile.TemporaryDirectory() as registros:
+            app = Aplicacion(fuente, carpeta_logs=registros)
+            resultado = app.iniciar_partida("Radiante", "42", CRIPTA)
+            self.assertTrue(resultado.ok, resultado.motivo)
+            self.assertEqual(app.solicitudes_usadas(), 0)
+            self.assertEqual(fuente.get_catalog_version(), paquete.get_catalog_version())
+            # Cambiar de selección restaura el catálogo de la cripta descargada.
+            fuente.crypta_details("cripta-01")
+            self.assertEqual(fuente.get_catalog_version(), {"version": "catalogo-online"})
+            self.assertEqual(fuente.catalog([ficha["id"]])["entidades"], [ficha])
+            with self.assertRaisesRegex(RuntimeError, "otra versión"):
+                fuente.catalog(["sl_lanza_puentes"])
+            fuente.crypta_details(CRIPTA)
+            self.assertEqual(fuente.get_catalog_version(), paquete.get_catalog_version())
+
+    def test_ficha_en_cache_compatible_no_necesita_paquete(self):
+        almacen = AlmacenDisco(self.cache)
+        almacen.validar_catalogo("version-descargada")
+        ficha = AdaptadorOffline(DATOS).catalog(["itm_daga_oxidada"])["entidades"][0]
+        almacen.guardar_ficha(ficha)
+        fuente = AdaptadorOffline(self.vacio, almacen=almacen)
+        self.assertEqual(fuente.catalog([ficha["id"]])["entidades"], [ficha])
 
 
 if __name__ == "__main__":
