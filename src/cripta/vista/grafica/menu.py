@@ -59,6 +59,7 @@ class MenuPrincipal(arcade.View):
             self.error = "No hay criptas disponibles."
             return
         self.seleccion = max(0, min(len(self.criptas) - 1, indice))
+        self.detalles = None  # Un fallo no debe mostrar ni iniciar con los detalles anteriores.
 
         def terminado(detalles):
             """Aplica los detalles consultados desde el hilo gráfico."""

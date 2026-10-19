@@ -17,6 +17,35 @@ class PruebasFin(unittest.TestCase):
         self.assertIsNone(fuente.solicitudes_restantes())
         self.assertEqual([fuente.timeout, fuente.max_reintentos_429], [3, 1])
 
+    def test_volver_a_seleccion_renueva_presupuesto_antes_de_consultar(self):
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
+        from cripta.adaptadores.Network_Adapter import NetworkAdapter
+        from cripta.controlador.Aplicacion import Aplicacion
+
+        fuente = NetworkAdapter()
+        cliente = fuente.client_id
+        fuente.fijar_presupuesto(9)
+        fuente._requests_made = 9
+        app = Aplicacion(fuente)
+        app._jugador = object()
+        app._simulacion = object()
+        app.estado_partida().activa = True
+        app.preparar_seleccion()
+        self.assertFalse(app.estado_partida().activa)
+        self.assertIsNone(app._jugador)
+        self.assertIsNone(app._simulacion)
+        self.assertEqual(fuente.requests_made, 0)
+        self.assertIsNone(fuente.solicitudes_restantes())
+        self.assertEqual(fuente.client_id, cliente)
+
+        datos = AdaptadorOffline('datos_prueba').crypta_details('cripta-02')
+        respuesta = SimpleNamespace(status_code=200, json=lambda: datos)
+        with patch('requests.get', return_value=respuesta):
+            self.assertEqual(app.previsualizar_cripta('cripta-02').id, 'cripta-02')
+        self.assertEqual(fuente.requests_made, 1)
+
     def test_otra_partida_no_reutiliza_fichas_de_version_anterior(self):
         from pruebas.test_replay import FuenteReplay
         from cripta.controlador.Aplicacion import Aplicacion

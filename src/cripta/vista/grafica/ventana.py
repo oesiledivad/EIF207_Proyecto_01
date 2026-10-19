@@ -124,7 +124,7 @@ class VentanaCripta(arcade.Window):
         from .menu import MenuPrincipal
         p = self.controlador.estado_partida()
         try:
-            self.controlador.terminar()
+            self.controlador.preparar_seleccion()
             menu = MenuPrincipal(self, p.cripta_id, p.nombre_jugador)
             self.cargar("Buscando criptas", menu.cargar, lambda _: self.show_view(menu))
         except (OSError, RuntimeError, ValueError) as error:
@@ -150,7 +150,7 @@ class VentanaCripta(arcade.Window):
             terminado: Función que recibe el resultado en el hilo gráfico.
         """
         from .carga import PantallaCarga
-        self.show_view(PantallaCarga(self, titulo, operacion, terminado))
+        self.show_view(PantallaCarga(self, titulo, operacion, terminado, self.current_view))
 
     def indicador_red(self):
         """Devuelve el modo y las solicitudes usadas frente al presupuesto."""

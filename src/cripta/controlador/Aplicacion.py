@@ -275,3 +275,7 @@ class Aplicacion:
     def terminar(self) -> None:
         self._cripta_service.esperar_precarga()   # sus solicitudes entran en el resumen
         self._partida.terminar(self.resumen_red())
+
+    def preparar_seleccion(self):
+        """Prepara una nueva sesión antes de mostrar la selección de criptas."""
+        self._inicio.preparar_seleccion()

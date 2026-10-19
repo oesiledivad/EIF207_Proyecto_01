@@ -52,6 +52,71 @@ def avanzar_carga(vista):
 
 class PruebasGrafica(unittest.TestCase):
     @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_error_de_red_permite_volver_reintentar_y_salir(self):
+        _ejecutar(self, COMUN + r'''
+from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
+from cripta.adaptadores.Crypt_Data_Source import PresupuestoAgotado
+from cripta.controlador.Aplicacion import Aplicacion
+from cripta.vista.grafica.menu import MenuPrincipal
+
+def finalizar_error(vista):
+    carga = vista.current_view
+    carga.on_draw()
+    carga.on_update(0.1)
+    try:
+        carga.futuro.result(timeout=5)
+    except RuntimeError:
+        pass
+    carga.on_update(0.1)
+    carga.on_draw()
+    assert carga.error
+    zonas_dentro(vista)
+    return carga
+
+app = Aplicacion(AdaptadorOffline('datos_prueba'))
+vista = VentanaCripta(app, visible=False, tamano=[640, 360])
+try:
+    menu = MenuPrincipal(vista, 'cripta-01')
+    menu.cargar()
+    vista.show_view(menu)
+    with patch.object(app, 'previsualizar_cripta', side_effect=RuntimeError('Sin conexión')):
+        menu.elegir(1)
+        carga = finalizar_error(vista)
+        assert [z.accion for z in vista.lienzo.zonas] == ['reintentar', 'volver', 'salir']
+        clic(vista, next(z for z in vista.lienzo.zonas if z.accion == 'reintentar'), carga)
+        otra = finalizar_error(vista)
+        assert otra is not carga and otra.retorno is menu
+        otra.on_key_press(arcade.key.ESCAPE, 0)
+        assert vista.current_view is menu and menu.detalles is None
+        menu.comenzar()
+        assert vista.current_view is menu and not app.estado_partida().activa
+    # Conexión recuperada: la selección vuelve a cargar sin reiniciar el programa.
+    menu.elegir(1)
+    avanzar_carga(vista)
+    assert vista.current_view is menu and menu.detalles.id == menu.criptas[1].id
+    with patch.object(app, 'previsualizar_cripta', side_effect=PresupuestoAgotado('9/9')):
+        menu.elegir(0)
+        carga = finalizar_error(vista)
+        assert [z.accion for z in vista.lienzo.zonas] == ['volver', 'salir']
+        carga.on_key_press(arcade.key.ENTER, 0)
+        assert vista.current_view is carga  # Reintentar no renueva un presupuesto agotado.
+        clic(vista, next(z for z in vista.lienzo.zonas if z.accion == 'volver'), carga)
+        assert vista.current_view is menu
+    # Si falla el arranque y no existe una vista anterior, siempre se puede salir.
+    vista.hide_view()
+    def fallar():
+        raise RuntimeError('Sin conexión')
+    vista.cargar('Conectando', fallar, lambda _: None)
+    carga = finalizar_error(vista)
+    assert [z.accion for z in vista.lienzo.zonas] == ['reintentar', 'salir']
+    with patch.object(vista, 'on_close') as cerrar:
+        clic(vista, next(z for z in vista.lienzo.zonas if z.accion == 'salir'), carga)
+        cerrar.assert_called_once()
+finally:
+    vista.close()
+''')
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
     def test_continuar_y_confirmar_reemplazo(self):
         """Continuar carga el guardado; cancelar conserva la partida en curso."""
         _ejecutar(self, COMUN + r'''
@@ -246,7 +311,7 @@ with tempfile.TemporaryDirectory() as carpeta:
         carga.on_update(0.1)
         assert carga.error == 'Sin conexión'
         carga.on_draw()
-        assert [z.accion for z in vista.lienzo.zonas] == ['reintentar']
+        assert [z.accion for z in vista.lienzo.zonas] == ['reintentar', 'volver', 'salir']
         vista.cargar('Buscando criptas', menu.cargar, lambda _: vista.show_view(menu))
         assert not menu.criptas
         avanzar_carga(vista)

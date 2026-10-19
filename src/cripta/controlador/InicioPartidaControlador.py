@@ -15,6 +15,14 @@ class InicioPartidaControlador:
     def __init__(self, aplicacion) -> None:
         self._app = aplicacion
 
+    def preparar_seleccion(self):
+        """Cierra la sesión y renueva su presupuesto antes de consultar otras criptas."""
+        app = self._app
+        app.terminar()
+        app._cripta_service.reiniciar_partida()
+        app._jugador = None
+        app._simulacion = None
+
     def iniciar(
         self,
         nombre_jugador: str,
