@@ -1049,4 +1049,132 @@ Prompt enviado:
 
 Uso de la respuesta: Confirmar que los hallazgos F1 a F10 seguían iguales antes de aplicar las correcciones.
 
+### Entrada #51
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Aplicar las correcciones del análisis en el plan y las tareas.
+
+Prompt enviado:
+
+```text
+Sí, aplica las ediciones, con estas precisiones. F1: agrega una medición y una prueba con una cripta sintética generada por semilla, de al menos 10 veces el tamaño del esqueleto más grande de datos_offline, que verifique el límite de 200 ms sin red; M3 sigue midiendo la cripta real cuando haya llaves. F2: agrega el campo opcional estadisticas (salas encoladas, salidas examinadas, llaves obtenidas) en el DTO, en data-model.md y en T025 a T027. F3: agrega a T085 los FR que valida el quickstart. F4: ya está resuelto, la spec se confirmó en su propio commit. F5: el registro de prompts se hace fuera de tasks.md, en cada commit; no agregues tarea. F6: agrega la prueba de que --bench no importa arcade. F7: ya fijé en la spec que los ids de llave se comparan como cadenas en orden lexicográfico; refléjalo en data-model.md. F8: agrega a T020 la nota de que el servicio publica como sala la sala donde inicia el enemigo (contrato del §4.2). F9: agrega test_cola_lista.py al árbol de pruebas del plan. F10: NetworkAdapter no tiene sesión inyectable y usa requests.get directamente; T064 DEBE usar unittest.mock.patch sobre requests.get en vez de modificar el adaptador. Al final confirma que ninguna tarea queda sin FR. No toques spec.md.
+```
+
+Uso de la respuesta: Corregir los hallazgos F1 a F3
+
+
+### Entrada #52
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Planificar la implementación de la niebla de guerra e «ir a» con /speckit-plan.
+
+Prompt enviado:
+
+```text
+/speckit-plan Planifica la spec specs/002-niebla-ir-a (usa SPECIFY_FEATURE_DIRECTORY=specs/002-niebla-ir-a al correr setup-plan.sh). Redacta en español, sin guiones largos, usando DEBE / NO DEBE. Para el contexto técnico lee solo estos archivos de src/cripta: controlador/ExploracionControlador.py, controlador/Aplicacion.py, controlador/CicloAccionesControlador.py, controlador/PartidaControlador.py, estructuras/Historial_Retroceso.py, estructuras/Salidas.py, estructuras/Indice_Salas.py, estructuras/Agenda_Eventos.py, modelo/Sala.py, modelo/Puertas.py, modelo/Efectos.py, modelo/Jugador.py, dto/FactoryDto_Partida.py, dto/Partida_dto.py, replay/reproductor.py y bench.py; de vista/grafica/escena.py lee solo el método minimapa. Puedes consultar specs/001-resolubilidad/plan.md para reutilizar decisiones ya tomadas (cola propia, línea base de pruebas).
+
+Hechos del proyecto que el plan DEBE respetar:
+- Python 3.13, uv, Arcade y unittest en pruebas/. MVC: el conocimiento del jugador vive en el modelo.
+- Constitución: prohibidos dict y set como índice, heapq, bisect, collections, networkx, sorted() y list.sort(); se usan list como almacenamiento y los ordenamientos propios.
+- Los ids de sala son enteros pequeños y secuenciales (IndiceSalas usa direccionamiento directo con list). Cada sala tiene como máximo 4 salidas (N, S, E, O).
+- En los datos cada puerta cerrada se declara solo en la salida de un lado y la salida inversa está abierta: cada salida es dirigida y tiene su propio estado. Por eso, estando en una sala, el jugador observa sus salidas y también las salidas de otras salas que entran a ella.
+- El costo de cada salida viene del campo costo del esqueleto (100 si no se declara). Esta capacidad lee el costo para las rutas; el tiempo de moverse según el costo lo implementa la spec 003.
+- Todo cambio del conocimiento DEBE registrarse en el historial de retroceso como cambio invertible, para que lo revierta el pergamino y lo reconstruya la línea de tiempo (spec 004). El formato binario del guardado es de la spec 004: esta capacidad solo expone el conocimiento de forma serializable.
+- La regla de regresión es la misma de la spec 001: la selección del README y la suite completa sin fallas nuevas respecto de una línea base.
+
+Diseño propuesto para evaluar en research.md, con alternativas y complejidad:
+- Estado de sala en una lista indexada por id (desconocida, avistada, explorada). Memoria de puertas en una lista plana indexada por sala por 4 más la dirección, con tres valores: sin observar, abierta y cerrada. Una lista de salidas entrantes por sala, construida una vez desde el esqueleto. Consultas en O(1); explorar cuesta lo revelado.
+- Cambios del conocimiento registrados en el historial existente como cambios invertibles; si el historial no permite asignar una posición de una lista, agregar ese tipo de cambio.
+- «ir a»: Dijkstra inverso desde el destino sobre el subgrafo conocido (salas exploradas y salidas recordadas abiertas), con un montículo mínimo propio, para obtener la distancia de cada sala al destino; el paso elige la vecina con costo de la salida más distancia mínimos y desempata por menor id. Se recalcula antes de cada paso. Comparar con Dijkstra desde el origen y con reutilizar distancias entre pasos.
+- El montículo mínimo DEBE ser genérico y reutilizable, porque la búsqueda del cazador (spec 003) también lo necesita. Justifica en research.md si «ir a» comparte implementación de búsqueda con el cazador o conviene separarla (§5.3).
+- Cada paso del viaje DEBE pasar por el mismo flujo de acción del jugador que un movimiento normal, para que consuma tiempo, ejecute eventos, se registre como movimiento individual en partida.log y sea reversible. La orden ir a se escribe en el registro como una línea de comentario que el reproductor ignora.
+- La vista muestra en el minimapa solo salas exploradas y avistadas, con el costo y el estado recordado de cada salida, y muestra en la bitácora el motivo de detención del viaje.
+- --bench DEBE medir las consultas al mapa conocido con mapas de tamaños crecientes y el cálculo de un paso de ir a con el mapa conocido completo, deterministas por semilla.
+
+Entregables: plan.md (con módulos afectados, constitution check, decisiones o puntos a confirmar y mediciones previstas), research.md (decisión, razón y alternativas), data-model.md, contracts/ (comando ir a y motivos de detención, formato del comentario en partida.log, y la interfaz serializable del conocimiento para la spec 004) y quickstart.md. No escribas código de implementación.
+```
+
+Uso de la respuesta: Generar plan.md (12 decisiones y 12 puntos a confirmar), research.md (D1 a D15), data-model.md, contracts/ y quickstart.md de la niebla e «ir a».
+
+### Entrada #53
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Registrar en el plan de la niebla las decisiones sobre los puntos C1 a C12.
+
+Prompt enviado:
+
+```text
+Actualiza specs/002-niebla-ir-a/plan.md y research.md con estas decisiones sobre los puntos a confirmar, sin cambiar nada más, y convierte esa sección en decisiones tomadas. C1: un costo declarado menor que 1 se trata como 100 y se avisa en la bitácora; no hay tope de pasos, porque durante un viaje ninguna puerta se puede abrir (ni el jugador ni los enemigos abren puertas en un viaje), así que la memoria cambia un número finito de veces y entre cambios cada paso acerca al destino: documenta ese argumento de terminación. C2: se agregan los motivos movimiento_rechazado y partida_terminada; no se agrega cancelado; la spec ya los incluye en FR-031a. C3: prioridad partida_terminada, daño, enemigos, llegada, como dice FR-031a. C4: el daño mínimo es 1 según la Parte I (§2.6), así que basta comparar la vida antes y después del paso. C5: enemigos vivos en el instante de la entrada. C6: vecina es el destino de una salida de la sala. C7: se acepta; actualizar_vecindad NO DEBE copiar el contenido de ninguna vecina y es_salida_final solo se muestra si la vecina está explorada; las pruebas de la Parte I que lo asuman se ajustan en tareas. C8: GestorPartida._aplicar_reversion revierte lista_agregada con una búsqueda lineal; el conocimiento NO DEBE usar lista_agregada sino un cambio nuevo lista_asignada (lista, posición, valor anterior) que se revierte en O(1); lista_agregada no se modifica. C9: la spec 001 se implementa antes que esta. C10 y C12: se aceptan las propuestas. C11: se propone compartir el montículo y Rutas.py con el cazador; la spec 003 lo confirma. Redacta en español, sin guiones largos.
+```
+
+Uso de la respuesta: Convertir los puntos C1 a C12 del plan en decisiones tomadas y documentar el argumento de terminación del viaje.
+
+### Entrada #54
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Generar las tareas de la niebla e «ir a» con /speckit-tasks.
+
+Prompt enviado:
+
+```text
+/speckit-tasks Genera las tareas de specs/002-niebla-ir-a (usa SPECIFY_FEATURE_DIRECTORY=specs/002-niebla-ir-a). Redacta en español, sin guiones largos. Cada tarea DEBE ser pequeña, verificable y citar al menos un FR; las tareas de soporte citan los FR que protegen. La primera tarea de implementación agrega el cambio lista_asignada al historial (decisión C8). Incluye una prueba unittest en pruebas/ por cada escenario de aceptación, incluidos los 6 del Apéndice B, citando su FR en el docstring. Usa la línea base de pruebas registrada por la spec 001 (no crees otra) e incluye al final una tarea de regresión contra ella. Incluye las tareas de --bench (K1 a K9) y la de la sección de docs/decisiones.md de este problema.
+```
+
+Uso de la respuesta: Generar tasks.md con 104 tareas (T001 a T104) que citan sus FR.
+
+### Entrada #55
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Revisar la consistencia entre spec, plan y tareas de la niebla con /speckit-analyze.
+
+Prompt enviado:
+
+```text
+/speckit-analyze Redacta en español. Revisa en especial: dependencias prohibidas por la constitución, que cada FR tenga al menos una tarea, que cada escenario del Apéndice B tenga su prueba, que ninguna tarea quede sin FR y que todo cambio del conocimiento pase por el historial como cambio invertible.
+```
+
+Uso de la respuesta: Obtener el informe con 10 hallazgos (0 críticos, 1 alto), sin dependencias prohibidas y con 42 de 43 FR cubiertos.
+
+### Entrada #56
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Aplicar las correcciones del análisis en el plan y las tareas de la niebla.
+
+Prompt enviado:
+
+```text
+Sí, aplica estas ediciones en plan.md, quickstart.md, contracts/ y tasks.md de specs/002-niebla-ir-a, sin tocar spec.md. C2: en T045 agrega la detección de llegada al destino y la detención con motivo llegada; US4 agrega los demás motivos. C1: cita FR-013 en T022 y en T102, y que T102 revise que la vista e ir a no lean el esqueleto completo. I1: plan y quickstart DEBEN apuntar a specs/001-resolubilidad/linea_base.txt. I2: el plan y el contrato citan FR-031a para C2 y C3. I3: agrega al plan los archivos de prueba que crean las tareas. U1: el viaje fija la bandera en su propio estado antes de llamar a mover y _accion_jugador la consulta. U2: agrega una prueba sin ventana que confirme que el motivo de detención llega a la bitácora. P1: aplica tu recomendación. D1: la spec 001 se implementa antes en la misma rama; T087 usa su --semilla y su criterio de cripta de referencia, sin implementar una versión mínima. A1: usa el umbral 1,5 de K1 en K2. Deja escrito en T019 y T074 que iniciar y restaurar escriben sin historial a propósito. Al final confirma que ninguna tarea queda sin FR.
+```
+
+Uso de la respuesta: Corregir los hallazgos C1, C2, I1 a I3, U1, U2, P1, D1 y A1 en el plan y las tareas de la niebla.
 ---
