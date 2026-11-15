@@ -135,7 +135,7 @@ Quien evalúa el proyecto quiere evidencia medida de que la verificación escala
 - Una llave sin ubicación publicada por el servicio: se informa como dato faltante y no se asume su sala.
 - Trampas o cierres automáticos: no cambian el veredicto, porque la puerta puede reabrirse con la misma llave.
 - Empates en el orden de llaves, en el punto de inicio de un ciclo o en el orden entre ciclos: se resuelven con una regla explícita y estable (menor id).
-- Varios ciclos en la misma cripta: el reporte los incluye todos, sin omitir ninguno.
+- Varios ciclos encontrados por la exploración: el reporte los incluye todos, sin omitir ninguno.
 
 ## Requirements *(mandatory)*
 
@@ -152,7 +152,7 @@ Quien evalúa el proyecto quiere evidencia medida de que la verificación escala
 - **FR-009**: Si la cripta no es resoluble, el resultado DEBE incluir un reporte con las llaves que no pueden obtenerse.
 - **FR-010**: El reporte DEBE incluir las puertas de la frontera bloqueada (puertas cerradas adyacentes a la región alcanzable) con la llave que requiere cada una.
 - **FR-011**: El reporte DEBE indicar, para cada llave de la frontera bloqueada, su sala y, si aplica, el id del enemigo que la suelta. Si la llave tiene varias ubicaciones, el reporte DEBE listarlas todas.
-- **FR-012**: Si una llave está detrás de puertas que solo ella abre, directamente o mediante una cadena de llaves, el reporte DEBE indicar cada ciclo concreto. Si existen varios ciclos distintos, el reporte DEBE incluirlos todos y NO DEBE omitir ninguno.
+- **FR-012**: Si una llave está detrás de puertas que solo ella abre, directamente o mediante una cadena de llaves, el reporte DEBE indicar el ciclo concreto. Un ciclo es una cadena de llaves encontrada por la misma exploración en la que cada llave está detrás de una puerta que requiere la siguiente y la última está detrás de una puerta que requiere la primera. Si la exploración encuentra varios ciclos distintos, el reporte DEBE incluirlos todos y NO DEBE omitir ninguno; no se exige enumerar todas las combinaciones posibles de rutas alternativas.
 - **FR-013**: Los ciclos reportados DEBEN ser deterministas: la misma cripta DEBE producir siempre los mismos ciclos, cada uno con el mismo punto de partida (su llave de menor id) y el mismo sentido, y la lista de ciclos DEBE ordenarse por el id de ese punto de partida.
 - **FR-014**: Al iniciar una partida, la interfaz DEBE mostrar el resultado de la verificación.
 - **FR-015**: Si la cripta no es resoluble y el programa no se ejecutó con --forzar, la partida NO DEBE iniciar y DEBE mostrarse el reporte.
@@ -203,3 +203,5 @@ Quien evalúa el proyecto quiere evidencia medida de que la verificación escala
 - La verificación solo consulta información; el estado del juego no cambia.
 - Dependencia: el servicio web publica el esqueleto y la ubicación de llaves de cada cripta, con su versión.
 - Fuera de alcance: simulación de combate, tiempo, trampas, movimiento de enemigos y la ruta concreta del jugador.
+- La verificación se ejecuta al iniciar una partida nueva y con --verificar; no se ejecuta al continuar una partida guardada ni en --replay, porque esas partidas ya iniciaron.
+- Los ids de llave se comparan como cadenas, carácter por carácter (orden lexicográfico; por ejemplo, itm_llave_10 va antes que itm_llave_2); los ids de sala se comparan como enteros.
