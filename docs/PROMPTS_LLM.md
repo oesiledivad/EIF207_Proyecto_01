@@ -926,6 +926,127 @@ Prompt enviado:
 
 Uso de la respuesta: Agregar la aclaración a la spec y ajustar FR-010.
 
+### Entrada #45
 
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Planificar la implementación de la resolubilidad con /speckit-plan.
+
+Prompt enviado:
+
+```text
+/speckit-plan Planifica la spec specs/001-resolubilidad (usa SPECIFY_FEATURE_DIRECTORY=specs/001-resolubilidad al correr setup-plan.sh). Redacta en español, sin guiones largos, usando DEBE / NO DEBE. Para el contexto técnico lee solo estos archivos de src/cripta: bootstrap.py, adaptadores/Crypt_Data_Source.py, adaptadores/Network_Adapter.py, adaptadores/AdaptadorOffline.py, adaptadores/Almacen_Disco.py, adaptadores/Guardar_Llamadas_API.py, servicio/CriptaService.py, dto/FactoryDto_Partida.py, dto/Partida_dto.py, controlador/InicioPartidaControlador.py, estructuras/Indice_Salas.py, estructuras/Ordenamientos.py y bench.py. No leas la carpeta vista/ salvo para ubicar dónde se muestra el inicio de la partida.
+
+Hechos del proyecto que el plan DEBE respetar:
+- Python 3.13, uv, Arcade y unittest en pruebas/. MVC: el algoritmo vive en el modelo y no conoce HTTP ni archivos.
+- Constitución: prohibidos dict y set como índice, heapq, bisect, collections, networkx, sorted() y list.sort(); se usan list como almacenamiento y los ordenamientos propios de estructuras/Ordenamientos.py.
+- Los ids de sala son enteros pequeños y secuenciales: IndiceSalas ya usa direccionamiento directo con list.
+- En los datos del servicio cada puerta cerrada se declara solo en la salida de un lado (por ejemplo, en cripta-01 la salida E de la sala 2 hacia la 5 requiere itm_llave_bronce y la salida O de la 5 hacia la 2 está abierta). La verificación DEBE tratar cada salida como dirigida, con la llave que declara su lado.
+- La ubicación de llaves llega de GET /criptas/<id>/llaves con la forma {"llaves": [{"id": "itm_llave_bronce", "sala": 4}, {"id": "itm_llave_negra", "sala": 12, "enemigo": "e-1203"}]}; cuenta en presupuesto_solicitudes y se persiste con la versión de la cripta, igual que el esqueleto. El paquete datos_offline actual no trae llaves: en ese caso el resultado es "no verificable".
+- Todas las clases que implementan CryptDataSource DEBEN implementar la nueva consulta.
+
+Diseño propuesto para evaluar en research.md, con alternativas y complejidad:
+- Exploración en anchura desde sala_inicial con una cola propia (list más índice de cabeza, sin deque). Cada salida cerrada cuya llave aún no se tiene se agrega a una lista de espera de esa llave; al obtener la llave se liberan sus salidas en espera. Cada sala y cada salida se procesan una sola vez: costo O(S + E + K).
+- Las llaves se identifican por un índice entero obtenido de un índice de ids de llave construido una vez (comparar: arreglo ordenado con el ordenamiento propio más búsqueda binaria propia, frente a una tabla hash propia con función de hash determinista). Los datos por llave (obtenida, lista de espera, ubicaciones) viven en listas indexadas por ese índice.
+- El orden de llaves es el orden en que cada llave se vuelve obtenible, con orden determinista de salas, salidas y llaves.
+- Reporte de no resoluble y ciclos: DEBE salir de la misma exploración (por ejemplo, continuándola más allá de la frontera bloqueada y registrando, para cada sala alcanzada así, qué llave la liberó), sin repetir exploraciones por llave, y reportar cada ciclo empezando por su llave de menor id. Justifica en research.md que el método no reporta ciclos falsos cuando una llave tiene caminos alternativos.
+- Alternativa descartada que --bench DEBE medir: repetir la exploración completa cada vez que se obtiene una llave, O(K · (S + E)), con criptas sintéticas de llaves encadenadas deterministas por semilla.
+
+Entregables: plan.md (con módulos afectados, constitution check y mediciones previstas), research.md (decisión, razón y alternativas), data-model.md, contracts/ (salida y códigos de --verificar, y la nueva consulta del adaptador) y quickstart.md. No escribas código de implementación.
+```
+
+Uso de la respuesta: Generar plan.md, research.md (decisiones D1 a D8), data-model.md, contracts/ y quickstart.md de la resolubilidad.
+
+### Entrada #46
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Registrar en el plan las decisiones tomadas sobre los puntos abiertos.
+
+Prompt enviado:
+
+```text
+Actualiza specs/001-resolubilidad/plan.md y research.md con estas decisiones, sin cambiar nada más: (1) se aceptan los ciclos del grafo de testigos; FR-012 de la spec ahora define ciclo como una cadena encontrada por la exploración en la que cada llave está detrás de una puerta que requiere la siguiente: alinea D6 con esa definición; (2) se acepta O(S + E + K) más el factor log K del índice de llaves; (3) --replay y continuar una partida guardada no verifican, como dice ahora la sección de supuestos de la spec; (4) la consulta de llaves suma al presupuesto y, si no alcanza, el resultado es "no verificada"; (5) en pruebas/ hay fuentes de datos falsas que no heredan de CryptDataSource, en test_partida.py, test_inventario.py, test_combate_efectos.py y test_guardados.py: DEBEN recibir la consulta de llaves devolviendo "sin datos", y las 46 pruebas de la Parte I DEBEN seguir pasando. Convierte la sección de puntos a confirmar en decisiones tomadas. Redacta en español, sin guiones largos.
+```
+
+Uso de la respuesta: Convertir los puntos a confirmar del plan en decisiones tomadas y alinear D3, D6, D7 y D8 de research.md.
+
+### Entrada #47
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Corregir la regla de regresión de pruebas en el plan.
+
+Prompt enviado:
+
+> En specs/001-resolubilidad/plan.md y research.md reemplaza la regla "las 46 pruebas de la Parte I DEBEN seguir pasando" por: "la selección de pruebas del README DEBE seguir pasando y la suite completa de pruebas/ NO DEBE tener fallas nuevas respecto de una línea base registrada antes de implementar". No cambies nada más.
+
+Uso de la respuesta: Reemplazar la regla de regresión por una línea base registrada antes de implementar.
+
+### Entrada #48
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Generar las tareas de la resolubilidad con /speckit-tasks.
+
+Prompt enviado:
+
+```text
+/speckit-tasks Genera las tareas de specs/001-resolubilidad (usa SPECIFY_FEATURE_DIRECTORY=specs/001-resolubilidad). Redacta en español, sin guiones largos. Cada tarea DEBE ser pequeña, verificable y citar al menos un FR; las tareas de soporte citan los FR que protegen. Incluye una prueba unittest en pruebas/ por cada escenario de aceptación, incluidos los 4 del Apéndice B, citando su FR en el docstring de la prueba. Incluye al inicio una tarea para registrar la línea base de la suite de pruebas existente y al final una tarea de regresión contra esa línea base. Incluye las tareas de --bench (M1 a M6) y la de la sección de DECISIONES.md de este problema.
+```
+
+Uso de la respuesta: Generar tasks.md con 86 tareas (T001 a T086) que citan sus FR.
+
+### Entrada #49
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Revisar la consistencia entre spec, plan y tareas con /speckit-analyze.
+
+Prompt enviado:
+
+```text
+/speckit-analyze Redacta en español. Revisa en especial: dependencias prohibidas por la constitución, que cada FR tenga al menos una tarea, que cada escenario del Apéndice B tenga su prueba y que FR-012 sea consistente con D6 de research.md.
+```
+
+Uso de la respuesta: Obtener el informe de análisis con 10 hallazgos (F1 a F10), sin dependencias prohibidas y con cobertura de 30 de 30 FR.
+
+### Entrada #50
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Repetir el análisis de consistencia (segunda ejecución, sin cambios en los archivos).
+
+Prompt enviado:
+
+```text
+/speckit-analyze Redacta en español. Revisa en especial: dependencias prohibidas por la constitución, que cada FR tenga al menos una tarea, que cada escenario del Apéndice B tenga su prueba y que FR-012 sea consistente con D6 de research.md.
+```
+
+Uso de la respuesta: Confirmar que los hallazgos F1 a F10 seguían iguales antes de aplicar las correcciones.
 
 ---
