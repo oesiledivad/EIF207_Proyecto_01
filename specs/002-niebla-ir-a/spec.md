@@ -175,6 +175,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 - Una puerta cambia dos veces mientras el jugador permanece en la sala: el mapa conserva el último estado.
 - Salida sin costo declarado: vale 100 para el cálculo de la ruta.
 - Conocimiento en el instante 0: solo la sala inicial explorada y sus destinos avistados.
+- Una salida con costo declarado menor que 1: se trata como costo 100 y se avisa en la bitácora.
 
 ## Requirements *(mandatory)*
 
@@ -220,6 +221,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 - **FR-029**: El viaje DEBE detenerse cuando el jugador reciba cualquier daño: ataque, trampa o veneno.
 - **FR-030**: El viaje DEBE detenerse cuando deje de existir una ruta conocida, sin consumir tiempo adicional.
 - **FR-031**: La interfaz DEBE mostrar el motivo de la detención del viaje.
+- **FR-031a**: El viaje DEBE detenerse también si un paso es rechazado (por ejemplo, porque falta contenido y no queda presupuesto) o si la partida termina durante el viaje, y la interfaz DEBE mostrar ese motivo. Si coinciden varios motivos en un mismo paso, se muestra uno según esta prioridad: partida terminada, daño, enemigos, llegada.
 - **FR-032**: ir a NO DEBE abrir puertas, aunque el jugador tenga la llave.
 - **FR-033**: En el registro de la partida, cada paso de un viaje DEBE quedar como un movimiento individual y la orden ir a DEBE quedar como un comentario que la reproducción ignora.
 - **FR-034**: El pergamino de retroceso DEBE revertir únicamente el último paso de un viaje, y el viaje NO DEBE continuar.
