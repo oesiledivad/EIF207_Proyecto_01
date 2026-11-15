@@ -15,10 +15,15 @@ from cripta.estructuras.Catalogo_Lista import Catalogo_Lista
 from cripta.servicio.CatalogoService import CatalogoService
 from cripta.servicio.PrecargaService import PrecargaService
 from cripta.dto.FactoryDto_Partida import (
-    parsear_detalles, parsear_sala, parsear_contenido,
+    parsear_detalles, parsear_sala, parsear_contenido, parsear_llaves,
 )
+from cripta.dto.Verificacion_dto import UbicacionLlave
 
 MAX_POR_LOTE = 10  # 3.4: contenido y catálogo aceptan hasta 10 por solicitud
+
+
+class UbicacionLlavesNoDisponible(Exception):
+    """No se pudo obtener una ubicación de llaves válida; no se emite veredicto."""
 
 
 class _FuenteSincronizada:
@@ -132,6 +137,50 @@ class CriptaService:
         self._catalogo_en_disco = True
         return (f"Caché en disco: cripta {'vigente' if cripta_vigente else 'nueva/actualizada'}, "
                 f"catálogo {'vigente' if cat_vigente else 'nuevo/actualizado'}.")
+
+    def validar_cripta_en_disco(self, detalles: DetallesCripta) -> bool:
+        """Valida la caché de la cripta por versión, sin consultar el catálogo.
+
+        A diferencia de `preparar_persistencia`, no hace la solicitud de versión
+        del catálogo. Sin almacén no hay disco y devuelve False.
+
+        Returns:
+            True si lo guardado era de la misma versión; False si es nuevo o no hay disco.
+        """
+        self._cripta_en_disco = False
+        if self._almacen is None:
+            return False
+        vigente = self._almacen.validar_cripta(detalles.id, detalles.version)
+        self._cripta_en_disco = True
+        return vigente
+
+    def obtener_ubicaciones_llaves(self, cripta_id: str) -> list[UbicacionLlave]:
+        """Devuelve las ubicaciones de llaves, del disco si hay, si no de la fuente.
+
+        Guarda en disco solo tras una respuesta válida. Una respuesta malformada
+        es "no disponible", no "sin llaves"; una lista vacía y válida sí es
+        un dato legítimo.
+
+        Raises:
+            UbicacionLlavesNoDisponible: ante cualquier falla de obtención.
+        """
+        try:
+            if self._cripta_en_disco:
+                guardadas = self._almacen.leer_llaves(cripta_id)
+                if guardadas is not None:
+                    try:
+                        return parsear_llaves(guardadas)
+                    except ValueError:
+                        pass   # archivo inválido: se vuelve a pedir a la fuente
+            respuesta = self._data_source.key_locations(cripta_id)
+            ubicaciones = parsear_llaves(respuesta)
+            if self._cripta_en_disco:
+                self._almacen.guardar_llaves(cripta_id, respuesta)
+            return ubicaciones
+        except (PresupuestoAgotado, RuntimeError, OSError, ValueError, NotImplementedError) as e:
+            # FileNotFoundError es un OSError.
+            raise UbicacionLlavesNoDisponible(
+                f"No se pudo obtener la ubicación de las llaves: {e}") from e
 
     @property
     def lecturas_disco(self) -> int:

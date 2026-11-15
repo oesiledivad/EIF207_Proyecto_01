@@ -4,6 +4,7 @@ from cripta.dto.Partida_dto import (
     DetallesCripta, SalaModelo, SalidaVecina, EnemigoPartida,
     ObjetoSuelo, TrampaPartida, ContenidoSala,
 )
+from cripta.dto.Verificacion_dto import UbicacionLlave
 from cripta.estructuras.Catalogo_Lista import Catalogo_Lista
 
 
@@ -118,3 +119,36 @@ def parsear_contenido(entrada: dict, catalogo: Catalogo_Lista) -> ContenidoSala:
             efecto=getattr(ficha, "efecto", "daño"),
         ))
     return ContenidoSala(enemigos=enemigos, objetos=objetos, trampas=trampas)
+
+
+def parsear_llaves(respuesta) -> list[UbicacionLlave]:
+    """Convierte la respuesta de `/criptas/{id}/llaves` en ubicaciones de llave.
+
+    Se descartan las entradas sin `id`. Una lista `llaves` vacía y válida es un
+    dato legítimo (cripta sin llaves). El orden de la lista se conserva tal cual;
+    el modelo no depende de él.
+
+    Raises:
+        ValueError: si falta `llaves`, la estructura general es inválida o una
+            entrada con `id` no trae una `sala` entera.
+    """
+    if not isinstance(respuesta, dict) or not isinstance(respuesta.get("llaves"), list):
+        raise ValueError("Respuesta de llaves inválida: falta la lista 'llaves'.")
+    ubicaciones: list[UbicacionLlave] = []
+    for entrada in respuesta["llaves"]:
+        if not isinstance(entrada, dict):
+            raise ValueError("Respuesta de llaves inválida: entrada que no es objeto.")
+        id_llave = entrada.get("id")
+        if id_llave is None or str(id_llave) == "":
+            continue
+        try:
+            sala = int(entrada.get("sala"))
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Respuesta de llaves inválida: sala no entera en '{id_llave}'.") from e
+        enemigo = entrada.get("enemigo")
+        ubicaciones.append(UbicacionLlave(
+            llave=str(id_llave),
+            sala=sala,
+            enemigo=None if enemigo is None else str(enemigo),
+        ))
+    return ubicaciones
