@@ -281,7 +281,8 @@ class CriptaService:
                 jugador_vida_max=30, jugador_ataque=6, jugador_defensa=2, jugador_velocidad=100
             )
 
-    def cargar_esqueleto_salas(self, cripta_id: str, sala_salida_id: int) -> list[SalaModelo]:
+    def cargar_esqueleto_salas(self, cripta_id: str, sala_salida_id: int,
+                               avisos: list | None = None) -> list[SalaModelo]:
         salas_conocidas: list[SalaModelo] = []
         pagina = 1
         while True:
@@ -296,7 +297,7 @@ class CriptaService:
 
             salas_brutas = resp.get("salas", [])
             for item_sala in salas_brutas:
-                nueva_sala = parsear_sala(item_sala, sala_salida_id)
+                nueva_sala = parsear_sala(item_sala, sala_salida_id, avisos)
                 if not any(s.id == nueva_sala.id for s in salas_conocidas):
                     salas_conocidas.append(nueva_sala)
 

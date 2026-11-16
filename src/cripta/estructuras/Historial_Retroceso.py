@@ -86,6 +86,16 @@ class Historial_Retroceso:
         self.registrar_si_abierto("lista_agregada", [lista, objeto])
         lista.append(objeto)
 
+    def asignar(self, lista: list, posicion: int, valor) -> None:
+        """Asigna `lista[posicion]` y registra el valor anterior (O(1)).
+
+        Si el valor no cambia no registra nada.
+        """
+        anterior = lista[posicion]
+        if anterior != valor:
+            self.registrar_si_abierto("lista_asignada", [lista, posicion, anterior])
+            lista[posicion] = valor
+
     def quitar(self, lista: list, objeto) -> None:
         posicion = lista.index(objeto)
         self.registrar_si_abierto("lista_quitada", [lista, posicion, objeto])

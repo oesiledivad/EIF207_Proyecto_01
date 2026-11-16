@@ -41,8 +41,12 @@ def parsear_detalles(detalles: dict, cripta_id: str) -> DetallesCripta:
     )
 
 
-def parsear_sala(item_sala: dict, sala_salida_id: int) -> SalaModelo:
-    """Convierte una sala del esqueleto y sus puertas."""
+def parsear_sala(item_sala: dict, sala_salida_id: int, avisos: list | None = None) -> SalaModelo:
+    """Convierte una sala del esqueleto y sus puertas.
+
+    El costo de una salida ausente o menor que 1 se normaliza a 100; en el segundo
+    caso se anexa un aviso a `avisos` (si se recibió) para la bitácora de arranque.
+    """
     s_id = int(item_sala.get("id", 0))
     s_nombre = str(item_sala.get("nombre", ""))
     s_desc = str(item_sala.get("descripcion", ""))
@@ -57,6 +61,16 @@ def parsear_sala(item_sala: dict, sala_salida_id: int) -> SalaModelo:
             llave = info_salida.get("llave")
             llave_str = str(llave) if llave is not None else ""
             cierre = info_salida.get("cierre_automatico")
+            costo = info_salida.get("costo")
+            if costo is None:
+                costo = 100
+            else:
+                costo = int(costo)
+                if costo < 1:
+                    if avisos is not None:
+                        avisos.append(f"Sala {s_id}: la salida {direccion} declara costo {costo} "
+                                      f"(menor que 1); se usa 100.")
+                    costo = 100
 
             lista_salidas.append(
                 SalidaVecina(
@@ -70,6 +84,7 @@ def parsear_sala(item_sala: dict, sala_salida_id: int) -> SalaModelo:
                     tiene_enemigos=False,
                     tiene_objetos=False,
                     cierre_automatico=int(cierre) if cierre is not None else None,
+                    costo=costo,
                 )
             )
 

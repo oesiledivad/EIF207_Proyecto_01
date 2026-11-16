@@ -18,6 +18,7 @@ from cripta.controlador.InventarioControlador import InventarioControlador
 from cripta.controlador.CombateControlador import CombateControlador
 from cripta.controlador.EfectosControlador import EfectosControlador
 
+from cripta.dto.Conocimiento_dto import MapaConocido
 from cripta.dto.Partida_dto import (
     CriptaResumen,
     DetallesCripta,
@@ -99,6 +100,10 @@ class Aplicacion:
     @_salas.setter
     def _salas(self, valor: IndiceSalas) -> None:
         self._exploracion.salas = valor
+
+    def mapa_conocido(self) -> MapaConocido:
+        """Mapa que conoce el jugador; no consume tiempo ni escribe en partida.log (FR-018)."""
+        return self._exploracion.mapa_conocido()
 
     def _crear_salas_desde_esqueleto(self, esqueleto: list[SalaModelo]) -> None:
         self._exploracion.ensamblar_salas(esqueleto)

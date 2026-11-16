@@ -14,17 +14,20 @@ como contexto porque el jugador y la simulación se recrean en cada partida.
 
 Complejidad:
     mover / abrir: O(1) sobre la sala actual (máx. 4 salidas) más el costo del ciclo
-    actualizar_vecindad: O(k * e), k = salidas (máx. 4), e = enemigos de la vecina
+    actualizar_vecindad: O(k), k = salidas (máx. 4)
+    mapa_conocido: O(S) sobre los ids, sin ordenar
 """
 
 from __future__ import annotations
 
+from cripta.dto.Conocimiento_dto import MapaConocido, SalaConocida, SalidaConocida
 from cripta.dto.Partida_dto import ContenidoSala, SalaModelo
 from cripta.dto.ResultadoAccion import ResultadoAccion
 from cripta.estructuras.Bitacora import Mensaje
 from cripta.estructuras.Indice_Salas import IndiceSalas
-from cripta.estructuras.Salidas import Salidas
+from cripta.estructuras.Salidas import Salidas, indice_direccion
 from cripta.modelo.Combate import esta_vivo
+from cripta.modelo.Conocimiento import ABIERTA, AVISTADA, CERRADA, EXPLORADA, ConocimientoJugador
 from cripta.modelo.Puertas import abrir_salida, buscar_llave
 from cripta.modelo.Sala import SalaJuego
 from cripta.modelo.enemigos.Rastreador import DURACION_RASTRO
@@ -35,6 +38,11 @@ class ExploracionControlador:
         self._app = app
         self.salas: IndiceSalas = IndiceSalas()
         self.max_id_sala = 0
+        # Salidas que llegan a cada sala, por id. Se deriva del esqueleto: NO es estado del juego.
+        self.entrantes: list[list] = []
+        # Lo que el jugador sabe (FR-001). El esqueleto completo de `salas` solo sirve de
+        # infraestructura de precarga de contenido (FR-013): la vista y el mapa no lo leen.
+        self.conocimiento = ConocimientoJugador()
 
     # Accesos cortos al contexto (se leen siempre de la aplicación: cambian por partida)
 
@@ -72,16 +80,62 @@ class ExploracionControlador:
         """
         self.salas = IndiceSalas()
         self.max_id_sala = 0
+        self.conocimiento = ConocimientoJugador()
+        for sala_modelo in esqueleto:
+            if sala_modelo.id > self.max_id_sala:
+                self.max_id_sala = sala_modelo.id
+        self.entrantes = [[] for _ in range(self.max_id_sala + 1)]
         for sala_modelo in esqueleto:
             salidas = Salidas()
             for v in sala_modelo.salidas:
-                salidas.agregar(v.direccion, v.sala_id, v.cerrada, v.llave or None, v.cierre_automatico)
+                salidas.agregar(v.direccion, v.sala_id, v.cerrada, v.llave or None,
+                                v.cierre_automatico, v.costo)
+            for salida in salidas:
+                salida.clave = sala_modelo.id * 4 + indice_direccion(salida.direccion)
+                if 0 <= salida.sala_destino <= self.max_id_sala:
+                    self.entrantes[salida.sala_destino].append(salida)
             self.salas.insertar(sala_modelo.id, SalaJuego(
                 id=sala_modelo.id, nombre=sala_modelo.nombre, salidas=salidas,
                 enemigos=[], objetos=[], trampas=[],
             ))
-            if sala_modelo.id > self.max_id_sala:
-                self.max_id_sala = sala_modelo.id
+
+    def iniciar_conocimiento(self, sala_inicial: int) -> None:
+        """Crea el conocimiento del instante 0 una vez ensambladas las salas (FR-001)."""
+        self.conocimiento.iniciar(self.salas, self.entrantes, sala_inicial)
+
+    def mapa_conocido(self) -> MapaConocido:
+        """Arma el mapa solo con lo que el jugador conoce (FR-018).
+
+        Recorre los ids en orden ascendente sin ordenar; no incluye salas
+        desconocidas y de las avistadas solo expone el id (FR-004). No consume
+        tiempo ni lee contenido.
+        """
+        mapa = MapaConocido()
+        c = self.conocimiento
+        if not c.inicializado:
+            return mapa
+        for id_ in range(len(c.estado_sala)):
+            estado = c.estado_sala[id_]
+            if estado == AVISTADA:
+                mapa.avistadas.append(id_)
+            elif estado == EXPLORADA:
+                sala = self.salas.obtener(id_)
+                if sala is None:
+                    continue
+                conocida = SalaConocida(id=id_, nombre=sala.nombre)
+                for direccion in ["N", "S", "E", "O"]:
+                    salida = sala.salidas.obtener(direccion)
+                    if salida is None or not 0 <= salida.sala_destino < len(c.estado_sala):
+                        continue
+                    memoria = c.memoria_puerta(salida.clave)
+                    conocida.salidas.append(SalidaConocida(
+                        direccion=direccion, destino=salida.sala_destino, costo=salida.costo,
+                        puerta="abierta" if memoria == ABIERTA else "cerrada" if memoria == CERRADA
+                        else "sin_observar",
+                        destino_estado="explorada" if c.estado_sala[salida.sala_destino] == EXPLORADA
+                        else "avistada"))
+                mapa.exploradas.append(conocida)
+        return mapa
 
     def cargar_lote(self, origen_id: int) -> None:
         """Lote de hasta 10 salas alrededor de `origen_id` (la precarga vive en CriptaService)."""
@@ -136,16 +190,20 @@ class ExploracionControlador:
                 v.transitable = not salida.cerrada
                 v.llave = salida.llave or ""
                 v.cierre_automatico = salida.cierre_automatico
-            vecina = self.salas.obtener(v.sala_id)
-            if vecina is None:
-                continue
-            hay_enemigos = False
-            for e in vecina.enemigos:
-                if esta_vivo(e):
-                    hay_enemigos = True
-                    break
-            v.tiene_enemigos = hay_enemigos
-            v.tiene_objetos = len(vecina.objetos) > 0
+            # FR-011, FR-014 (C7): nada del contenido de las vecinas; lo conocido sale del conocimiento.
+            if salida is not None:
+                v.costo = salida.costo
+            c = self._app._exploracion.conocimiento
+            if c.inicializado:
+                if salida is not None:
+                    memoria = c.memoria_puerta(salida.clave)
+                    v.puerta_recordada = ("abierta" if memoria == ABIERTA else "cerrada"
+                                          if memoria == CERRADA else "sin_observar")
+                explorada = c.estado(v.sala_id) == EXPLORADA
+                v.estado_vecina = "explorada" if explorada else "avistada"
+                v.es_salida_final = v.es_salida_final and explorada
+                if not explorada:
+                    v.nombre = f"Sala {v.sala_id}"   # de una avistada solo se conoce el id (FR-004)
 
     #  Movimiento (2.3)
 
@@ -208,7 +266,9 @@ class ExploracionControlador:
         tiempo_actual = self._simulacion.reloj.tiempo_actual
 
         self._servicio.liberar_contenido_visible(sala_origen)   # deja de ser la sala actual
+        antorcha = self._jugador.antorcha_encendida   # tal como estaba antes de entrar
         self._simulacion.agenda.cambiar(self._jugador, "sala", destino_id)
+        self.conocimiento.entrar(destino_id, antorcha, self._gestor.historial, tiempo_actual)
         self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # 2.9
         app._combate.activar_sala(sala_destino, self._simulacion)   # 2.4
         self._servicio.fijar_fichas(self._servicio.tipos_visibles(sala_destino))

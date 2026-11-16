@@ -23,6 +23,9 @@ class SalidaVecina:
     tiene_enemigos: bool
     tiene_objetos: bool
     cierre_automatico: int | None = None
+    costo: int = 100                          # FR-023
+    puerta_recordada: str = "sin_observar"    # abierta, cerrada o sin_observar (FR-005)
+    estado_vecina: str = "avistada"           # explorada o avistada (FR-002)
 
 @dataclass
 class EnemigoPartida:

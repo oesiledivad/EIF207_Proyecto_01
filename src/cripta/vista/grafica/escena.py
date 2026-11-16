@@ -506,11 +506,15 @@ class Escena:
             color = ROJO if vecina.cerrada else ORO if vecina.es_salida_final else [150, 140, 120]
             x, y = [celda_x + dx, celda_y + dy]
             encima = l.bajo_raton(x, y, 20, 18)
-            l.rect(x, y, 20, 18, [40, 36, 32] if not encima else [70, 60, 44])
+            explorada = vecina.estado_vecina == "explorada"
+            relleno = [40, 36, 32] if explorada else [22, 20, 20]   # avistada: solo se sabe que existe
+            l.rect(x, y, 20, 18, relleno if not encima else [70, 60, 44])
             l.marco(x, y, 20, 18, color)
-            l.texto(str(vecina.sala_id), x + 10, y + 6, 1, color, ancla="centro")
+            l.texto(str(vecina.sala_id), x + 10, y + 6, 1, color if explorada else TEXTO_SUAVE, ancla="centro")
             l.zona(x, y, 20, 18, "mover_mapa", vecina.direccion,
-                   f"{vecina.direccion}: sala {vecina.sala_id}" + (" (cerrada)" if vecina.cerrada else ""))
+                   f"{vecina.direccion}: sala {vecina.sala_id} ({vecina.estado_vecina}) · costo {vecina.costo}"
+                   f" · puerta {vecina.puerta_recordada.replace('_', ' ')}"
+                   + (" (cerrada)" if vecina.cerrada else ""))
 
     def mensaje_estado(self, vista):
         """Último aviso de la vista (acción rechazada, instrucciones) sobre el muro inferior."""

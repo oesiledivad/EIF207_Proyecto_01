@@ -211,7 +211,7 @@ class VentanaCripta(arcade.Window):
             criterios = ["real", "peso", "valor", "nombre"]
             self.criterio = criterios[(criterios.index(self.criterio) + 1) % 4]
             return
-        if accion in ["ayuda", "terminar", "informacion", "menu", "cheats"]:
+        if accion in ["ayuda", "terminar", "informacion", "menu", "cheats", "mapa"]:
             self.abrir_panel(accion)
             return
         if accion == "seleccionar_item":
@@ -357,6 +357,17 @@ class VentanaCripta(arcade.Window):
                               f"{'equipado' if item.equipado else 'sin equipar'}")
             self.show_view(Panel(self, f"SALA {p.sala_actual_id}", texto="\n".join(lineas)))
             return
+        if accion == "mapa":
+            mapa = self.controlador.mapa_conocido()
+            lineas = []
+            for conocida in mapa.exploradas:
+                lineas.append(f"Sala {conocida.id}: {conocida.nombre}")
+                lineas += [f"   {s.direccion} -> sala {s.destino} ({s.destino_estado}) · costo {s.costo}"
+                           f" · puerta {s.puerta.replace('_', ' ')}" for s in conocida.salidas]
+            if mapa.avistadas:
+                lineas.append("Avistadas: " + ", ".join(str(i) for i in mapa.avistadas))
+            self.show_view(Panel(self, "MAPA CONOCIDO", texto=chr(10).join(lineas) or "Nada conocido todavía."))
+            return
         if accion == "ayuda":
             texto = ("Clic en una puerta: abrir o moverse · Flechas: moverse\n"
                      "Clic en un enemigo: seleccionar · Doble clic o A: atacar\n"
@@ -365,7 +376,7 @@ class VentanaCripta(arcade.Window):
                      "Tab: siguiente objeto · U: usar · E: equipar · S/D: soltar\n"
                      "Alt+P/V/N/R: ordenar el inventario por peso/valor/nombre/real\n"
                      "Alt+D: alternar ascendente/descendente\n"
-                     "I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido · F3: música\n"
+                     "C: mapa conocido · I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido · F3: música\n"
                      "Minimapa: dorado = salida, rojo = cerrada.")
             self.show_view(Panel(self, "AYUDA", texto=texto))
             return
@@ -389,6 +400,7 @@ class VentanaCripta(arcade.Window):
             self.show_view(Panel(self, "MENÚ", [
                 ["Continuar", lambda: None],
                 ["Información de la sala (I)", lambda: self.abrir_panel("informacion")],
+                ["Mapa conocido (C)", lambda: self.abrir_panel("mapa")],
                 ["Guardar partida", self.guardar_partida],                 # <- NUEVA
                 ["Cargar partida guardada", self.elegir_guardado],
                 ["Cheats (sin puntajes, guardado ni replay)", lambda: self.abrir_panel("cheats")],
@@ -557,6 +569,8 @@ class VentanaCripta(arcade.Window):
             self.item = actual.instancia_id if actual else ""
         elif symbol == arcade.key.I:
             self.ejecutar("informacion")
+        elif symbol == arcade.key.C:
+            self.ejecutar("mapa")
         elif symbol == arcade.key.A:
             self.ejecutar("atacar")
         elif symbol == arcade.key.PERIOD:

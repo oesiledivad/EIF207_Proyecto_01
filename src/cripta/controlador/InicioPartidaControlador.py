@@ -78,7 +78,8 @@ class InicioPartidaControlador:
         app._jugador, app._simulacion = app._partida.preparar_actores(detalles, semilla_efectiva)
 
         try:
-            esqueleto = app._cripta_service.cargar_esqueleto_salas(cripta_id, detalles.sala_salida)
+            esqueleto = app._cripta_service.cargar_esqueleto_salas(
+                cripta_id, detalles.sala_salida, avisos_bitacora)
             app._gestor.estado.salas_conocidas = esqueleto
             app._crear_salas_desde_esqueleto(esqueleto)
             # 2.4: el contenido de la sala inicial debe estar antes de la primera acción.
@@ -111,6 +112,7 @@ class InicioPartidaControlador:
             return ResultadoInicio(ok=False, motivo="No se pudo cargar la cripta: el contenido de la "
                                                     "sala inicial no está disponible.")
         sala_inicial.ultimo_tiempo_visita = 0             # 2.9
+        app._exploracion.iniciar_conocimiento(detalles.sala_inicial)   # instante 0 (FR-001)
         try:
             tipos = app._cripta_service.tipos_visibles(sala_inicial)
             tipos.extend(e.tipo for e in sala_inicial.enemigos if e.vida > 0)
