@@ -122,6 +122,14 @@ class AlmacenDisco:
         sala_id = int(entrada.get("sala", 0))
         self._escribir_json(self._dir_cripta(cripta_id) / "contenido" / f"{sala_id}.json", entrada)
 
+    def leer_llaves(self, cripta_id: str) -> dict | None:
+        """Ubicaciones de llaves guardadas; ausente o dañado equivale a None."""
+        return self._leer_json(self._dir_cripta(cripta_id) / "llaves.json")
+
+    def guardar_llaves(self, cripta_id: str, datos: dict) -> None:
+        """Guarda la respuesta cruda de llaves dentro de la carpeta versionada de la cripta."""
+        self._escribir_json(self._dir_cripta(cripta_id) / "llaves.json", datos)
+
     #  Datos generales (los usa --offline para jugar lo ya descargado)
 
     def guardar_lista_criptas(self, datos: dict) -> None:

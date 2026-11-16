@@ -86,3 +86,6 @@ class NetworkAdapter(CryptDataSource):
 
     def get_catalog_version(self) -> dict:
         return self._request("/catalogo/version")
+
+    def key_locations(self, crypta_id: str) -> dict:
+        return self._request(f"/criptas/{crypta_id}/llaves")

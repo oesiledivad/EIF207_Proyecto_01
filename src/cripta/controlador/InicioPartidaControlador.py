@@ -1,6 +1,7 @@
 """Preparación de partidas y de su registro."""
 
 from cripta.adaptadores.Crypt_Data_Source import PresupuestoAgotado
+from cripta.controlador.VerificacionControlador import VerificacionControlador
 from cripta.dto.Partida_dto import ResultadoInicio
 from cripta.estructuras.Bitacora import Mensaje
 
@@ -29,8 +30,14 @@ class InicioPartidaControlador:
         semilla: str,
         cripta_id: str,
         registrar: bool = True,
+        forzar: bool = False,
+        verificar: bool = True,
     ) -> ResultadoInicio:
-        """Prepara una partida nueva; una carga solicita registrar=False para omitir replay."""
+        """Prepara una partida nueva; una carga solicita registrar=False para omitir replay.
+
+        Con `verificar` se comprueba la resolubilidad tras cargar el esqueleto: una cripta
+        no resoluble no inicia salvo con `forzar` (FR-015, FR-016).
+        """
         app = self._app
         try:
             nombre, semilla_efectiva = app._partida.validar_inicio(nombre_jugador, semilla, cripta_id)
@@ -60,17 +67,20 @@ class InicioPartidaControlador:
             "offline" if app._cripta_service.es_offline() else "red",
         )
 
+        app._viaje.descartar()   # FR-034a: iniciar o cargar una partida descarta el viaje activo
         app._bitacora.limpiar()
         app._guardado.actual = None
         app._bitacora.append(Mensaje("sistema", f"Partida iniciada en {cripta_id}."))
         app._bitacora.append(Mensaje("sistema", f"Semilla: {semilla_efectiva}."))
         # 4.4: validar lo persistido ANTES de cargar esqueleto, contenido o fichas.
         app._bitacora.append(Mensaje("sistema", app._cripta_service.preparar_persistencia(detalles)))
+        avisos_bitacora: list[str] = []
 
         app._jugador, app._simulacion = app._partida.preparar_actores(detalles, semilla_efectiva)
 
         try:
-            esqueleto = app._cripta_service.cargar_esqueleto_salas(cripta_id, detalles.sala_salida)
+            esqueleto = app._cripta_service.cargar_esqueleto_salas(
+                cripta_id, detalles.sala_salida, avisos_bitacora)
             app._gestor.estado.salas_conocidas = esqueleto
             app._crear_salas_desde_esqueleto(esqueleto)
             # 2.4: el contenido de la sala inicial debe estar antes de la primera acción.
@@ -80,12 +90,30 @@ class InicioPartidaControlador:
             app._gestor.estado.activa = False
             return ResultadoInicio(ok=False, motivo=f"No se pudo cargar la cripta: {e}")
 
+        verificacion = None
+        aviso = ""
+        if verificar:
+            verificador = VerificacionControlador(app._cripta_service)
+            verificacion = verificador.verificar_cripta(cripta_id)
+            texto = verificador.formatear(verificacion)
+            if verificacion.estado == "no_verificable":
+                aviso = "resolubilidad no verificada"
+                avisos_bitacora.append(f"{aviso}. {verificacion.motivo_no_verificable}")
+            else:
+                aviso = texto
+                if verificacion.estado == "no_resoluble":
+                    if not forzar:
+                        app._gestor.estado.activa = False
+                        return ResultadoInicio(ok=False, motivo=texto, verificacion=verificacion)
+                    avisos_bitacora.append(texto)
+
         sala_inicial = app._salas.obtener(detalles.sala_inicial)
         if sala_inicial is None or not sala_inicial.contenido_cargado:
             app._gestor.estado.activa = False
             return ResultadoInicio(ok=False, motivo="No se pudo cargar la cripta: el contenido de la "
                                                     "sala inicial no está disponible.")
         sala_inicial.ultimo_tiempo_visita = 0             # 2.9
+        app._exploracion.iniciar_conocimiento(detalles.sala_inicial)   # instante 0 (FR-001)
         try:
             tipos = app._cripta_service.tipos_visibles(sala_inicial)
             tipos.extend(e.tipo for e in sala_inicial.enemigos if e.vida > 0)
@@ -107,4 +135,7 @@ class InicioPartidaControlador:
             except OSError as error:
                 app._gestor.estado.activa = False
                 return ResultadoInicio(ok=False, motivo=f"No se pudo crear el registro: {error}")
-        return ResultadoInicio(ok=True, semilla_efectiva=semilla_efectiva)
+        for texto in avisos_bitacora:
+            app._bitacora.append(Mensaje("sistema", texto))
+        return ResultadoInicio(ok=True, semilla_efectiva=semilla_efectiva,
+                               verificacion=verificacion, aviso=aviso)

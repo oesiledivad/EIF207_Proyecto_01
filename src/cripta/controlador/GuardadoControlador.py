@@ -108,6 +108,9 @@ class GuardadoControlador:
         except (ValueError, KeyError, RuntimeError) as error:
             app._gestor.estado.activa = False
             return ResultadoAccion.fallo(f"El guardado no coincide con la cripta: {error}")
+        # FR-015: el formato binario aún no trae conocimiento (spec 004). Mientras tanto, el conocimiento
+        # queda como en el instante 0 pero desde la sala actual, con las puertas ya restauradas.
+        app._exploracion.iniciar_conocimiento(datos.sala_actual_id)
         self.actual = origen
         app._bitacora.append(Mensaje("sistema", f"Partida cargada de {origen}."))
         return ResultadoAccion.exito()

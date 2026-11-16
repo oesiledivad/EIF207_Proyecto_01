@@ -164,6 +164,15 @@ class PartidaControlador:
                 self._gestor.estado.activa = False
                 raise ErrorRegistro(f"No se pudo registrar la accion: {error}") from error
 
+    def registrar_comentario(self, texto):
+        """Escribe una línea de comentario en `partida.log`; sin registro no hace nada (FR-033)."""
+        if self._registro is not None:
+            try:
+                self._registro.comentar(texto)
+            except OSError as error:
+                self._gestor.estado.activa = False
+                raise ErrorRegistro(f"No se pudo registrar el comentario: {error}") from error
+
     def retroceder(self) -> ResultadoAccion:
         if not self._gestor.estado.activa:
             return ResultadoAccion.fallo("La partida no está activa.")

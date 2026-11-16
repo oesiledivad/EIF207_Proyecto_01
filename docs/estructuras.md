@@ -72,3 +72,85 @@ Código: [reproductor.py](../src/cripta/replay/reproductor.py).
 `cargar_sala` relee y recorre el índice en cada llamada: $O(s+b)$ para devolver $b$ bytes, sin leer los cuerpos de las otras salas. No es acceso $O(1)$.
 
 Código: [Cache_Fichas.py](../src/cripta/estructuras/Cache_Fichas.py), [Agenda_Eventos.py](../src/cripta/estructuras/Agenda_Eventos.py) y [Guardado_Binario.py](../src/cripta/estructuras/Guardado_Binario.py).
+
+## 7. Resolubilidad: cola con índice de cabeza e índice de llaves (§3.5, §5.4)
+
+Notación: $n$ elementos de la cola, $K$ llaves distintas, $m$ ids que se indexan (salidas cerradas y ubicaciones). Las razones de elegirlas y su comparación medida están en la [sección 12 de decisiones.md](decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
+
+### `ColaLista`: cola FIFO
+
+Una `list` y un índice de cabeza. Sacar avanza el índice y suelta la referencia sin desplazar la lista; no usa `list.pop(0)` ni `deque`.
+
+| Operación                           | Costo                   |
+|-------------------------------------|-------------------------|
+| `encolar`                           | $O(1)$ amortizado       |
+| `sacar`                             | $O(1)$                  |
+| `vacia`                             | $O(1)$                  |
+
+**Invariantes:** el orden de salida es el de entrada; sacar de una cola vacía lanza `IndexError`. La lista conserva las posiciones ya sacadas hasta que la cola se descarta, así que ocupa $O(n)$ de memoria por todas las inserciones y no se reutiliza entre rondas.
+
+### `IndiceLlaves`: arreglo ordenado con búsqueda binaria
+
+Guarda los ids de llave distintos, ordenados con `ordenar` del proyecto. El rango de una llave es su posición, de modo que «menor id» equivale a «menor rango». No usa `dict`, `set` ni `bisect`.
+
+| Operación                     | Costo                                              |
+|-------------------------------|----------------------------------------------------|
+| Construcción                  | $O(m\log m)$: ordenar y quitar repetidos           |
+| `rango` (id a posición)       | $O(\log K)$ por búsqueda binaria; $-1$ si no existe |
+| `cantidad`                    | $O(1)$                                             |
+| `ids` (copia en orden)        | $O(K)$                                             |
+
+**Invariantes:** ids distintos y en orden lexicográfico; el resultado no depende del orden de la entrada. Este índice es el factor $\log K$ de la verificación, que por lo demás cuesta $O(S+E+K)$. La medición M4 lo comparó con una tabla hash propia y conserva el arreglo.
+
+Código: [Cola_Lista.py](../src/cripta/estructuras/Cola_Lista.py) e [Indice_Llaves.py](../src/cripta/estructuras/Indice_Llaves.py).
+
+## 8. Niebla de guerra e ir a: montículo, conocimiento y rutas (§3.3, §3.4)
+
+Notación: $S$ salas, $E$ salidas, $V$ salas alcanzadas por una búsqueda, $c$ cambios, $e$ salidas que llegan a una sala. Las razones y las mediciones están en la [sección 13 de decisiones.md](decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
+
+### `MonticuloMinimo`: montículo binario con eliminación perezosa
+
+Tres listas paralelas (prioridad, desempate, elemento) y un tamaño vivo. Compara por `(prioridad, desempate)` con enteros; no usa `heapq` y no reemplaza al heap de la agenda.
+
+| Operación        | Costo                                              |
+|------------------|----------------------------------------------------|
+| `insertar`       | $O(\log n)$                                        |
+| `extraer_minimo` | $O(\log n)$                                        |
+| `esta_vacio`     | $O(1)$                                             |
+| `vaciar`         | $O(1)$, conserva la memoria reservada              |
+
+**Invariantes:** el padre nunca es mayor que sus hijos; el llamador reinserta con mejor prioridad y descarta las entradas obsoletas al extraer. Extraer de un montículo vacío es un error del llamador.
+
+### `ConocimientoJugador`: listas planas indexadas por entero
+
+`estado_sala[id]` (0 desconocida, 1 avistada, 2 explorada) y `puerta[clave]` (0 sin observar, 1 abierta, 2 cerrada, con `clave = origen * 4 + dirección`), más un `registro` cronológico de cambios `[tiempo, tipo, índice, valor]`. Todo cambio pasa por `historial.asignar` y se anexa al registro.
+
+| Operación                              | Costo                         |
+|----------------------------------------|-------------------------------|
+| `estado`, `memoria_puerta`, `salida_usable` | $O(1)$                   |
+| `explorar`                             | $O(4)$                        |
+| `entrar`                               | $O(4)$; $O(16)$ con antorcha  |
+| `observar`                             | $O(4 + e)$                    |
+| `iniciar`, `instantanea`, `restaurar`  | $O(S)$                        |
+| `reconstruir`, `reconstruir_hasta_tiempo` | $O(S + c)$                 |
+| `longitud_registro`                    | $O(1)$                        |
+
+**Invariantes:** cada valor es 0, 1 o 2 y cabe en un byte; la instantánea mide `5n + 2`; una sala explorada nunca baja de estado salvo por retroceso; `iniciar` y `restaurar` no tocan el historial a propósito.
+
+### `BuscadorRutas`: Dijkstra inverso con parada anticipada
+
+`distancia` y `marca` (listas de tamaño $S$), un contador de generación y un `MonticuloMinimo` reutilizado: `marca[v] == generacion` indica que `distancia[v]` es de la búsqueda actual, así no se reinicializan $S$ posiciones por paso. El predicado `usable` lo aporta el llamador.
+
+| Operación                    | Costo                                              |
+|------------------------------|----------------------------------------------------|
+| `distancias_hacia`           | $O((V + E)\log V)$; se detiene al fijar `parar_en` |
+| `elegir_paso`                | $O(4)$                                             |
+| `distancia_de`               | $O(1)$                                             |
+
+**Invariantes:** con costos mayores que 0 la parada no pierde empates; el desempate es menor id de la sala destino y luego N, S, E, O.
+
+### Tipo `lista_asignada` del historial
+
+`Historial_Retroceso.asignar(lista, posicion, valor)` registra `[lista, posicion, valor_anterior]` y asigna; si el valor no cambia no registra nada. Registrar e invertir cuestan $O(1)$ por cambio. `GestorPartida` lo invierte restaurando `lista[posicion]`; `lista_agregada` se invierte con `pop()` del final, $O(1)$.
+
+Código: [Monticulo_Minimo.py](../src/cripta/estructuras/Monticulo_Minimo.py), [Conocimiento.py](../src/cripta/modelo/Conocimiento.py), [Rutas.py](../src/cripta/modelo/Rutas.py), [Historial_Retroceso.py](../src/cripta/estructuras/Historial_Retroceso.py) y [GestorPartida.py](../src/cripta/controlador/GestorPartida.py).
