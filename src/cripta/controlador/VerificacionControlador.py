@@ -56,14 +56,19 @@ class VerificacionControlador:
         return verificar(detalles, salas, ubicaciones)
 
     def formatear(self, resultado: ResultadoVerificacion) -> str:
-        """Texto de la salida según contracts/verificar-cli.md (caso resoluble).
+        """Texto de la salida según contracts/verificar-cli.md.
 
-        La primera línea es siempre el veredicto. Los otros estados se
-        completan en la historia siguiente (reporte de bloqueo).
+        La primera línea es siempre el veredicto (o la falta de veredicto).
+        Las listas salen en el orden que ya trae el resultado: llaves por id,
+        puertas por (llave, inserción) y ciclos por su llave de menor id.
         """
-        if resultado.estado != "resoluble":
-            etiqueta = "NO RESOLUBLE" if resultado.estado == "no_resoluble" else "resolubilidad no verificada"
-            return f"Cripta {resultado.cripta_id}: {etiqueta}"
+        if resultado.estado == "no_verificable":
+            return (
+                f"Cripta {resultado.cripta_id}: resolubilidad no verificada\n"
+                f"Motivo: {resultado.motivo_no_verificable}"
+            )
+        if resultado.estado == "no_resoluble":
+            return self._formatear_bloqueo(resultado)
 
         lineas = [
             f"Cripta {resultado.cripta_id} (version {resultado.version}): RESOLUBLE",
@@ -76,3 +81,75 @@ class VerificacionControlador:
             lineas.append(linea)
         lineas.append(f"Solicitudes de red: {self._servicio.requests_made}/{self._presupuesto}")
         return "\n".join(lineas)
+
+    def _formatear_bloqueo(self, resultado: ResultadoVerificacion) -> str:
+        """Texto del caso no resoluble: motivo, llaves, puertas y ciclos."""
+        reporte = resultado.reporte
+        if reporte.motivo == "llave_salida_inobtenible":
+            motivo = "llave de salida no obtenible"
+        else:
+            motivo = "ninguna puerta con la llave de salida llega a la sala de salida"
+        lineas = [
+            f"Cripta {resultado.cripta_id} (version {resultado.version}): NO RESOLUBLE",
+            f"Motivo: {motivo}",
+            f"Llaves que no pueden obtenerse ({len(reporte.llaves_inobtenibles)}):",
+        ]
+        for llave in reporte.llaves_inobtenibles:
+            lineas.append(_linea_llave(llave))
+
+        lineas.append(f"Puertas bloqueadas en la frontera ({len(reporte.frontera)}):")
+        for puerta in reporte.frontera:
+            lineas.append(
+                f"  - sala {puerta.sala_origen} salida {puerta.direccion} "
+                f"hacia sala {puerta.sala_destino} exige {puerta.llave}")
+
+        lineas.append(f"Ciclos de dependencia ({len(reporte.ciclos)}):")
+        for numero, ciclo in enumerate(reporte.ciclos, start=1):
+            nombres = ""
+            for paso in ciclo.pasos:
+                nombres += f"{paso.llave} -> "
+            nombres += ciclo.pasos[0].llave
+            lineas.append(f"  Ciclo {numero}: {nombres}")
+            for j, paso in enumerate(ciclo.pasos):
+                siguiente = ciclo.pasos[(j + 1) % len(ciclo.pasos)].llave
+                p = paso.puerta
+                lineas.append(
+                    f"    {paso.llave} esta en sala {paso.sala} detras de la puerta sala {p.sala_origen} "
+                    f"salida {p.direccion} hacia sala {p.sala_destino} que exige {siguiente}")
+
+        lineas.append(f"Solicitudes de red: {self._servicio.requests_made}/{self._presupuesto}")
+        return "\n".join(lineas)
+
+
+def _texto_ubicacion(ubicacion) -> str:
+    """Sala de una ubicación y, si la suelta un enemigo, su id."""
+    texto = f"sala {ubicacion.sala}"
+    if ubicacion.enemigo is not None:
+        texto += f" (enemigo {ubicacion.enemigo})"
+    return texto
+
+
+def _linea_llave(llave) -> str:
+    """Línea de una llave inobtenible con sus ubicaciones y su causa."""
+    if not llave.ubicaciones:
+        if llave.causa == "sin_ubicacion":
+            return f"  - {llave.llave}: sin ubicacion publicada"
+        return f"  - {llave.llave}: sin ubicacion ; {llave.causa}"
+    causas = {
+        "en_ciclo": "en ciclo",
+        "sala_desconectada": "sala desconectada",
+        "ubicacion_invalida": "ubicacion invalida",
+    }
+    if llave.causa == "depende_de":
+        causa = f"depende de {llave.depende_de}"
+    else:
+        causa = causas.get(llave.causa, llave.causa)
+    if len(llave.ubicaciones) == 1:
+        lugar = _texto_ubicacion(llave.ubicaciones[0])
+        return f"  - {llave.llave}: {lugar} ; {causa}"
+    lugares = ""
+    for u in llave.ubicaciones:
+        if lugares:
+            lugares += ", "
+        lugares += _texto_ubicacion(u)
+    return f"  - {llave.llave}: ubicaciones: {lugares} ; {causa}"

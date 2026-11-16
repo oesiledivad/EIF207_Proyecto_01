@@ -322,6 +322,174 @@ class PruebasResolubilidad(unittest.TestCase):
         self.assertEqual(len(r.advertencias), 1)
 
 
+def puerta_tupla(p) -> tuple:
+    """Puerta bloqueada como tupla comparable."""
+    return (p.sala_origen, p.direccion, p.sala_destino, p.llave)
+
+
+def ciclos_resumen(resultado) -> list[list[tuple]]:
+    """Ciclos del reporte como listas de (llave, sala, enemigo, puerta)."""
+    return [
+        [(p.llave, p.sala, p.enemigo, puerta_tupla(p.puerta)) for p in c.pasos]
+        for c in resultado.reporte.ciclos
+    ]
+
+
+def bloqueada(resultado, llave: str):
+    """Entrada de `llaves_inobtenibles` de una llave, o None."""
+    for b in resultado.reporte.llaves_inobtenibles:
+        if b.llave == llave:
+            return b
+    return None
+
+
+class PruebasReporteBloqueo(unittest.TestCase):
+    """Pruebas del reporte de bloqueo (historia US2)."""
+
+    def test_us2_1_apendice_b_ciclo_de_llave_salida(self):
+        """FR-012: llave_salida tras la unica puerta que ella abre; ciclo de longitud 1."""
+        salas = [
+            sala(1, salida("E", 2, "LS")),
+            sala(2, salida("N", 3, "LS")),
+            sala(3),
+        ]
+        r = verificar(detalles(1, 3, "LS"), salas, [ubic("LS", 2)])
+        self.assertEqual(r.estado, "no_resoluble")
+        self.assertEqual(r.reporte.motivo, "llave_salida_inobtenible")
+        self.assertEqual(ciclos_resumen(r), [[("LS", 2, None, (1, "E", 2, "LS"))]])
+        self.assertEqual(bloqueada(r, "LS").causa, "en_ciclo")
+
+    def test_us2_2_ciclo_de_dos_llaves(self):
+        """FR-012: A tras una puerta que exige B y B tras una puerta que exige A."""
+        salas = [
+            sala(1, salida("E", 2, "B"), salida("N", 3, "A"), salida("S", 4, "A")),
+            sala(2), sala(3), sala(4),
+        ]
+        r = verificar(detalles(1, 4, "A"), salas, [ubic("A", 2), ubic("B", 3)])
+        self.assertEqual(r.estado, "no_resoluble")
+        self.assertEqual(ciclos_resumen(r), [[
+            ("A", 2, None, (1, "E", 2, "B")),
+            ("B", 3, None, (1, "N", 3, "A")),
+        ]])
+
+    def test_us2_3_reporte_completo(self):
+        """FR-009, FR-010, FR-011: llaves inobtenibles, frontera, y sala y enemigo de cada llave."""
+        salas = [
+            sala(1, salida("E", 2, "B"), salida("N", 3, "A"), salida("S", 6, "A")),
+            sala(2, salida("S", 5)),
+            sala(3), sala(5), sala(6),
+        ]
+        ubicaciones = [ubic("A", 2), ubic("B", 3), ubic("C", 5, "en1")]
+        r = verificar(detalles(1, 6, "A"), salas, ubicaciones)
+        self.assertEqual(r.estado, "no_resoluble")
+        rep = r.reporte
+        self.assertEqual([b.llave for b in rep.llaves_inobtenibles], ["A", "B", "C"])
+        self.assertEqual([puerta_tupla(p) for p in rep.frontera], [
+            (1, "N", 3, "A"), (1, "S", 6, "A"), (1, "E", 2, "B"),
+        ])
+        c = bloqueada(r, "C")
+        self.assertEqual([(u.sala, u.enemigo) for u in c.ubicaciones], [(5, "en1")])
+        self.assertEqual(c.causa, "depende_de")
+        self.assertEqual(c.depende_de, "B")
+        self.assertEqual(bloqueada(r, "A").causa, "en_ciclo")
+
+    def test_us2_4_ciclo_determinista(self):
+        """FR-013: repetir y permutar las entradas da el mismo ciclo, inicio y sentido."""
+        def armar(invertir: bool):
+            salas = [
+                sala(1, salida("E", 2, "B"), salida("N", 3, "A"), salida("S", 4, "A")),
+                sala(2), sala(3), sala(4),
+            ]
+            ubicaciones = [ubic("A", 2), ubic("B", 3)]
+            if invertir:
+                salas.reverse()
+                for s in salas:
+                    s.salidas.reverse()
+                ubicaciones.reverse()
+            return salas, ubicaciones
+
+        salas, ubicaciones = armar(False)
+        primero = verificar(detalles(1, 4, "A"), salas, ubicaciones)
+        segundo = verificar(detalles(1, 4, "A"), salas, ubicaciones)
+        permutado = verificar(detalles(1, 4, "A"), *armar(True))
+        self.assertEqual(ciclos_resumen(primero), ciclos_resumen(segundo))
+        self.assertEqual(ciclos_resumen(primero), ciclos_resumen(permutado))
+        self.assertEqual(primero.reporte.ciclos[0].pasos[0].llave, "A")
+
+    def test_us2_5_varios_ciclos_ordenados(self):
+        """FR-012, FR-013: ciclos disjuntos, cada uno desde su llave menor y ordenados por ella."""
+        salas = [
+            sala(1, salida("E", 2, "D"), salida("W", 3, "C"), salida("N", 4, "B"),
+                 salida("S", 5, "A"), salida("U", 6)),
+            sala(2), sala(3), sala(4), sala(5), sala(6), sala(7),
+        ]
+        # C y D en las salas bajas, A y B en las altas: el orden sale de las llaves, no de las salas.
+        ubicaciones = [ubic("C", 2), ubic("D", 3), ubic("A", 4), ubic("B", 5)]
+        r = verificar(detalles(1, 7, "A"), salas, ubicaciones)
+        self.assertEqual(r.estado, "no_resoluble")
+        self.assertEqual([[p.llave for p in c.pasos] for c in r.reporte.ciclos], [["A", "B"], ["C", "D"]])
+
+    def test_borde_llave_sin_ubicacion(self):
+        """FR-011: una llave que una puerta exige y nadie publica queda con causa sin_ubicacion."""
+        salas = [sala(1, salida("E", 2, "X")), sala(2)]
+        r = verificar(detalles(1, 2, "X"), salas, [])
+        self.assertEqual(r.estado, "no_resoluble")
+        x = bloqueada(r, "X")
+        self.assertEqual(x.causa, "sin_ubicacion")
+        self.assertEqual(x.ubicaciones, [])
+        self.assertEqual(r.reporte.ciclos, [])
+
+    def test_borde_varias_ubicaciones_desconectadas(self):
+        """FR-011: con varias ubicaciones y ninguna alcanzable se listan todas."""
+        salas = [sala(1, salida("E", 2, "X")), sala(2), sala(8), sala(9)]
+        r = verificar(detalles(1, 2, "X"), salas, [ubic("X", 9), ubic("X", 8, "en2")])
+        x = bloqueada(r, "X")
+        self.assertEqual(x.causa, "sala_desconectada")
+        self.assertEqual([(u.sala, u.enemigo) for u in x.ubicaciones], [(8, "en2"), (9, None)])
+
+    def test_borde_ubicacion_invalida(self):
+        """FR-011: una llave publicada solo en una sala inexistente queda con causa ubicacion_invalida."""
+        salas = [sala(1, salida("E", 2, "X")), sala(2)]
+        r = verificar(detalles(1, 2, "X"), salas, [ubic("X", 77)])
+        x = bloqueada(r, "X")
+        self.assertEqual(x.causa, "ubicacion_invalida")
+        self.assertEqual([u.sala for u in x.ubicaciones], [77])
+
+    def test_borde_alternativas_no_generan_ciclo_aparte(self):
+        """FR-012: A tras puertas de B y C; se reporta el ciclo A, B y no A, C aparte (research D6)."""
+        salas = [
+            sala(1, salida("E", 2, "B"), salida("N", 2, "C")),
+            sala(2, salida("E", 3, "A"), salida("N", 4, "A")),
+            sala(3), sala(4), sala(5),
+        ]
+        r = verificar(detalles(1, 5, "A"), salas, [ubic("A", 2), ubic("B", 3), ubic("C", 4)])
+        self.assertEqual(r.estado, "no_resoluble")
+        self.assertEqual(ciclos_resumen(r), [[
+            ("A", 2, None, (1, "E", 2, "B")),
+            ("B", 3, None, (2, "E", 3, "A")),
+        ]])
+        c = bloqueada(r, "C")
+        self.assertEqual(c.causa, "depende_de")
+        self.assertEqual(c.depende_de, "A")
+
+    def test_reporte_misma_exploracion(self):
+        """FR-025, FR-024: con K llaves encadenadas y bloqueo al final no se explora por llave."""
+        k = 20
+        salas = []
+        ubicaciones = []
+        for j in range(1, k + 1):
+            salas.append(sala(j, salida("E", j + 1, f"K{j:02d}")))
+            ubicaciones.append(ubic(f"K{j:02d}", j))
+        salas.append(sala(k + 1, salida("E", k + 2, "LS")))
+        salas.append(sala(k + 2))
+        r = verificar(detalles(1, k + 2, "LS"), salas, ubicaciones)
+        self.assertEqual(r.estado, "no_resoluble")
+        total_salidas = k + 1
+        self.assertEqual(r.estadisticas.salidas_examinadas, total_salidas)
+        self.assertLess(r.estadisticas.salidas_examinadas, k * total_salidas)
+        self.assertEqual(r.estadisticas.salas_encoladas, k + 2)
+
+
 def sorted_copia(valores: list[str]) -> list[str]:
     """Copia ordenada de ids de prueba (solo para comparar en las pruebas)."""
     return ordenar(list(valores))
