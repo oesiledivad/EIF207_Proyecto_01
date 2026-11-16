@@ -1,13 +1,16 @@
 """Niebla de guerra: interfaz serializable del conocimiento (US6, spec 004)."""
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from pruebas.apoyo_niebla import armar_aplicacion, sala
+from pruebas.apoyo_niebla import FuenteNiebla, armar_aplicacion, sala
+from cripta.controlador.Aplicacion import Aplicacion
 from cripta.estructuras.Inventario import ItemInventario
-from cripta.modelo.Conocimiento import ConocimientoJugador
+from cripta.modelo.Conocimiento import (ABIERTA, AVISTADA, CERRADA, DESCONOCIDA, EXPLORADA,
+                                        ConocimientoJugador)
 
 
 def _esqueleto():
@@ -116,6 +119,34 @@ class PruebasSerializable(unittest.TestCase):
                          c.instantanea())
         self.assertTrue(app.usar_pergamino().ok)
         self.assertEqual(c.longitud_registro(), 0)        # el retroceso recortó el registro
+
+    def test_fr015_carga_sin_conocimiento_parte_de_la_sala_actual(self):
+        """FR-015: un guardado sin conocimiento se carga como el instante 0 pero desde la sala actual:
+        sala actual explorada, destinos de sus salidas avistados, sus puertas observadas."""
+        with tempfile.TemporaryDirectory(prefix="cripta-fr015-") as carpeta:
+            ruta = Path(carpeta) / "partida.bin"
+            origen = Aplicacion(FuenteNiebla(_esqueleto(), 1, 4), ruta_guardado=ruta)
+            self.assertTrue(origen.iniciar_partida("Jugador", "42", "cripta-01",
+                                                   registrar=False, verificar=False).ok)
+            for direccion in ["N", "N"]:
+                self.assertTrue(origen.mover(direccion).ok)       # sala 3, lejos de la inicial
+            self.assertTrue(origen.guardar().ok)
+
+            otra = Aplicacion(FuenteNiebla(_esqueleto(), 1, 4), ruta_guardado=ruta)
+            resultado = otra.cargar()
+            self.assertTrue(resultado.ok, resultado.motivo)
+            c = otra._exploracion.conocimiento
+            self.assertEqual(otra.estado_partida().sala_actual_id, 3)
+            self.assertEqual(c.estado(3), EXPLORADA)
+            for destino in [2, 4, 5]:
+                self.assertEqual(c.estado(destino), AVISTADA)
+            for desconocida in [0, 1]:
+                self.assertEqual(c.estado(desconocida), DESCONOCIDA)
+            esperado = {"S": ABIERTA, "N": ABIERTA, "E": CERRADA}
+            for salida in otra._salas.obtener(3).salidas:
+                self.assertEqual(c.memoria_puerta(salida.clave), esperado[salida.direccion])
+            self.assertEqual(c.longitud_registro(), 0)
+            self.assertEqual(c.instantanea()[1], 6)
 
 
 if __name__ == "__main__":
