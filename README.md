@@ -203,13 +203,38 @@ Para reproducir una partida propia, sustituye la ruta por su archivo `.log` dent
 
 ### Medir rendimiento
 
-Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia y cargas sintéticas. No consulta la red ni abre la interfaz.
+Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y la sección «Resolubilidad» (M1 a M7). No consulta la red ni abre la interfaz.
 
 ```sh
 uv run cripta --bench
 ```
 
-Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada.
+Con `--semilla N` las criptas sintéticas de la sección «Resolubilidad» se generan con esa semilla; vacía equivale a `42` y nunca es aleatoria. Con la misma semilla los conteos coinciden entre ejecuciones y los tiempos varían.
+
+```sh
+uv run cripta --bench --semilla 42
+```
+
+Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
+
+### Verificar la resolubilidad de una cripta
+
+Decide si la cripta se puede ganar y en qué orden se obtienen las llaves, o por qué no. No abre la interfaz. Con `--offline` no consulta la red.
+
+```sh
+uv run cripta --verificar cripta-01
+uv run cripta --offline --verificar cripta-01
+```
+
+Códigos de salida: `0` si es resoluble, `1` si no lo es y `2` si no se pudo emitir un veredicto (datos o llaves no disponibles) o hubo un error de uso. `--semilla` no tiene efecto con `--verificar`.
+
+Al iniciar una partida la cripta también se verifica. Si no es resoluble, la partida no inicia y se muestra el reporte. `--forzar` permite iniciarla de todos modos y se ignora con `--verificar`, `--bench` y `--replay`:
+
+```sh
+uv run cripta --forzar --cripta cripta-01
+```
+
+El algoritmo, la complejidad y las mediciones están en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
 
 ### Consultar la ayuda
 
@@ -225,7 +250,9 @@ Puedes añadir estas opciones al comando de arranque para ajustar la capacidad d
 
 | Opción                              | Función y valor predeterminado                                           |
 |-------------------------------------|--------------------------------------------------------------------------|
-| `--cripta`, `--nombre`, `--semilla` | Preselección del menú; nombre `Jugador`, semilla aleatoria si está vacía |
+| `--cripta`, `--nombre`, `--semilla` | Preselección del menú; nombre `Jugador`, semilla aleatoria si está vacía (con `--bench`, `42`) |
+| `--verificar CRIPTA`                | Verifica la resolubilidad sin abrir la interfaz; salida 0, 1 o 2          |
+| `--forzar`                          | Inicia una cripta no resoluble de todos modos                            |
 | `--cache-size 25`                   | Capacidad de fichas de catálogo en memoria; debe ser positiva            |
 | `--cache-dir .cripta_cache`         | Carpeta de caché persistente                                             |
 | `--offline-dir datos_offline`        | Paquete local de respuestas de la API                                    |

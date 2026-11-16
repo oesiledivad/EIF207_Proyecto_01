@@ -65,7 +65,8 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
                        help="Vista Arcade (ya es la predeterminada; se acepta por compatibilidad).")
     parser.add_argument("--cripta", help="Id de cripta preseleccionada en el menú.")
     parser.add_argument("--nombre", default="Jugador", help="Nombre inicial del jugador.")
-    parser.add_argument("--semilla", default="", help="Semilla inicial (vacía = aleatoria).")
+    parser.add_argument("--semilla", default="", help="Semilla inicial (vacía = aleatoria). Con --bench, vacía equivale a 42; "
+                             "sin efecto con --verificar.")
     return parser.parse_args(argv)
 
 
@@ -125,8 +126,16 @@ def main(argv: list[str] | None = None) -> int:
         print("--cache-size debe ser un entero positivo.", file=sys.stderr)
         return 2
     if args.bench:
-        from cripta.bench import main as medir
-        medir()
+        from cripta.bench import main as medir, semilla_efectiva
+        if not str(args.semilla).strip():
+            medir()   # Sin --semilla: bench.main usa 42 por defecto
+            return 0
+        try:
+            semilla = semilla_efectiva(args.semilla)
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+        medir(semilla=semilla)
         return 0
     if args.verificar:
         return _verificar(args)

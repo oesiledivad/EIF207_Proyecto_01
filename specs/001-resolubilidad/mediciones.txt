@@ -1,0 +1,52 @@
+Mediciones de resolubilidad (T081)
+Comando: uv run python -m cripta --bench --semilla 42 (dos ejecuciones)
+Pruebas: uv run python -m unittest pruebas.test_bench_resolubilidad (6 pruebas, OK)
+Comparacion: con los tiempos enmascarados, las dos ejecuciones son identicas (conteos iguales); los tiempos varian.
+
+--- Ejecucion 1 ---
+=== Resolubilidad de la cripta (semilla 42) ===
+M1 verificacion frente a la alternativa ingenua (la ingenua pierde y la brecha crece con K)
+  S=200 E=409 K=20 verificacion=0.972ms (429 ops) ingenua=1.358ms (8181 ops) ingenua/verificacion=1.4x PIERDE
+  S=2000 E=4121 K=200 verificacion=10.940ms (4321 ops) ingenua=141.621ms (824201 ops) ingenua/verificacion=12.9x PIERDE
+  S=20000 E=41237 K=2000 verificacion=147.926ms (43237 ops) ingenua=omitida (supera el tope)
+  la brecha crece con K: SI
+M2 escalado de la verificacion al multiplicar por 10 el tamano (limite 15)
+  S 200 -> 2000: tiempo x11.25 operaciones x10.07 menor que 15
+  S 2000 -> 20000: tiempo x13.52 operaciones x10.01 menor que 15
+M3 cripta de referencia del paquete (sin red, limite 200 ms)
+  sin llaves en el paquete
+M4 indice de llaves a 20000 salas (K=2000, 4092 consultas)
+  solo consultas: arreglo=5.911ms hash=6.185ms
+  construccion + consultas: arreglo=16.293ms hash=19.956ms arreglo/hash=0.82x
+  decision: se conserva el arreglo ordenado (el hash no gana por mas de 2 veces)
+M5 costo del reporte sobre la verificacion pura (variante con ciclo)
+  S=2000 E=4121 no_resoluble ciclos=1 pura=10.997ms con reporte=11.140ms salidas examinadas=4121 de 4121 (no repite exploraciones)
+  S=20000 E=41237 no_resoluble ciclos=1 pura=148.282ms con reporte=152.076ms salidas examinadas=41237 de 41237 (no repite exploraciones) tiempo con reporte x13.65 al multiplicar por 10
+M6 orden por ronda a 20000 salas (17 rondas)
+  con ordenar=45.175ms sin ordenar=0.046ms verificacion completa=149.698ms sobrecosto del orden=30.1% de la verificacion
+M7 cripta sintetica grande sin red (10 x 50 salas, limite 200 ms)
+  S=500 E=1027 K=50 resoluble en 2.571ms menor que 200 ms
+
+--- Ejecucion 2 ---
+=== Resolubilidad de la cripta (semilla 42) ===
+M1 verificacion frente a la alternativa ingenua (la ingenua pierde y la brecha crece con K)
+  S=200 E=409 K=20 verificacion=0.973ms (429 ops) ingenua=1.368ms (8181 ops) ingenua/verificacion=1.4x PIERDE
+  S=2000 E=4121 K=200 verificacion=10.951ms (4321 ops) ingenua=142.515ms (824201 ops) ingenua/verificacion=13.0x PIERDE
+  S=20000 E=41237 K=2000 verificacion=151.809ms (43237 ops) ingenua=omitida (supera el tope)
+  la brecha crece con K: SI
+M2 escalado de la verificacion al multiplicar por 10 el tamano (limite 15)
+  S 200 -> 2000: tiempo x11.26 operaciones x10.07 menor que 15
+  S 2000 -> 20000: tiempo x13.86 operaciones x10.01 menor que 15
+M3 cripta de referencia del paquete (sin red, limite 200 ms)
+  sin llaves en el paquete
+M4 indice de llaves a 20000 salas (K=2000, 4092 consultas)
+  solo consultas: arreglo=5.787ms hash=6.165ms
+  construccion + consultas: arreglo=16.330ms hash=20.045ms arreglo/hash=0.81x
+  decision: se conserva el arreglo ordenado (el hash no gana por mas de 2 veces)
+M5 costo del reporte sobre la verificacion pura (variante con ciclo)
+  S=2000 E=4121 no_resoluble ciclos=1 pura=10.973ms con reporte=10.959ms salidas examinadas=4121 de 4121 (no repite exploraciones)
+  S=20000 E=41237 no_resoluble ciclos=1 pura=148.366ms con reporte=149.454ms salidas examinadas=41237 de 41237 (no repite exploraciones) tiempo con reporte x13.64 al multiplicar por 10
+M6 orden por ronda a 20000 salas (17 rondas)
+  con ordenar=44.783ms sin ordenar=0.045ms verificacion completa=150.811ms sobrecosto del orden=29.7% de la verificacion
+M7 cripta sintetica grande sin red (10 x 50 salas, limite 200 ms)
+  S=500 E=1027 K=50 resoluble en 2.583ms menor que 200 ms

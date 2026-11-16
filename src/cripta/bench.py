@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import random
 import time
+from types import SimpleNamespace
 
 from cripta.estructuras.Agenda_Eventos import HeapAgendaEventos
 from cripta.estructuras.Salidas import Salidas
@@ -338,7 +339,487 @@ def _bench_referencia(repeticiones=30):
     return medidas
 
 
-def main():
+# Resolubilidad de la cripta (Parte II, 3.5 y 5.4): mediciones M1 a M7.
+# Todo es sintetico y determinista por semilla; no usa red, disco de la cripta ni vista.
+
+SEMILLA_PREDETERMINADA = 42
+SALAS_SIN_PAQUETE = 500   # Tamano de M7 cuando no esta el paquete datos_offline
+
+
+def semilla_efectiva(texto) -> int:
+    """Semilla de --bench: vacia o None equivale a 42, nunca es aleatoria.
+
+    Raises:
+        ValueError: si el texto no es un entero.
+    """
+    if texto is None or str(texto).strip() == "":
+        return SEMILLA_PREDETERMINADA
+    try:
+        return int(str(texto).strip())
+    except ValueError:
+        raise ValueError("--semilla debe ser un entero.") from None
+
+
+class CriptaSintetica:
+    """Cripta generada por semilla, lista para `verificar`."""
+
+    def __init__(self, detalles, salas, ubicaciones, n_salidas, n_llaves):
+        self.detalles = detalles
+        self.salas = salas
+        self.ubicaciones = ubicaciones
+        self.n_salas = len(salas)
+        self.n_salidas = n_salidas
+        self.n_llaves = n_llaves
+
+
+def generar_cripta(semilla: int, salas: int, llaves: int | None = None,
+                   con_ciclo: bool = False) -> CriptaSintetica:
+    """Genera una cripta sintetica determinista (D8).
+
+    Region base conectada por un arbol aleatorio con salidas abiertas, una cadena
+    de K llaves (la puerta j exige la llave j-1 y la llave j esta en la sala que esa
+    puerta abre), ramas decorativas y ubicaciones repetidas. Los ids de sala se
+    permutan por la semilla. Con `con_ciclo`, la puerta de la penultima sala de la
+    cadena exige la ultima llave y se cierra un ciclo.
+
+    Args:
+        semilla: Semilla de `random.Random`.
+        salas: Cantidad total de salas S.
+        llaves: Cantidad K de llaves; por omision S // 10 (al menos 2).
+        con_ciclo: Variante no resoluble con ciclo final.
+
+    Raises:
+        ValueError: si S es muy pequeno para K llaves.
+    """
+    from cripta.dto.Partida_dto import DetallesCripta, SalaModelo, SalidaVecina
+    from cripta.dto.Verificacion_dto import UbicacionLlave
+
+    azar = random.Random(semilla)
+    k = llaves if llaves is not None else max(2, salas // 10)
+    if k < 2 or salas < k + 4:
+        raise ValueError("La cripta sintetica necesita al menos 2 llaves y K + 4 salas.")
+    restantes = salas - k - 1          # Salas de la region base y ramas decorativas
+    decorativas = restantes // 10
+    base = restantes - decorativas
+    primera_cadena = base + decorativas
+    salida_final = salas - 1
+
+    ids = list(range(salas))
+    azar.shuffle(ids)
+    permutacion = list(range(k))
+    azar.shuffle(permutacion)
+    nombres = [f"llave-{p:06d}" for p in permutacion]
+
+    salidas: list[list] = [[] for _ in range(salas)]    # Por sala logica: [direccion, destino, llave]
+    total_salidas = 0
+
+    def conectar(a: int, b: int, llave: str = "") -> None:
+        nonlocal total_salidas
+        salidas[a].append([f"p{len(salidas[a])}", b, llave])
+        total_salidas += 1
+
+    def abrir(a: int, b: int) -> None:
+        conectar(a, b)
+        conectar(b, a)
+
+    for i in range(1, base):
+        abrir(i, azar.randrange(i))
+    for _ in range(base // 10):
+        a = azar.randrange(base)
+        b = azar.randrange(base)
+        if a != b:
+            abrir(a, b)
+    for d in range(decorativas):
+        abrir(base + d, azar.randrange(base + d))
+
+    # Cadena: todas las puertas salen de la sala inicial y la puerta j abre la sala j de la
+    # cadena, donde esta la llave j. Asi cada llave libera solo la siguiente puerta.
+    for j in range(k):
+        origen = 0
+        if con_ciclo and j == k - 2:
+            exigida = k - 1
+        else:
+            exigida = j - 1
+        conectar(origen, primera_cadena + j, nombres[exigida] if exigida >= 0 else "")
+    conectar(primera_cadena + k - 1, salida_final, nombres[k - 1])
+
+    ubicaciones: list = []
+    for j in range(k):
+        enemigo = f"enemigo-{j}" if azar.random() < 0.3 else None
+        ubicaciones.append(UbicacionLlave(nombres[j], ids[primera_cadena + j], enemigo))
+    for j in range(k):
+        if azar.random() < 0.05:
+            otra = azar.randrange(j, k)
+            if otra != j:
+                ubicaciones.append(UbicacionLlave(nombres[j], ids[primera_cadena + otra], None))
+
+    lista = []
+    for logica in range(salas):
+        vecinas = [
+            SalidaVecina(direccion=d, sala_id=ids[destino], nombre="", cerrada=bool(llave),
+                         llave=llave, transitable=True, es_salida_final=False,
+                         tiene_enemigos=False, tiene_objetos=False)
+            for d, destino, llave in salidas[logica]
+        ]
+        lista.append(SalaModelo(id=ids[logica], nombre=f"s{ids[logica]}", descripcion="", salidas=vecinas))
+    detalles = DetallesCripta(
+        id="sintetica", version=f"semilla-{semilla}", salas_total=salas, sala_inicial=ids[0],
+        sala_salida=ids[salida_final], llave_salida=nombres[k - 1], inventario_max=10,
+        presupuesto_solicitudes=0, jugador_vida_max=30, jugador_ataque=6, jugador_defensa=2,
+        jugador_velocidad=100)
+    return CriptaSintetica(detalles, lista, ubicaciones, total_salidas, k)
+
+
+def verificar_ingenua(cripta: CriptaSintetica):
+    """Alternativa DESCARTADA, solo para medicion: O(K * (S + E)).
+
+    Repite la exploracion completa cada vez que se obtiene una llave nueva. Es
+    justo lo que FR-024 prohibe; se conserva como contraste de M1, igual que
+    `_ListaOrdenada` en la medicion de la agenda.
+
+    Returns:
+        (gano, operaciones): operaciones cuenta salidas recorridas y llaves obtenidas.
+    """
+    from cripta.estructuras.Indice_Llaves import IndiceLlaves
+
+    detalles = cripta.detalles
+    total = 0
+    for s in cripta.salas:
+        if s.id + 1 > total:
+            total = s.id + 1
+    ids_llaves = [u.llave for u in cripta.ubicaciones] + [detalles.llave_salida]
+    indice = IndiceLlaves(ids_llaves)
+    cantidad = indice.cantidad()
+    rango_salida = indice.rango(detalles.llave_salida)
+    salidas: list[list] = [[] for _ in range(total)]
+    for s in cripta.salas:
+        for sa in s.salidas:
+            salidas[s.id].append((sa.sala_id, indice.rango(sa.llave) if sa.cerrada else -1))
+    llaves_sala: list[list] = [[] for _ in range(total)]
+    for u in cripta.ubicaciones:
+        llaves_sala[u.sala].append(indice.rango(u.llave))
+
+    tengo = [False] * cantidad
+    operaciones = 0
+    while True:
+        visto = [False] * total
+        cola = [detalles.sala_inicial]
+        visto[detalles.sala_inicial] = True
+        cabeza = 0
+        nueva = False
+        gano = False
+        while cabeza < len(cola):
+            sala = cola[cabeza]
+            cabeza += 1
+            for k in llaves_sala[sala]:
+                if not tengo[k]:
+                    tengo[k] = True
+                    nueva = True
+                    operaciones += 1
+            for destino, k in salidas[sala]:
+                operaciones += 1
+                if k != -1 and not tengo[k]:
+                    continue
+                if k != -1 and k == rango_salida and destino == detalles.sala_salida:
+                    gano = True
+                if not visto[destino]:
+                    visto[destino] = True
+                    cola.append(destino)
+        if gano or not nueva:
+            return gano, operaciones
+
+
+def _mejor_de(repeticiones: int, operacion) -> float:
+    """Menor tiempo en segundos de `repeticiones` corridas."""
+    mejor = None
+    for _ in range(repeticiones):
+        inicio = time.perf_counter()
+        operacion()
+        transcurrido = time.perf_counter() - inicio
+        if mejor is None or transcurrido < mejor:
+            mejor = transcurrido
+    return mejor
+
+
+def _ms(segundos) -> str:
+    return "---" if segundos is None else f"{segundos * 1000:.3f}ms"
+
+
+def _carpeta_paquete(carpeta=None):
+    from pathlib import Path
+    if carpeta is not None:
+        return Path(carpeta)
+    return Path(__file__).resolve().parents[2] / "datos_offline"
+
+
+def tamano_mayor_esqueleto(carpeta=None) -> int | None:
+    """Mayor `salas_total` entre las criptas del paquete; None si el paquete no esta."""
+    import json
+
+    carpeta = _carpeta_paquete(carpeta)
+    if not carpeta.is_dir():
+        return None
+    mayor = None
+    for ruta in carpeta.glob("cripta_*.json"):
+        nombre = ruta.name
+        if nombre.endswith(("_contenido.json", "_version.json", "_llaves.json")) or "_salas_" in nombre:
+            continue
+        try:
+            datos = json.loads(ruta.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        total = datos.get("salas_total") if isinstance(datos, dict) else None
+        if isinstance(total, int) and (mayor is None or total > mayor):
+            mayor = total
+    return mayor
+
+
+def _verificar_cripta(cripta):
+    from cripta.modelo.Resolubilidad import verificar
+    return verificar(cripta.detalles, cripta.salas, cripta.ubicaciones)
+
+
+def medir_m1(tamanos=(200, 2000, 20000), tope_ingenua=2000, semilla=SEMILLA_PREDETERMINADA):
+    """M1: verificacion O(S + E + K) frente a la ingenua O(K (S + E)). FR-024, FR-026, SC-004."""
+    print("M1 verificacion frente a la alternativa ingenua (la ingenua pierde y la brecha crece con K)")
+    filas = []
+    for salas in tamanos:
+        cripta = generar_cripta(semilla, salas)
+        resultado = _verificar_cripta(cripta)
+        est = resultado.estadisticas
+        ops_verificacion = est.salidas_examinadas + est.llaves_obtenidas
+        t_verificacion = _mejor_de(5, lambda: _verificar_cripta(cripta))
+        t_ingenua = None
+        ops_ingenua = None
+        if salas <= tope_ingenua:
+            inicio = time.perf_counter()
+            ops_ingenua = verificar_ingenua(cripta)[1]
+            t_ingenua = time.perf_counter() - inicio
+        filas.append(SimpleNamespace(
+            salas=salas, salidas=cripta.n_salidas, llaves=cripta.n_llaves,
+            t_verificacion=t_verificacion, t_ingenua=t_ingenua,
+            ops_verificacion=ops_verificacion, ops_ingenua=ops_ingenua))
+        if t_ingenua is None:
+            comparacion = "ingenua=omitida (supera el tope)"
+        else:
+            comparacion = (f"ingenua={_ms(t_ingenua)} ({ops_ingenua} ops) "
+                           f"ingenua/verificacion={t_ingenua / max(t_verificacion, 1e-9):.1f}x "
+                           f"{'PIERDE' if t_ingenua > t_verificacion else 'GANA'}")
+        print(f"  S={salas} E={cripta.n_salidas} K={cripta.n_llaves} "
+              f"verificacion={_ms(t_verificacion)} ({ops_verificacion} ops) {comparacion}")
+    previa = None
+    creciente = True
+    for fila in filas:
+        if fila.t_ingenua is None:
+            continue
+        brecha = fila.t_ingenua / max(fila.t_verificacion, 1e-9)
+        if previa is not None and brecha <= previa:
+            creciente = False
+        previa = brecha
+    print(f"  la brecha crece con K: {'SI' if creciente else 'NO'}")
+    return filas
+
+
+def medir_m2(filas) -> None:
+    """M2: escalado al multiplicar por 10 el tamano. FR-024, SC-004."""
+    print("M2 escalado de la verificacion al multiplicar por 10 el tamano (limite 15)")
+    for anterior, actual in zip(filas, filas[1:]):
+        cociente = actual.t_verificacion / max(anterior.t_verificacion, 1e-9)
+        cociente_ops = actual.ops_verificacion / max(anterior.ops_verificacion, 1)
+        print(f"  S {anterior.salas} -> {actual.salas}: tiempo x{cociente:.2f} operaciones x{cociente_ops:.2f} "
+              f"{'menor que 15' if cociente < 15 else 'NO es menor que 15'}")
+
+
+def medir_m3(carpeta=None) -> None:
+    """M3: cripta de referencia del paquete si trae llaves. FR-023, SC-003."""
+    from cripta.adaptadores.AdaptadorOffline import AdaptadorOffline
+    from cripta.controlador.VerificacionControlador import VerificacionControlador
+    from cripta.servicio.CriptaService import CriptaService
+
+    carpeta = _carpeta_paquete(carpeta)
+    print("M3 cripta de referencia del paquete (sin red, limite 200 ms)")
+    medidas = 0
+    if carpeta.is_dir():
+        for ruta in carpeta.glob("cripta_*_llaves.json"):
+            cripta_id = ruta.name[len("cripta_"):-len("_llaves.json")]
+            fuente = AdaptadorOffline(carpeta)
+            controlador = VerificacionControlador(CriptaService(fuente))
+            inicio = time.perf_counter()
+            resultado = controlador.verificar_cripta(cripta_id)
+            t = time.perf_counter() - inicio
+            medidas += 1
+            print(f"  {cripta_id}: {resultado.estado} en {_ms(t)} solicitudes={fuente.requests_made} "
+                  f"{'menor que 200 ms' if t < 0.2 else 'EXCEDE 200 ms'}")
+    if medidas == 0:
+        print("  sin llaves en el paquete")
+
+
+def medir_m7(semilla=SEMILLA_PREDETERMINADA, carpeta=None) -> None:
+    """M7: cripta sintetica de 10 veces el esqueleto mayor del paquete. FR-023, SC-003."""
+    mayor = tamano_mayor_esqueleto(carpeta)
+    salas = 10 * mayor if mayor else SALAS_SIN_PAQUETE
+    origen = f"10 x {mayor}" if mayor else "paquete ausente"
+    print(f"M7 cripta sintetica grande sin red ({origen} salas, limite 200 ms)")
+    cripta = generar_cripta(semilla, salas)
+    resultado = _verificar_cripta(cripta)
+    t = _mejor_de(3, lambda: _verificar_cripta(cripta))
+    print(f"  S={cripta.n_salas} E={cripta.n_salidas} K={cripta.n_llaves} {resultado.estado} "
+          f"en {_ms(t)} {'menor que 200 ms' if t < 0.2 else 'EXCEDE 200 ms'}")
+
+
+class _TablaHashLlaves:
+    """Alternativa medida en M4: tabla hash propia con hash polinomial determinista.
+
+    No usa `hash()` de Python (que cambia entre ejecuciones) ni `dict`.
+    """
+
+    def __init__(self, ids: list[str]) -> None:
+        tamano = 1
+        while tamano < 2 * max(1, len(ids)):
+            tamano *= 2
+        self._ids = ids
+        self._cubetas: list[list[int]] = [[] for _ in range(tamano)]
+        self._mascara = tamano - 1
+        for rango, id_llave in enumerate(ids):
+            self._cubetas[self._hash(id_llave)].append(rango)
+
+    def _hash(self, texto: str) -> int:
+        h = 0
+        for c in texto:
+            h = (h * 131 + ord(c)) & 0xFFFFFFFF
+        return h & self._mascara
+
+    def rango(self, id_llave: str) -> int:
+        for rango in self._cubetas[self._hash(id_llave)]:
+            if self._ids[rango] == id_llave:
+                return rango
+        return -1
+
+
+def medir_m4(salas=20000, semilla=SEMILLA_PREDETERMINADA) -> None:
+    """M4: indice de llaves, arreglo ordenado con busqueda binaria frente a tabla hash. FR-024, FR-008."""
+    from cripta.estructuras.Indice_Llaves import IndiceLlaves
+
+    cripta = generar_cripta(semilla, salas)
+    ids = []
+    consultas = []
+    for s in cripta.salas:
+        for sa in s.salidas:
+            if sa.cerrada:
+                ids.append(sa.llave)
+                consultas.append(sa.llave)
+    for u in cripta.ubicaciones:
+        ids.append(u.llave)
+        consultas.append(u.llave)
+    ids.append(cripta.detalles.llave_salida)
+
+    def arreglo_completo():
+        indice = IndiceLlaves(ids)
+        for id_llave in consultas:
+            indice.rango(id_llave)
+
+    def hash_completo():
+        # El rango sigue exigiendo el orden por id (FR-008), por eso incluye construir el arreglo.
+        base = IndiceLlaves(ids).ids()
+        tabla = _TablaHashLlaves(base)
+        for id_llave in consultas:
+            tabla.rango(id_llave)
+
+    indice = IndiceLlaves(ids)
+    tabla = _TablaHashLlaves(indice.ids())
+    t_arreglo_consultas = _mejor_de(3, lambda: [indice.rango(c) for c in consultas])
+    t_hash_consultas = _mejor_de(3, lambda: [tabla.rango(c) for c in consultas])
+    t_arreglo = _mejor_de(3, arreglo_completo)
+    t_hash = _mejor_de(3, hash_completo)
+    ganancia = t_arreglo / max(t_hash, 1e-9)
+    print(f"M4 indice de llaves a {salas} salas (K={indice.cantidad()}, {len(consultas)} consultas)")
+    print(f"  solo consultas: arreglo={_ms(t_arreglo_consultas)} hash={_ms(t_hash_consultas)}")
+    print(f"  construccion + consultas: arreglo={_ms(t_arreglo)} hash={_ms(t_hash)} "
+          f"arreglo/hash={ganancia:.2f}x")
+    decision = ("se conserva el arreglo ordenado (el hash no gana por mas de 2 veces)"
+                if ganancia <= 2 else "gana la tabla hash por mas de 2 veces")
+    print(f"  decision: {decision}")
+
+
+def medir_m5(tamanos=(2000, 20000), semilla=SEMILLA_PREDETERMINADA) -> None:
+    """M5: costo del reporte (fase especulativa y ciclos) sobre la verificacion pura. FR-025."""
+    print("M5 costo del reporte sobre la verificacion pura (variante con ciclo)")
+    anterior = None
+    for salas in tamanos:
+        pura = generar_cripta(semilla, salas)
+        ciclica = generar_cripta(semilla, salas, con_ciclo=True)
+        resultado = _verificar_cripta(ciclica)
+        est = resultado.estadisticas
+        t_pura = _mejor_de(3, lambda: _verificar_cripta(pura))
+        t_reporte = _mejor_de(3, lambda: _verificar_cripta(ciclica))
+        repite = ("no repite exploraciones" if est.salidas_examinadas <= 2 * ciclica.n_salidas
+                  else "REPITE exploraciones")
+        escala = ("" if anterior is None
+                  else f" tiempo con reporte x{t_reporte / max(anterior, 1e-9):.2f} al multiplicar por 10")
+        anterior = t_reporte
+        print(f"  S={salas} E={ciclica.n_salidas} {resultado.estado} ciclos={len(resultado.reporte.ciclos)} "
+              f"pura={_ms(t_pura)} con reporte={_ms(t_reporte)} "
+              f"salidas examinadas={est.salidas_examinadas} de {ciclica.n_salidas} ({repite}){escala}")
+
+
+def medir_m6(salas=20000, semilla=SEMILLA_PREDETERMINADA) -> None:
+    """M6: orden por ronda con `ordenar` frente a orden de cola sin ordenar. FR-008, FR-024."""
+    from cripta.estructuras.Ordenamientos import ordenar
+
+    cripta = generar_cripta(semilla, salas)
+    # Rondas de una exploracion en anchura que ignora las puertas: el mismo reparto por ronda.
+    total = 0
+    for s in cripta.salas:
+        if s.id + 1 > total:
+            total = s.id + 1
+    vecinos: list[list[int]] = [[] for _ in range(total)]
+    for s in cripta.salas:
+        for sa in s.salidas:
+            vecinos[s.id].append(sa.sala_id)
+    visto = [False] * total
+    actual = [cripta.detalles.sala_inicial]
+    visto[actual[0]] = True
+    lotes: list[list[int]] = []
+    while actual:
+        lotes.append(actual)
+        siguiente = []
+        for sala in actual:
+            for destino in vecinos[sala]:
+                if not visto[destino]:
+                    visto[destino] = True
+                    siguiente.append(destino)
+        actual = siguiente
+
+    def con_orden():
+        for lote in lotes:
+            ordenar(list(lote))
+
+    def sin_orden():
+        for lote in lotes:
+            list(lote)
+
+    t_orden = _mejor_de(3, con_orden)
+    t_copia = _mejor_de(3, sin_orden)
+    t_total = _mejor_de(3, lambda: _verificar_cripta(cripta))
+    sobrecosto = (t_orden - t_copia) / max(t_total, 1e-9) * 100
+    print(f"M6 orden por ronda a {salas} salas ({len(lotes)} rondas)")
+    print(f"  con ordenar={_ms(t_orden)} sin ordenar={_ms(t_copia)} "
+          f"verificacion completa={_ms(t_total)} sobrecosto del orden={sobrecosto:.1f}% de la verificacion")
+
+
+def _bench_resolubilidad(semilla: int = SEMILLA_PREDETERMINADA) -> None:
+    """Seccion Resolubilidad: M1 a M7, con la misma semilla en todas."""
+    print(f"\n=== Resolubilidad de la cripta (semilla {semilla}) ===")
+    filas = medir_m1((200, 2000, 20000), 2000, semilla)
+    medir_m2(filas)
+    medir_m3()
+    medir_m4(20000, semilla)
+    medir_m5((2000, 20000), semilla)
+    medir_m6(20000, semilla)
+    medir_m7(semilla)
+
+
+def main(semilla: int = SEMILLA_PREDETERMINADA):
     import tempfile
     _bench_simulacion()
     _bench_referencia()
@@ -347,6 +828,7 @@ def main():
         _bench_ciclo_completo(enemigos)
     with tempfile.TemporaryDirectory(prefix="cripta-bench-") as carpeta:
         _bench_estructuras_y_persistencia(carpeta)
+    _bench_resolubilidad(semilla)
 
 
 if __name__ == "__main__":

@@ -129,3 +129,17 @@ variar. `--bench` no abre ventana.
 | Sin vista en `--verificar` y `--bench` | Escenarios 2, 3 y 7 | FR-017, FR-028, SC-006 |
 | Reutilización y presupuesto | Escenario 5 | FR-019 a FR-021, SC-005 |
 | Rendimiento con evidencia | Escenario 7 | FR-023, FR-024, FR-026, SC-003, SC-004 |
+
+## Resultado de la validación
+
+Ejecutada en la rama `kyara` (T085). Los paquetes de los escenarios 2, 3 y 4 son copias de `datos_offline` hechas fuera del repositorio, con un `cripta_cripta-01_llaves.json` armado para cada caso; `datos_offline` no se modificó. No se ejecutó la suite completa ni T086.
+
+| Escenario | Resultado | Evidencia |
+|-----------|-----------|-----------|
+| 1. Pruebas automatizadas | CUMPLE | Las seis pruebas, una por módulo (`python -m unittest pruebas.<módulo>`): `test_resolubilidad` 30, `test_indice_llaves` 6, `test_llaves_adaptadores` 8, `test_verificar_cli` 6, `test_inicio_verificacion` 6 y `test_bench_resolubilidad` 6, todas en verde |
+| 2. Consola, cripta resoluble | CUMPLE | `RESOLUBLE`, 2 llaves en orden (bronce en la sala 3, negra en la sala 5 con su enemigo), `Solicitudes de red: 0/9`, código 0, sin ventana |
+| 3. Consola, cripta no resoluble | CUMPLE | `NO RESOLUBLE`, llave inobtenible con su sala y causa «en ciclo», una puerta de la frontera, `Ciclo 1: itm_llave_negra -> itm_llave_negra` con su puerta testigo, código 1; la segunda ejecución es idéntica byte a byte (`cmp`) |
+| 4. Partida bloqueada y `--forzar` | CUMPLE sin ventana | Se ejecutó `Aplicacion.iniciar_partida` con la cripta bloqueada: sin `--forzar` da `ok=False`, `activa=False` y el reporte completo como motivo; con `--forzar` da `ok=True`, `activa=True`; con la cripta resoluble inicia. No se abrió la ventana gráfica: la parte visual del reporte en pantalla queda para una comprobación manual |
+| 5. Reutilización con red | CUMPLE | Con `cripta-02` del servicio y una caché nueva: primera ejecución `Solicitudes de red: 3/23` (incluye la consulta de llaves), segunda `1/23`, y quedó `criptas/cripta-02/llaves.json`. `cripta-01` no existe en el servicio (error 404), por eso se usó `cripta-02`. El cambio de versión lo cubren las pruebas de `test_llaves_adaptadores` |
+| 6. Ubicación no disponible | CUMPLE | `--verificar cripta-01 --offline` con el paquete actual: `resolubilidad no verificada`, código 2, sin las palabras RESOLUBLE ni NO RESOLUBLE |
+| 7. Medición | CUMPLE | `--bench --semilla 42` dos veces: conteos idénticos con los tiempos enmascarados, sin ventana ni `arcade`, M1 a M7 impresos; salida en `mediciones.txt`. M3 imprime «sin llaves en el paquete» porque el paquete no trae llaves |

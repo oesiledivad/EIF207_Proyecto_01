@@ -188,3 +188,77 @@ El índice binario permite consultar una sala sin leer los cuerpos restantes. La
 | Cargar todo, media | 1,549 ms | 0,840 ms |
 
 Leer una sala binaria promedió **0,192 ms**. El acceso selectivo es su ventaja; no resultó menor ni más rápido cargando todo.
+
+## 12. Resolubilidad de la cripta (Parte II, §3.5 y §5.4)
+
+**Necesidad y elección.** Decidir, antes de jugar y sin red durante la decisión, si la cripta se puede ganar, en qué orden se obtienen las llaves y, si no se puede, por qué. El modelo (`modelo/Resolubilidad.py`) recibe el esqueleto de salas y la ubicación publicada de las llaves; no conoce HTTP, archivos ni vista. Elegimos una única exploración en anchura por rondas con una lista de espera por llave (D1 y D2 de [research.md](../specs/001-resolubilidad/research.md)). Cada salida cerrada cuya llave aún no se tiene queda en la espera de esa llave; al obtener la llave se liberan sus salidas. La exploración no se detiene al ganar, porque la spec exige todas las llaves obtenibles (FR-007).
+
+**Orden determinista.** La exploración avanza por rondas y cada ronda se ordena por id de sala con `ordenar` del proyecto. Las salidas de una sala se recorren por (destino, dirección) y las llaves de una sala por id. Con ello una llave publicada en varias salas se obtiene en la alcanzable primero y, en empate de ronda, en la de menor id (FR-008). Dos ejecuciones con los mismos datos dan el mismo orden.
+
+**Alternativas descartadas.**
+
+| Alternativa | Costo | Motivo |
+|-------------|-------|--------|
+| Repetir la exploración completa cada vez que se obtiene una llave | $O(K\,(S+E))$ | Es la que FR-024 prohíbe. Solo vive en `--bench` como contraste (M1) |
+| Iterar hasta punto fijo sobre todas las puertas | $O(K\,E)$ en el peor caso | Misma familia que la anterior, sin mejora de cota |
+| Búsqueda en profundidad recursiva | $O(S+E+K)$ | El límite de recursión de Python falla en cadenas largas de salas; una pila explícita no mejora la cola y complica el orden por rondas |
+| Conjuntos disjuntos por región | casi lineal | Las salidas son dirigidas, así que fusionar regiones es incorrecto |
+| Cola de prioridad por costo | $O((S+E)\log S)$ | No hay costos que ordenar y exigiría un montículo sin necesidad |
+
+**Estructuras propias y por qué.** Todo es `list` direccionada por entero, sin `dict`, `set`, `sorted` ni `list.sort` (principio I). `ColaLista` es una `list` con índice de cabeza: `list.pop(0)` costaría $O(n)$ y `deque` está prohibido. `IndiceLlaves` es un arreglo ordenado de ids distintos con búsqueda binaria propia: el rango de una llave es su posición, de modo que «menor id» se reduce a comparar enteros (D3 y D4). Las salidas se guardan en listas planas por sala (inicio y fin), ordenadas una sola vez en $O(E)$ porque cada sala tiene pocas salidas.
+
+**Complejidad.** La exploración cuesta $O(S+E+K)$: cada sala se encola una vez, cada salida se examina una vez y cada llave se obtiene una vez. El índice de llaves añade un factor $\log K$ al construirse y al resolver ids a rangos, $O((E_c+L)\log K)$ con $E_c$ salidas cerradas y $L$ ubicaciones. El ordenamiento por ronda aporta $O(S\log S)$ en el peor caso, una ronda muy ancha. Por eso afirmamos casi lineal y no lineal puro; SC-004 se comprueba midiendo (M2), no por la cota.
+
+**Ciclos del grafo de testigos.** Si no hay victoria, una segunda fase continúa sobre la misma exploración, sin reiniciarla ni explorar por llave: atraviesa las puertas bloqueadas, etiqueta cada sala nueva con la llave que la libera y guarda la puerta testigo (D6). Para cada llave inobtenible se toma su ubicación alcanzada primero y se agrega una arista hacia la llave que libera esa sala. Una arista por llave forma una función parcial, así que los ciclos son disjuntos y se enumeran en $O(K)$ con una pasada de colores, cada uno desde su llave de menor id. Tres lemas sostienen que no hay ciclos falsos. Sean $R$ la región alcanzada, $O$ las llaves obtenidas y $U$ el resto:
+
+1. **U es un bloqueo real.** Si alguna llave de $U$ se pudiera obtener, la primera en obtenerse estaría en una sala fuera de $R$ detrás de una puerta cuya llave está en $U$ y aún no se tiene: contradicción con que $R$ es un punto fijo.
+2. **Cada arista es real.** Se registra solo si existe una ruta desde $R$ hasta la sala de la llave cuya última puerta cerrada exige la llave siguiente, y esa puerta se incluye en el reporte para verificarla a mano.
+3. **Las alternativas no ocultan una salida.** Si una llave tiene rutas por las puertas de $J_1$ y $J_2$, ambas llaves están en $U$ (si una estuviera en $O$, la sala sería alcanzable). Elegir una no oculta una vía libre.
+
+Decisión tomada: se reportan los ciclos del grafo de testigos y no las combinaciones de rutas alternativas, cuya enumeración es exponencial. Esto cumple la definición de ciclo de FR-012. Las alternativas descartadas son repetir una exploración por llave bloqueada ($O(K\,(S+E))$, prohibido por FR-025), componentes fuertemente conexas (reportan componentes y no ciclos concretos) y enumerar todos los ciclos elementales (exponencial).
+
+**Consulta de llaves, presupuesto y persistencia (D7).** La ubicación de las llaves llega por un método propio de la fuente de datos (`GET /criptas/{id}/llaves`). En red cuenta como solicitud, respeta el presupuesto y los reintentos (principio V). Se guarda en `criptas/<id>/llaves.json` dentro de la carpeta que se reinicia cuando cambia la versión: con la misma versión, la segunda verificación lee disco y no usa red (FR-020); con otra versión se vuelve a consultar (FR-021). Si la ubicación no está disponible o el presupuesto no alcanza, el resultado es «resolubilidad no verificada», que no es un veredicto (FR-022).
+
+**Replay y cargas sin verificar (D8).** `--replay` y continuar una partida guardada no verifican: no gastan solicitudes ni bloquean una partida que ya existe. Una partida iniciada con `--forzar` queda registrada y se puede reproducir. `--verificar` y `--bench` no importan `arcade` ni abren la vista (principio III).
+
+### Comparación medida
+
+**Reproducción:** `uv run python -m cripta --bench --semilla 42`, sección «Resolubilidad», implementada en [src/cripta/bench.py](../src/cripta/bench.py). Entorno y semilla como en §11; cada tiempo es el mejor de 3 a 5 corridas, salvo la ingenua, que se ejecuta una vez. Las cifras completas están en [mediciones.txt](../specs/001-resolubilidad/mediciones.txt); con la misma semilla los conteos coinciden entre ejecuciones y los tiempos varían. Las criptas se generan por semilla: región base conectada, cadena de $K=S/10$ llaves donde la puerta $j$ exige la llave $j-1$, ramas decorativas, ubicaciones repetidas e ids de sala permutados.
+
+**M1: verificación frente a repetir la exploración por llave.**
+
+| Salas $S$ | Salidas $E$ | Llaves $K$ | Verificación | Operaciones | Ingenua | Operaciones | Ingenua / verificación |
+|----------:|------------:|-----------:|-------------:|------------:|--------:|------------:|-----------------------:|
+| 200       | 409         | 20         | 0,972 ms     | 429         | 1,358 ms | 8 181      | 1,4 veces              |
+| 2 000     | 4 121       | 200        | 10,940 ms    | 4 321       | 141,621 ms | 824 201  | 12,9 veces             |
+| 20 000    | 41 237      | 2 000      | 147,926 ms   | 43 237      | omitida | omitida     | no medida              |
+
+La ingenua pierde en los dos tamaños medidos y la brecha crece con $K$: de 1,4 a 12,9 veces. Por conteo, las operaciones de la verificación crecen 10 veces por cada 10 veces de tamaño, y las de la ingenua 100 veces. A 200 salas la ventaja en tiempo es pequeña; el contraste solo es claro desde 2 000 salas.
+
+**M2: escalado al multiplicar por 10.** De 200 a 2 000 salas el tiempo crece 11,25 veces y las operaciones 10,07; de 2 000 a 20 000, 13,52 veces y 10,01. Ambos cocientes son menores que 15, como pide SC-004, pero el segundo está cerca del límite: el factor $\log K$ y el ordenamiento por ronda explican que el tiempo crezca más que las operaciones.
+
+**M3: cripta de referencia del paquete.** El paquete `datos_offline` no trae `cripta_<id>_llaves.json`, así que la medición imprime «sin llaves en el paquete». Cuando el paquete traiga llaves, la misma medición verifica la cripta real sin red y marca si tarda menos de 200 ms. No hay cifra real de la cripta de referencia en esta ejecución.
+
+**M7: límite de 200 ms sin red.** El esqueleto más grande del paquete tiene 50 salas, así que se genera una cripta sintética de 500 salas ($E=1\,027$, $K=50$). Resultó resoluble y se verificó en 2,571 ms, muy por debajo de 200 ms (SC-003). La prueba automatizada `test_limite_200ms_cripta_sintetica_grande` comprueba el mismo límite con el mejor de 3 corridas. Los tamaños de 2 000 y 20 000 salas se miden solo en M1, sin exigir un límite en una prueba.
+
+**M4: arreglo ordenado frente a tabla hash propia**, a 20 000 salas ($K=2\,000$, 4 092 consultas):
+
+| Medida | Arreglo ordenado | Tabla hash |
+|--------|-----------------:|-----------:|
+| Solo consultas | 5,911 ms | 6,185 ms |
+| Construcción y consultas | 16,293 ms | 19,956 ms |
+
+El arreglo es 1,22 veces más rápido que el hash en la medición completa, así que la regla de decisión (cambiar solo si el hash gana por más de 2 veces) conserva el arreglo. El hash no ahorra el orden: el rango por id exige ordenar los ids de todos modos, y la tabla se suma a ese costo.
+
+**M5: costo del reporte en la variante con ciclo.**
+
+| $S$ | $E$ | Sin reporte (resoluble) | Con reporte (un ciclo) | Salidas examinadas |
+|----:|----:|------------------------:|-----------------------:|-------------------:|
+| 2 000  | 4 121  | 10,997 ms  | 11,140 ms  | 4 121 de 4 121   |
+| 20 000 | 41 237 | 148,282 ms | 152,076 ms | 41 237 de 41 237 |
+
+El reporte cuesta cerca de 1 % a 3 % sobre la verificación y examina cada salida una sola vez: no repite exploraciones. El tiempo con reporte crece 13,65 veces al multiplicar por 10 el tamaño. La comparación usa una cripta resoluble del mismo tamaño y semilla, no la misma cripta sin reporte, porque el modelo no ofrece una verificación sin reporte; es una aproximación.
+
+**M6: orden por ronda con `ordenar`**, a 20 000 salas (17 rondas muy anchas): ordenar las rondas cuesta 45,175 ms frente a 0,046 ms de solo copiarlas, un sobrecosto de 30,1 % de los 149,698 ms de la verificación completa. Es el costo de cumplir el empate por menor id (FR-008). Es aceptable porque el escalado de M2 sigue menor que 15; si dejara de serlo, la salida correcta sería enmendar la spec antes del código (principio VII) y no relajar el orden en silencio.
+
+**Límites de esta medición.** Una ejecución, una semilla, en un solo equipo. Las criptas sintéticas tienen una cadena lineal de llaves, que es el peor caso para la ingenua, y no representan todas las criptas posibles. M3 no tiene dato real mientras el paquete no traiga llaves.

@@ -1253,4 +1253,21 @@ Prompt enviado:
 
 Uso de la respuesta: Implementar la fase especulativa, el grafo de testigos, la enumeración de ciclos, el reporte de bloqueo y su formato en consola, con las pruebas de US2 (T030 a T042).
 
+### Entrada #63
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Corregir la falla de regresión en la prueba de bench de la Parte I.
+
+Prompt enviado:
+
+```text
+La regresión muestra una falla nueva: pruebas.test_bench.PruebasBench.test_bench_no_construye_fuente_ni_vista espera que bootstrap llame a cripta.bench.main() sin argumentos cuando se usa --bench sin --semilla. Ajusta src/cripta/bootstrap.py para que llame a bench.main() sin argumentos si no se pasó --semilla, y a bench.main(semilla=N) si se pasó; bench.main DEBE usar 42 por defecto. No modifiques la prueba de la Parte I. Después ejecuta pruebas.test_bench y pruebas.test_bench_resolubilidad.
+```
+
+Uso de la respuesta: Se ajustó solo bootstrap.py. Sin --semilla llama a bench.main() sin argumentos; con --semilla N valida el valor y llama a bench.main(semilla=N), devolviendo 2 si no es entero. bench.py no cambió porque ya usaba 42 por defecto, y la prueba de la Parte I quedó intacta. Se confirmó que test_bench_no_importa_arcade requiere ejecutarse con uv run, porque su subproceso usa python -I y solo encuentra el paquete en el entorno del proyecto.
 ---

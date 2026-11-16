@@ -72,3 +72,34 @@ Código: [reproductor.py](../src/cripta/replay/reproductor.py).
 `cargar_sala` relee y recorre el índice en cada llamada: $O(s+b)$ para devolver $b$ bytes, sin leer los cuerpos de las otras salas. No es acceso $O(1)$.
 
 Código: [Cache_Fichas.py](../src/cripta/estructuras/Cache_Fichas.py), [Agenda_Eventos.py](../src/cripta/estructuras/Agenda_Eventos.py) y [Guardado_Binario.py](../src/cripta/estructuras/Guardado_Binario.py).
+
+## 7. Resolubilidad: cola con índice de cabeza e índice de llaves (§3.5, §5.4)
+
+Notación: $n$ elementos de la cola, $K$ llaves distintas, $m$ ids que se indexan (salidas cerradas y ubicaciones). Las razones de elegirlas y su comparación medida están en la [sección 12 de decisiones.md](decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
+
+### `ColaLista`: cola FIFO
+
+Una `list` y un índice de cabeza. Sacar avanza el índice y suelta la referencia sin desplazar la lista; no usa `list.pop(0)` ni `deque`.
+
+| Operación                           | Costo                   |
+|-------------------------------------|-------------------------|
+| `encolar`                           | $O(1)$ amortizado       |
+| `sacar`                             | $O(1)$                  |
+| `vacia`                             | $O(1)$                  |
+
+**Invariantes:** el orden de salida es el de entrada; sacar de una cola vacía lanza `IndexError`. La lista conserva las posiciones ya sacadas hasta que la cola se descarta, así que ocupa $O(n)$ de memoria por todas las inserciones y no se reutiliza entre rondas.
+
+### `IndiceLlaves`: arreglo ordenado con búsqueda binaria
+
+Guarda los ids de llave distintos, ordenados con `ordenar` del proyecto. El rango de una llave es su posición, de modo que «menor id» equivale a «menor rango». No usa `dict`, `set` ni `bisect`.
+
+| Operación                     | Costo                                              |
+|-------------------------------|----------------------------------------------------|
+| Construcción                  | $O(m\log m)$: ordenar y quitar repetidos           |
+| `rango` (id a posición)       | $O(\log K)$ por búsqueda binaria; $-1$ si no existe |
+| `cantidad`                    | $O(1)$                                             |
+| `ids` (copia en orden)        | $O(K)$                                             |
+
+**Invariantes:** ids distintos y en orden lexicográfico; el resultado no depende del orden de la entrada. Este índice es el factor $\log K$ de la verificación, que por lo demás cuesta $O(S+E+K)$. La medición M4 lo comparó con una tabla hash propia y conserva el arreglo.
+
+Código: [Cola_Lista.py](../src/cripta/estructuras/Cola_Lista.py) e [Indice_Llaves.py](../src/cripta/estructuras/Indice_Llaves.py).
