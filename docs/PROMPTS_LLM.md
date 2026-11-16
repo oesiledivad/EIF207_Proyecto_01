@@ -1378,4 +1378,30 @@ Prompt enviado:
 
 Uso de la respuesta: Se implementaron T069 a T082. Conocimiento ganó instantanea, restaurar y reconstruir (incluido el mapa conocido de un instante pasado). El pergamino cancela el viaje activo, e iniciar o cargar una partida lo descarta (FR-034a). ir a deja el comentario # ir_a <sala> en el registro y el replay ignora las líneas de comentario, de modo que los replays de la Parte I se reproducen igual. Se detectó que FR-015 pide guardar el conocimiento con la partida, mientras el contrato asigna el formato binario del guardado a la spec 004; quedó pendiente de decisión sin improvisar. Verificación: selección del README 58 OK, pruebas de la 002 OK y suite completa con las mismas 6 fallas preexistentes.
 
+
+
+
+
+### Entrada #68
+
+Fecha: 16/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Enmendar FR-015 para asignar a la spec 004 la inclusión del conocimiento en el formato de guardado, y definir e implementar el conocimiento por defecto al cargar un guardado sin conocimiento.
+
+Prompt enviado:
+
+```text
+Enmienda de FR-015 en la spec 002 (sin commits):
+1. Primero dime qué estado de conocimiento queda hoy al cargar una partida guardada: qué salas quedan exploradas y avistadas, y si la sala actual del jugador queda explorada. Indica el archivo y la línea donde ocurre.
+2. spec.md, FR-015: reescríbelo para que diga que el conocimiento DEBE poder guardarse y restaurarse con la partida; que esta spec provee instantanea() y restaurar() según contracts/conocimiento-serializable.md; que incluirlo en el formato binario del guardado corresponde a la spec 004; y que, mientras un guardado no contenga conocimiento, al cargarlo el conocimiento DEBE quedar como en el instante 0 pero desde la sala actual: la sala actual explorada con sus salidas, costos y puertas observadas, y los destinos de sus salidas avistados.
+3. tasks.md: agrega T076a en la Fase 8, después de T076, para implementar y probar ese valor por defecto (cita FR-015).
+4. Si el código actual no cumple FR-015 enmendado, implementa T076a con su prueba en pruebas/test_conocimiento_serializable.py y márcala [X]. Si ya lo cumple, solo agrega la prueba y márcala. No modifiques el formato binario ni los archivos de src/cripta/controlador/guardado/.
+5. Muéstrame el texto final de FR-015 y T076a, dime qué archivos cambiaste y ejecuta con uv run pruebas.test_conocimiento_serializable y la selección del README.
+```
+
+Uso de la respuesta: Se confirmó un defecto: al cargar una partida, el conocimiento se armaba desde la sala inicial de la cripta y la sala actual del jugador quedaba desconocida. FR-015 se enmendó (la inclusión en el formato binario corresponde a la spec 004 y se define el conocimiento por defecto al cargar) y se agregó T076a. GuardadoControlador.py ahora inicia el conocimiento desde la sala actual después de restaurar, sin tocar el formato de guardado. La prueba nueva falla sin el arreglo y pasa con él. Verificación: selección del README 58 OK y suite completa con las mismas 6 fallas preexistentes.
 ---

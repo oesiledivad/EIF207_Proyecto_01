@@ -201,7 +201,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 
 - **FR-013**: El programa PUEDE seguir descargando el esqueleto completo de la cripta y usarlo para la precarga de contenido, porque es infraestructura.
 - **FR-014**: Todo lo que la interfaz muestra del mapa y todo lo que usa ir a DEBE derivarse exclusivamente del conocimiento del jugador.
-- **FR-015**: El conocimiento del jugador DEBE ser parte del estado del juego: DEBE guardarse y restaurarse con la partida.
+- **FR-015**: El conocimiento del jugador DEBE poder guardarse y restaurarse con la partida. Esta spec provee `instantanea()` y `restaurar()` según `contracts/conocimiento-serializable.md`; incluirlo en el formato binario del guardado corresponde a la spec 004. Mientras un guardado no contenga conocimiento, al cargarlo el conocimiento DEBE quedar como en el instante 0 pero desde la sala actual: la sala actual explorada con sus salidas, costos y puertas observadas, y los destinos de sus salidas avistados.
 - **FR-016**: El conocimiento del jugador DEBE revertirse con el pergamino de retroceso. Revertir una entrada con antorcha encendida DEBE devolver las salas exploradas por la antorcha a su estado anterior.
 - **FR-017**: El conocimiento del jugador DEBE poder reconstruirse para cualquier instante pasado, para uso de la línea de tiempo (spec 004).
 - **FR-018**: La interfaz DEBE ofrecer un comando para ver el mapa conocido, que muestre las salas exploradas, sus salidas con costo y estado recordado de la puerta (abierta, cerrada o sin observar), y las salas avistadas. NO DEBE mostrar salas desconocidas.
