@@ -18,6 +18,9 @@ Complejidad:
     observar: O(4 + entrantes)
     salida_usable: O(1)
     iniciar: O(S) una vez
+    instantanea / restaurar: O(S)
+    longitud_registro: O(1)
+    reconstruir: O(S + n), n cambios del registro
 """
 
 from __future__ import annotations
@@ -31,6 +34,8 @@ ABIERTA = 1
 CERRADA = 2
 
 COSTO_DEFECTO = 100
+
+VERSION_INSTANTANEA = 1
 
 TIPO_ESTADO_SALA = 0
 TIPO_MEMORIA_PUERTA = 1
@@ -165,3 +170,94 @@ class ConocimientoJugador:
                 and self.estado(salida.clave // 4) == EXPLORADA
                 and self.estado(salida.sala_destino) == EXPLORADA
                 and self.memoria_puerta(salida.clave) == ABIERTA)
+
+    # Interfaz serializable (contracts/conocimiento-serializable.md, FR-015 y FR-017)
+
+    def instantanea(self) -> list[int]:
+        """Lista de enteros: versión, n, estado de cada sala y memoria de cada salida.
+
+        Mide `5n + 2` y cada valor cabe en un byte (0 a 2). No guarda entrantes,
+        nombres ni costos: se derivan del esqueleto. O(S).
+        """
+        n = len(self.estado_sala)
+        resultado = [VERSION_INSTANTANEA, n]
+        resultado.extend(self.estado_sala)
+        resultado.extend(self.puerta)
+        return resultado
+
+    @staticmethod
+    def _validar_instantanea(instantanea: list[int], n_esperado: int | None = None) -> int:
+        """Valida versión, `n`, largo y valores; devuelve `n`. Falla con ValueError.
+
+        Con `n_esperado` (el del esqueleto ensamblado) exige que coincida.
+        """
+        if not isinstance(instantanea, list) or len(instantanea) < 2:
+            raise ValueError("Instantánea del conocimiento incompleta.")
+        if instantanea[0] != VERSION_INSTANTANEA:
+            raise ValueError("Versión de instantánea del conocimiento no admitida.")
+        n = instantanea[1]
+        if type(n) is not int or n < 0 or (n_esperado is not None and n != n_esperado):
+            raise ValueError("La instantánea no coincide con el esqueleto de la cripta.")
+        if len(instantanea) != 5 * n + 2:
+            raise ValueError("Largo de instantánea del conocimiento incorrecto.")
+        for posicion in range(2, len(instantanea)):
+            valor = instantanea[posicion]
+            if type(valor) is not int or not 0 <= valor <= 2:
+                raise ValueError("Valor de instantánea del conocimiento fuera de 0 a 2.")
+        return n
+
+    def restaurar(self, instantanea: list[int]) -> None:
+        """Reemplaza el conocimiento por el de una instantánea y vacía el registro (FR-015).
+
+        No toca el historial A PROPÓSITO: ocurre al cargar, con el historial
+        limpio, y no es un cambio de juego reversible con el pergamino. Valida
+        todo antes de cambiar nada. O(S).
+        """
+        if not self.inicializado:
+            raise ValueError("El conocimiento no está iniciado: no hay esqueleto contra el que validar.")
+        n = len(self.estado_sala)
+        self._validar_instantanea(instantanea, n)
+        self.estado_sala = list(instantanea[2:2 + n])
+        self.puerta = list(instantanea[2 + n:])
+        self.registro = []
+
+    def longitud_registro(self) -> int:
+        """Cantidad de cambios del registro cronológico. O(1)."""
+        return len(self.registro)
+
+    @staticmethod
+    def reconstruir(instantanea_base: list[int], registro: list, n: int) -> "ConocimientoJugador":
+        """Conocimiento nuevo tras aplicar los primeros `n` cambios del registro a la base.
+
+        `instantanea_base` es la del instante 0. No modifica el conocimiento vivo
+        ni el historial. El resultado es de solo lectura (sirve para `instantanea`,
+        `estado`, `memoria_puerta` y para armar un `MapaConocido`). Falla con
+        ValueError si `n` está fuera de `0..len(registro)`. O(S + n).
+        """
+        if type(n) is not int or not 0 <= n <= len(registro):
+            raise ValueError("Cantidad de cambios fuera del registro.")
+        total = ConocimientoJugador._validar_instantanea(instantanea_base)
+        nuevo = ConocimientoJugador()
+        nuevo.inicializado = True
+        nuevo.estado_sala = list(instantanea_base[2:2 + total])
+        nuevo.puerta = list(instantanea_base[2 + total:])
+        for posicion in range(n):
+            _, tipo, indice, valor = registro[posicion]
+            if tipo == TIPO_ESTADO_SALA:
+                nuevo.estado_sala[indice] = valor
+            else:
+                nuevo.puerta[indice] = valor
+        return nuevo
+
+    @staticmethod
+    def reconstruir_hasta_tiempo(instantanea_base: list[int], registro: list,
+                                 t: int) -> "ConocimientoJugador":
+        """Aplica los cambios con `tiempo <= t`; exacta solo en fronteras de acción.
+
+        La forma canónica es `reconstruir` por prefijo. El registro está en orden
+        cronológico, así que se corta en el primer cambio posterior a `t`. O(S + n).
+        """
+        cantidad = 0
+        while cantidad < len(registro) and registro[cantidad][0] <= t:
+            cantidad += 1
+        return ConocimientoJugador.reconstruir(instantanea_base, registro, cantidad)

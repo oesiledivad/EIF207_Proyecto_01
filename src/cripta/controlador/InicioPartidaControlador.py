@@ -67,6 +67,7 @@ class InicioPartidaControlador:
             "offline" if app._cripta_service.es_offline() else "red",
         )
 
+        app._viaje.descartar()   # FR-034a: iniciar o cargar una partida descarta el viaje activo
         app._bitacora.limpiar()
         app._guardado.actual = None
         app._bitacora.append(Mensaje("sistema", f"Partida iniciada en {cripta_id}."))

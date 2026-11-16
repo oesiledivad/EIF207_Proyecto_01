@@ -1347,4 +1347,35 @@ Prompt enviado:
 ```
 
 Uso de la respuesta: Se implementaron T049 a T068 y T054a sin tareas detenidas. El viaje se detiene por enemigos activos (bandera entrada_con_enemigos en ExploracionControlador) y por daño, detectado al comparar la vida antes y después de cada paso, sin modificar Combate.py. Se agregó la prioridad partida_terminada > danio > enemigos > llegada (FR-031a) y el corte por cantidad de pasos, reutilizando los motivos que ya existían. Con la antorcha encendida, entrar explora las vecinas en O(16), usando la mecánica de antorcha de la Parte I. Pruebas escritas antes de implementar y vistas fallar (US4: 9 de 20; US5: 4 de 6). Verificación: selección del README 58 OK, pruebas de la 002 OK y suite completa con las mismas 6 fallas preexistentes.
+
+
+
+
+### Entrada #67
+
+Fecha: 16/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit (/speckit-implement).
+
+Objetivo: Implementar US6 (el conocimiento como parte del estado de la partida) y US7 (registro de la partida y reproducción con ir a) de la especificación 002.
+
+Prompt enviado:
+
+```text
+/speckit-implement Implementa únicamente la Fase 8 (US6, T069-T076) y la Fase 9 (US7, T077-T082) de specs/002-niebla-ir-a/tasks.md, en orden, y detente en el checkpoint de US7. Reglas:
+1. Respeta la constitución: estructuras propias; prohibidos dict/set como índice o caché, heapq, bisect, collections, sorted(), list.sort() y equivalentes. --replay, --bench y --verificar no instancian la vista.
+2. Escribe las pruebas de cada historia antes de su implementación y confirma que fallan antes de implementar.
+3. Pruebas con unittest en pruebas/. No modifiques pruebas de la Parte I, de la 001 ni de US1 a US5.
+4. No ejecutes unittest discover ni pruebas.test_guardar_llamadas. Verifica con la selección del README más todas las pruebas de la 002, siempre con uv run.
+5. Sigue contracts/conocimiento-serializable.md y contracts/registro-partida.md. Las partidas guardadas y los replays de la Parte I deben seguir cargándose y reproduciéndose igual; si el contrato no define cómo tratar un guardado o un replay sin conocimiento, detente y repórtalo.
+6. T075: además del pergamino, implementa y prueba FR-034a (iniciar o cargar una partida descarta el viaje activo). Hoy Aplicacion.py solo cancela el viaje en _accion_jugador.
+7. Si una tarea no coincide con el código o con el spec, detente y repórtalo en vez de improvisar. Si haces un ajuste que no está en las tareas, cita el FR exacto y copia su texto.
+8. Marca [X] cada tarea al terminarla. No hagas commits.
+9. Al final dame: tareas completadas, archivos creados o modificados, ajustes fuera de las tareas, tareas detenidas y el resultado de las pruebas.
+```
+
+Uso de la respuesta: Se implementaron T069 a T082. Conocimiento ganó instantanea, restaurar y reconstruir (incluido el mapa conocido de un instante pasado). El pergamino cancela el viaje activo, e iniciar o cargar una partida lo descarta (FR-034a). ir a deja el comentario # ir_a <sala> en el registro y el replay ignora las líneas de comentario, de modo que los replays de la Parte I se reproducen igual. Se detectó que FR-015 pide guardar el conocimiento con la partida, mientras el contrato asigna el formato binario del guardado a la spec 004; quedó pendiente de decisión sin improvisar. Verificación: selección del README 58 OK, pruebas de la 002 OK y suite completa con las mismas 6 fallas preexistentes.
+
 ---

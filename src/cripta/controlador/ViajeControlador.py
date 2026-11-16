@@ -93,6 +93,8 @@ class ViajeControlador:
         self.activo = True
         self.pasos = 0
         self.motivo = ""
+        # FR-033: la orden aceptada queda como comentario, una sola vez, antes del primer paso.
+        app._partida.registrar_comentario(f"ir_a {destino}")
         return ResultadoViaje(ok=True, activo=True)
 
     def avanzar(self) -> ResultadoViaje:
@@ -132,6 +134,17 @@ class ViajeControlador:
         if sala == self.destino:
             return self._detener("llegada", f"Viaje detenido: llegaste a la sala {self.destino}.", ok=True)
         return ResultadoViaje(ok=True, activo=True)
+
+    def descartar(self) -> None:
+        """Olvida el viaje activo con motivo `cancelado` al empezar otra partida (FR-034a).
+
+        No escribe mensaje: la bitácora y el registro de la partida anterior ya no existen.
+        """
+        self.activo = False
+        self.motivo = "cancelado"
+        self.destino = -1
+        self.pasos = 0
+        self.en_paso = False
 
     def cancelar(self) -> ResultadoViaje:
         """Interrumpe el viaje activo con el motivo `cancelado` (FR-034)."""

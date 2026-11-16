@@ -106,15 +106,18 @@ class ExploracionControlador:
         """Crea el conocimiento del instante 0 una vez ensambladas las salas (FR-001)."""
         self.conocimiento.iniciar(self.salas, self.entrantes, sala_inicial)
 
-    def mapa_conocido(self) -> MapaConocido:
+    def mapa_conocido(self, conocimiento=None) -> MapaConocido:
         """Arma el mapa solo con lo que el jugador conoce (FR-018).
+
+        `conocimiento` permite armar el mapa de un instante pasado reconstruido
+        (FR-017); por defecto usa el conocimiento vivo.
 
         Recorre los ids en orden ascendente sin ordenar; no incluye salas
         desconocidas y de las avistadas solo expone el id (FR-004). No consume
         tiempo ni lee contenido.
         """
         mapa = MapaConocido()
-        c = self.conocimiento
+        c = self.conocimiento if conocimiento is None else conocimiento
         if not c.inicializado:
             return mapa
         for id_ in range(len(c.estado_sala)):

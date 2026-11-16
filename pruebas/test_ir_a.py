@@ -512,5 +512,55 @@ class PruebasIrAPeligro(unittest.TestCase):
         self.assertEqual(_mensajes_viaje(app), [TEXTO_SIN_RUTA])
 
 
+# ---------------------------------------------------------------------------
+# US6: iniciar o cargar una partida descarta el viaje activo (FR-034a)
+# ---------------------------------------------------------------------------
+
+import tempfile
+
+
+class PruebasViajeYPartidaNueva(unittest.TestCase):
+    def _viaje_activo(self, ruta=None):
+        app = Aplicacion(FuenteNiebla(_lineal(), 1, 4), ruta_guardado=ruta)
+        self.assertTrue(app.iniciar_partida("Jugador", "42", "cripta-01", registrar=False,
+                                            verificar=False).ok)
+        _conocer(app, [1, 2, 3, 4])
+        return app
+
+    def _comprobar_descartado(self, app):
+        self.assertFalse(app.viaje_activo)
+        self.assertEqual(app._viaje.motivo, "cancelado")
+        antes = tiempo(app)
+        sala_antes = app._jugador.sala
+        paso = app.avanzar_viaje()
+        self.assertFalse(paso.ok or paso.activo)
+        self.assertEqual(app._jugador.sala, sala_antes)    # el viaje no continúa en la nueva partida
+        self.assertEqual(tiempo(app), antes)
+
+    def test_fr034a_iniciar_partida_descarta_el_viaje(self):
+        """FR-034a: iniciar una partida descarta el viaje activo y no continúa en la nueva."""
+        app = self._viaje_activo()
+        self.assertTrue(app.ir_a(4).activo)
+        self.assertTrue(app.avanzar_viaje().activo)
+        self.assertEqual(app._jugador.sala, 2)
+        self.assertTrue(app.iniciar_partida("Jugador", "42", "cripta-01", registrar=False,
+                                            verificar=False).ok)
+        self.assertEqual(app._jugador.sala, 1)
+        self._comprobar_descartado(app)
+
+    def test_fr034a_cargar_partida_descarta_el_viaje(self):
+        """FR-034a: cargar una partida descarta el viaje activo y no continúa en la cargada."""
+        with tempfile.TemporaryDirectory(prefix="cripta-viaje-carga-") as carpeta:
+            ruta = Path(carpeta) / "guardado.bin"
+            app = self._viaje_activo(ruta)
+            self.assertTrue(app.guardar().ok)
+            self.assertTrue(app.ir_a(4).activo)
+            self.assertTrue(app.avanzar_viaje().activo)
+            resultado = app.cargar()
+            self.assertTrue(resultado.ok, resultado.motivo)
+            self.assertEqual(app._jugador.sala, 1)
+            self._comprobar_descartado(app)
+
+
 if __name__ == "__main__":
     unittest.main()

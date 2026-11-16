@@ -271,6 +271,7 @@ class Aplicacion:
         anteriores = self._tipos_activos()
         resultado = self._partida.retroceder()
         if resultado.ok:
+            self._viaje.cancelar()   # FR-034: el viaje no continúa tras revertir su último paso
             self._avisar(self._cripta_service.reproteger(anteriores, self._tipos_activos()))
             self._despues_del_ciclo()
             self._bitacora.append(Mensaje("efecto", "Usaste un pergamino de retroceso."))
