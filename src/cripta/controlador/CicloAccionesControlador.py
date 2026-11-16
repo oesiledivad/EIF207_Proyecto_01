@@ -50,6 +50,9 @@ class CicloAccionesControlador:
                               app._gestor.estado.acciones_ejecutadas + 1)
             if esta_vivo(app._jugador):
                 self.consumir_tiempo(nombre_costo)
+            # FR-008: lo que se ve de las puertas se recuerda al terminar la acción (D4).
+            app._exploracion.conocimiento.observar(
+                app._jugador.sala, historial, app._simulacion.reloj.tiempo_actual)
             self.finalizar()
             if nombre_costo == "mover":
                 app._partida.comprobar_victoria(sala_origen, argumento, app.resumen_red())

@@ -15,6 +15,8 @@ Complejidad:
     estado / memoria_puerta: O(1)
     explorar: O(4)
     entrar: O(4)
+    observar: O(4 + entrantes)
+    salida_usable: O(1)
     iniciar: O(S) una vez
 """
 
@@ -117,3 +119,39 @@ class ConocimientoJugador:
         vecinas llega con la historia de la antorcha.
         """
         self.explorar(sala, historial, tiempo)
+
+    def _asignar_puerta(self, clave: int, valor: int, historial, tiempo: int) -> None:
+        """Cambia la memoria de una puerta por el historial y lo anexa al registro."""
+        if not 0 <= clave < len(self.puerta) or self.puerta[clave] == valor:
+            return
+        historial.asignar(self.puerta, clave, valor)
+        historial.agregar(self.registro, [tiempo, TIPO_MEMORIA_PUERTA, clave, valor])
+
+    def observar(self, sala: int, historial, tiempo: int) -> None:
+        """Recuerda el estado real de las puertas que el jugador ve desde `sala`.
+
+        Cubre las 4 salidas de la sala y las salidas de otras salas que llegan a
+        ella (FR-007); solo los cambios reales llegan al registro (FR-037). Se
+        llama al terminar cada acción, no al explorar por antorcha (FR-009a).
+        Costo O(4 + entrantes).
+        """
+        if not self.inicializado or not 0 <= sala < len(self.estado_sala):
+            return
+        modelo = self._salas.obtener(sala)
+        if modelo is None:
+            return
+        for salida in modelo.salidas:
+            self._asignar_puerta(salida.clave, CERRADA if salida.cerrada else ABIERTA, historial, tiempo)
+        for salida in self._entrantes[sala]:
+            self._asignar_puerta(salida.clave, CERRADA if salida.cerrada else ABIERTA, historial, tiempo)
+
+    def salida_usable(self, salida) -> bool:
+        """Predicado de las rutas: ¿puede el jugador contar con esta salida? O(1).
+
+        Solo si su sala de origen y su destino están explorados y su memoria de
+        puerta es abierta. Nunca consulta el estado real de las puertas (FR-014, FR-022).
+        """
+        return (self.inicializado
+                and self.estado(salida.clave // 4) == EXPLORADA
+                and self.estado(salida.sala_destino) == EXPLORADA
+                and self.memoria_puerta(salida.clave) == ABIERTA)

@@ -9,6 +9,7 @@ from cripta.controlador.GuardadoControlador import GuardadoControlador
 from cripta.controlador.CheatsControlador import CheatsControlador
 from cripta.controlador.InicioPartidaControlador import InicioPartidaControlador
 from cripta.controlador.CicloAccionesControlador import CicloAccionesControlador
+from cripta.controlador.ViajeControlador import ViajeControlador
 
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
@@ -18,7 +19,7 @@ from cripta.controlador.InventarioControlador import InventarioControlador
 from cripta.controlador.CombateControlador import CombateControlador
 from cripta.controlador.EfectosControlador import EfectosControlador
 
-from cripta.dto.Conocimiento_dto import MapaConocido
+from cripta.dto.Conocimiento_dto import MapaConocido, ResultadoViaje
 from cripta.dto.Partida_dto import (
     CriptaResumen,
     DetallesCripta,
@@ -67,6 +68,7 @@ class Aplicacion:
         self._cheats = CheatsControlador(self)
         self._inicio = InicioPartidaControlador(self)
         self._ciclo = CicloAccionesControlador(self)
+        self._viaje = ViajeControlador(self)   # estado del viaje: NO es estado del juego
 
     #  Selección
 
@@ -105,6 +107,32 @@ class Aplicacion:
         """Mapa que conoce el jugador; no consume tiempo ni escribe en partida.log (FR-018)."""
         return self._exploracion.mapa_conocido()
 
+    #  Viaje automático «ir a» (delegado a ViajeControlador)
+
+    def ir_a(self, sala_id) -> ResultadoViaje:
+        """Acepta o rechaza `ir a <sala>`; la orden no consume tiempo (FR-019 a FR-022)."""
+        return self._viaje.iniciar(sala_id)
+
+    def avanzar_viaje(self) -> ResultadoViaje:
+        """Da un paso del viaje activo (FR-025)."""
+        return self._viaje.avanzar()
+
+    def cancelar_viaje(self) -> ResultadoViaje:
+        """Interrumpe el viaje activo (FR-034)."""
+        return self._viaje.cancelar()
+
+    def ir_a_completo(self, sala_id) -> ResultadoViaje:
+        """Acepta la orden y repite los pasos hasta que el viaje se detiene (pruebas y consola)."""
+        resultado = self._viaje.iniciar(sala_id)
+        while resultado.ok and resultado.activo:
+            resultado = self._viaje.avanzar()
+        return resultado
+
+    @property
+    def viaje_activo(self) -> bool:
+        """Lo consulta la vista en cada ciclo para seguir avanzando."""
+        return self._viaje.activo
+
     def _crear_salas_desde_esqueleto(self, esqueleto: list[SalaModelo]) -> None:
         self._exploracion.ensamblar_salas(esqueleto)
 
@@ -126,6 +154,9 @@ class Aplicacion:
                 and self._gestor.estado.activa)
 
     def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None) -> ResultadoAccion:
+        # FR-034: toda acción del jugador que no sea un paso del propio viaje lo cancela.
+        if self._viaje.activo and not self._viaje.en_paso:
+            self._viaje.cancelar()
         # Punto fijo para incorporar la precarga en segundo plano (determinista, 4.2).
         self._avisar(self._cripta_service.completar_precarga())
         return self._ciclo.ejecutar(nombre_costo, ejecutar, argumento)
