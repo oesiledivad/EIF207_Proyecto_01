@@ -14,7 +14,7 @@ El modelo no conoce HTTP, archivos ni vista.
 Complejidad:
     estado / memoria_puerta: O(1)
     explorar: O(4)
-    entrar: O(4)
+    entrar: O(4), O(16) con la antorcha encendida
     observar: O(4 + entrantes)
     salida_usable: O(1)
     iniciar: O(S) una vez
@@ -115,10 +115,20 @@ class ConocimientoJugador:
     def entrar(self, sala: int, antorcha: bool, historial, tiempo: int) -> None:
         """El jugador entra a `sala`: la explora (FR-002, FR-036).
 
-        `antorcha` es la antorcha tal como estaba al entrar; su efecto sobre las
-        vecinas llega con la historia de la antorcha.
+        `antorcha` es la antorcha tal como estaba al entrar. Si estaba encendida,
+        también explora el destino de cada salida de la sala, abierta o cerrada
+        (FR-010). Explorar no observa puertas ni toca enemigos, trampas ni
+        contenido (FR-011); con la antorcha apagada las vecinas solo quedan
+        avistadas (FR-012). Costo O(16).
         """
         self.explorar(sala, historial, tiempo)
+        if not antorcha or not self.inicializado or not 0 <= sala < len(self.estado_sala):
+            return
+        modelo = self._salas.obtener(sala)
+        if modelo is None:
+            return
+        for salida in modelo.salidas:
+            self.explorar(salida.sala_destino, historial, tiempo)
 
     def _asignar_puerta(self, clave: int, valor: int, historial, tiempo: int) -> None:
         """Cambia la memoria de una puerta por el historial y lo anexa al registro."""

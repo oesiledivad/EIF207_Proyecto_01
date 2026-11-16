@@ -1318,4 +1318,33 @@ Enmienda de la spec 002 (solo documentos y, si hace falta, la prueba de T042; si
 
 Uso de la respuesta: FR-025 se enmendó para indicar que cada paso de ir a consume el mismo tiempo que un movimiento ordinario, ya que el tiempo según el costo de la salida pertenece a la spec 003 (research.md, D6). Se agregó FR-034a para descartar el viaje activo al iniciar o cargar una partida, y research.md pasó a citarlo. T042 se redactó de nuevo y quedó marcada; su prueba se ajustó para comparar cada paso con un movimiento ordinario equivalente, de modo que siga siendo válida cuando se integre la spec 003. T075 se amplió para verificar FR-034a en US6. pruebas.test_ir_a: 6 pruebas OK.
 
+
+
+### Entrada #66
+
+Fecha: 16/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit (/speckit-implement).
+
+Objetivo: Implementar US4 (detener el viaje ante peligro o falta de ruta) y US5 (explorar vecinas con la antorcha) de la especificación 002.
+
+Prompt enviado:
+
+```text
+/speckit-implement Implementa únicamente la Fase 6 (US4, T049-T060 y T054a) y la Fase 7 (US5, T061-T068) de specs/002-niebla-ir-a/tasks.md, en orden, y detente en el checkpoint de US5. Reglas:
+1. Respeta la constitución: estructuras propias; prohibidos dict/set como índice o caché, heapq, bisect, collections, sorted(), list.sort() y equivalentes. --replay, --bench y --verificar no instancian la vista.
+2. Escribe las pruebas de cada historia antes de su implementación y confirma que fallan antes de implementar.
+3. Pruebas con unittest en pruebas/. No modifiques pruebas de la Parte I, de la 001, de US1, US2 ni US3.
+4. No ejecutes unittest discover ni pruebas.test_guardar_llamadas. Verifica con la selección del README más las pruebas nuevas y las de US1 a US3, siempre con uv run.
+5. T059: ViajeControlador ya tiene los motivos sin_ruta, movimiento_rechazado y partida_terminada (adelantados en US3). Completa enemigos, danio, la prioridad entre motivos (FR-031a) y el corte por cantidad de pasos sin duplicar lo existente, y asegúrate de que las pruebas de US4 también cubran esos tres motivos.
+6. T058: no cambies el comportamiento del combate de la Parte I; solo detecta el daño para detener el viaje. Si eso exige modificar Combate.py, detente y repórtalo antes.
+7. US5: si la antorcha no existe en el código actual o su mecánica pertenece a otra spec, detente y repórtalo.
+8. Si una tarea no coincide con el código o con el spec, detente y repórtalo en vez de improvisar. Si haces un ajuste que no está en las tareas, cita el FR exacto y copia su texto.
+9. Marca [X] cada tarea al terminarla. No hagas commits.
+10. Al final dame: tareas completadas, archivos creados o modificados, ajustes fuera de las tareas, tareas detenidas y el resultado de las pruebas.
+```
+
+Uso de la respuesta: Se implementaron T049 a T068 y T054a sin tareas detenidas. El viaje se detiene por enemigos activos (bandera entrada_con_enemigos en ExploracionControlador) y por daño, detectado al comparar la vida antes y después de cada paso, sin modificar Combate.py. Se agregó la prioridad partida_terminada > danio > enemigos > llegada (FR-031a) y el corte por cantidad de pasos, reutilizando los motivos que ya existían. Con la antorcha encendida, entrar explora las vecinas en O(16), usando la mecánica de antorcha de la Parte I. Pruebas escritas antes de implementar y vistas fallar (US4: 9 de 20; US5: 4 de 6). Verificación: selección del README 58 OK, pruebas de la 002 OK y suite completa con las mismas 6 fallas preexistentes.
 ---

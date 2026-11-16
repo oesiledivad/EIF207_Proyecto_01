@@ -43,6 +43,9 @@ class ExploracionControlador:
         # Lo que el jugador sabe (FR-001). El esqueleto completo de `salas` solo sirve de
         # infraestructura de precarga de contenido (FR-013): la vista y el mapa no lo leen.
         self.conocimiento = ConocimientoJugador()
+        # Verdadero si al entrar a la sala en el último movimiento había enemigos vivos (activos
+        # o dormidos, ya activados los dormidos). Lo lee el viaje; no es estado del juego.
+        self.entrada_con_enemigos = False
 
     # Accesos cortos al contexto (se leen siempre de la aplicación: cambian por partida)
 
@@ -271,6 +274,7 @@ class ExploracionControlador:
         self.conocimiento.entrar(destino_id, antorcha, self._gestor.historial, tiempo_actual)
         self._simulacion.agenda.cambiar(sala_destino, "ultimo_tiempo_visita", tiempo_actual)  # 2.9
         app._combate.activar_sala(sala_destino, self._simulacion)   # 2.4
+        self.entrada_con_enemigos = any(esta_vivo(e) for e in sala_destino.enemigos)   # FR-028 (C5)
         self._servicio.fijar_fichas(self._servicio.tipos_visibles(sala_destino))
         self._estado.objetos_suelo = sala_destino.objetos
         self._bitacora.append(Mensaje("jugador", f"Te mueves al {direccion}: {sala_destino.nombre}."))
