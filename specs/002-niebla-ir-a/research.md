@@ -201,7 +201,13 @@ cada paso con el conocimiento vigente.
 - **Reutilizar distancias entre pasos**: la memoria de puertas cambia al observar la sala nueva, y
   una puerta recordada abierta que resulta cerrada invalida distancias de forma no local. Mantener
   la corrección exige detectar qué distancias dependen de la arista cambiada, con más código que el
-  recálculo. Se mide en K6 y solo se adopta si gana por más de 2 veces.
+  recálculo. Se mide en K6 y solo se adopta si gana por más de 2 veces. La regla de más de 2 veces
+  compara solo alternativas que cumplen FR-026 (recalcular con el conocimiento vigente en cada paso).
+  Reutilizar distancias no lo cumple cuando el conocimiento cambia durante el viaje, así que no
+  entra en la comparación. En K6 (2 000 salas, 10 viajes, semilla 42) el inverso con parada tardó
+  869 ms, el inverso completo 4 042 ms, el Dijkstra desde el origen 1 086 ms y reutilizar 151 ms
+  (5,75 veces menos, según `mediciones.txt`); las cuatro coinciden en el costo de ruta solo porque en esa medición el
+  conocimiento no cambia entre pasos.
 - **BFS con la cola de la spec 001**: correcto solo con costos iguales; FR-023 prefiere menor costo
   aunque tenga más salas. K8 muestra rutas peores.
 - **Floyd-Warshall o precálculo de todas las distancias**: O(X^3) o memoria O(X^2); además se
