@@ -157,3 +157,15 @@ vida 15, tiempo 1200), con 0 solicitudes de red. También pasaron `test_us7_1_pa
 `uv run python -m cripta --bench --semilla 42` dos veces: aparecen K1 a K9, sin ventana, y las partes deterministas
 coinciden (solo cambian los tiempos). K4: máximo 0,239 ms (menor que 5 ms). Salida en [mediciones.txt](mediciones.txt).
 
+### Validación visual en la GUI (16/11/2026)
+
+- Aviso «resolubilidad no verificada» (spec 001): verificado.
+- Escenarios 1, 2, 7 y 8: verificados.
+- Escenarios 3, 4 y 6: verificados.
+- Escenario 17: verificado.
+- Escenario 9: verificado.
+- Escenario 16: verificado.
+- Escenarios 5 y 12: verificados.
+- Escenario 13: verificado.
+- Escenario 15: verificado.
+- Sección 3 (replay de un viaje): verificada.
