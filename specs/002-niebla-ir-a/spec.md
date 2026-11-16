@@ -214,7 +214,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 - **FR-022**: La ruta DEBE calcularse solo con el conocimiento del jugador: solo salas exploradas y solo salidas que su mapa recuerda abiertas; una salida con puerta cerrada o «sin observar» NO DEBE usarse.
 - **FR-023**: La ruta DEBE minimizar la suma de costos de las salidas, y una salida sin costo declarado DEBE valer 100. Entre dos rutas, DEBE preferirse la de menor costo total aunque tenga más salas.
 - **FR-024**: Si varias vecinas inician rutas de costo mínimo, el primer paso DEBE ir hacia la de menor id, con la misma regla de desempate que el cazador.
-- **FR-025**: Cada paso DEBE ser una acción completa del jugador: DEBE consumir tiempo según el costo de la salida y DEBEN ocurrir normalmente los eventos del reloj entre un paso y el siguiente.
+- **FR-025**: Cada paso de ir a DEBE ser un movimiento ordinario completo del jugador: DEBE consumir el mismo tiempo que ese movimiento (con la spec 003, el costo de la salida; mientras tanto, el costo actual de mover) y DEBEN ocurrir normalmente los eventos del reloj entre un paso y el siguiente.
 - **FR-026**: La ruta DEBE recalcularse antes de cada paso con el conocimiento vigente. Si al llegar a una sala el jugador observa que una puerta de su ruta está cerrada, el mapa DEBE actualizarse y el siguiente cálculo DEBE evitarla.
 - **FR-027**: El viaje DEBE detenerse cuando el jugador llegue al destino.
 - **FR-028**: El viaje DEBE detenerse cuando el jugador entre a una sala que contiene al menos un enemigo vivo, activo o dormido; los enemigos derrotados no cuentan. Los enemigos dormidos DEBEN activarse según las reglas de la Parte I.
@@ -225,6 +225,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 - **FR-032**: ir a NO DEBE abrir puertas, aunque el jugador tenga la llave.
 - **FR-033**: En el registro de la partida, cada paso de un viaje DEBE quedar como un movimiento individual y la orden ir a DEBE quedar como un comentario que la reproducción ignora.
 - **FR-034**: El pergamino de retroceso DEBE revertir únicamente el último paso de un viaje, y el viaje NO DEBE continuar.
+- **FR-034a**: Iniciar o cargar una partida DEBE descartar cualquier viaje activo; el viaje NO DEBE continuar en la nueva partida.
 
 **Rendimiento y evidencia**
 

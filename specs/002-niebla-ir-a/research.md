@@ -388,7 +388,7 @@ lista que ya recibe el pergamino mediante `lista_agregada`, así que un retroces
 guarda, no entra al historial y se cancela al retroceder, cargar o terminar. Lo único persistente
 son sus pasos y el conocimiento.
 
-**Razón**: FR-034 (el viaje no continúa tras el pergamino). Un viaje a medias al cargar una partida
+**Razón**: FR-034a (el viaje no continúa en una partida nueva o cargada). Un viaje a medias al cargar una partida
 sería ambiguo.
 
 **Alternativas**: guardar el destino del viaje en el guardado: añade formato a la spec 004 sin

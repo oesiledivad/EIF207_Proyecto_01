@@ -1295,5 +1295,27 @@ Prompt enviado:
 
 Uso de la respuesta: Se implementaron T001 a T026. Base compartida: cambio de historial lista_asignada con reversión O(1) (Historial_Retroceso.asignar y GestorPartida), corrección de la reversión de lista_agregada para usar pop() del final según T002 y C8 (FR-037), costo e índice de dirección en Salidas, salidas entrantes, Monticulo_Minimo propio, y el modelo y DTO de Conocimiento. US1: niebla en el minimapa, panel del mapa conocido (tecla C y menú) y tooltip con estado, costo y puerta recordada. Las salas avistadas se muestran solo por su id ("Sala N") y la vecindad ya no expone enemigos ni objetos, según FR-006 y SC-002; se corrigió la cita de FR-004 a FR-006. Verificación: selección del README 58 OK, 30 pruebas nuevas OK y suite completa con 235 pruebas y las mismas 6 fallas preexistentes de la línea base, comparadas por nombre.
 
+### Entrada #65
+
+Fecha: 16/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Enmendar la especificación 002 para resolver la contradicción entre FR-025 y research.md sobre el tiempo de cada paso de ir a, y agregar el requisito de descartar el viaje al iniciar o cargar una partida.
+
+Prompt enviado:
+
+```text
+Enmienda de la spec 002 (solo documentos y, si hace falta, la prueba de T042; sin commits):
+1. spec.md, FR-025: reescríbelo para que diga que cada paso de ir a DEBE ser un movimiento ordinario completo del jugador, que DEBE consumir el mismo tiempo que ese movimiento (con la spec 003, el costo de la salida; mientras tanto, el costo actual de mover) y que DEBEN ocurrir normalmente los eventos del reloj entre un paso y el siguiente.
+2. spec.md: agrega FR-034a justo después de FR-034: «Iniciar o cargar una partida DEBE descartar cualquier viaje activo; el viaje NO DEBE continuar en la nueva partida.»
+3. research.md, línea 391: cambia la cita de FR-034 por FR-034a.
+4. tasks.md: ajusta la redacción de T042 para que la prueba compare el avance del reloj de cada paso con el de un movimiento ordinario (FR-025 enmendado). Si la prueba actual ya lo verifica, márcala [X]; si no, ajusta la prueba en pruebas/test_ir_a.py y luego márcala. Amplía T075 para que también verifique FR-034a.
+5. Muéstrame el texto final de FR-025, FR-034a, T042 y T075, dime si cambiaste la prueba y ejecuta pruebas.test_ir_a con uv run.
+```
+
+Uso de la respuesta: FR-025 se enmendó para indicar que cada paso de ir a consume el mismo tiempo que un movimiento ordinario, ya que el tiempo según el costo de la salida pertenece a la spec 003 (research.md, D6). Se agregó FR-034a para descartar el viaje activo al iniciar o cargar una partida, y research.md pasó a citarlo. T042 se redactó de nuevo y quedó marcada; su prueba se ajustó para comparar cada paso con un movimiento ordinario equivalente, de modo que siga siendo válida cuando se integre la spec 003. T075 se amplió para verificar FR-034a en US6. pruebas.test_ir_a: 6 pruebas OK.
 
 ---
