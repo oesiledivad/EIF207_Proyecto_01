@@ -10,8 +10,10 @@ class Errante(Enemigo):
         super().__init__(identificador, vida, vida_max, ataque, defensa,
                           velocidad, sala, tiempo_siguiente, comportamiento)
 
-    def _decidir_movimiento(self, salas, tiempo_actual, azar):
-        transitables = [s.sala_destino for s in salas.obtener(self.sala).salidas if not s.cerrada]
-        if not transitables:
-            return ["esperar", None]
-        return ["mover", azar.choice(transitables)]
+    def _decidir_movimiento(self, salas, tiempo_actual, azar, persecucion=None, sala_jugador_id=None):
+        # Mismo orden y cantidad que antes, así azar.choice elige el mismo destino (FR-022).
+        abiertas = [s for s in salas.obtener(self.sala).salidas if not s.cerrada]
+        if not abiertas:
+            return ["esperar", None, None]
+        salida = azar.choice(abiertas)
+        return ["mover", salida.sala_destino, salida.costo]

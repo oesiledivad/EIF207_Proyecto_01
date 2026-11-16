@@ -13,7 +13,8 @@ búsquedas: `marca[v] == generacion` indica que `distancia[v]` es de la búsqued
 actual, así no se reinicializan S posiciones en cada paso.
 
 Complejidad (A aristas relajadas, V salas alcanzadas):
-    distancias_hacia: O((V + A) log V), y se detiene al fijar `parar_en`
+    distancias_hacia: O((V + A) log V), y se detiene al fijar `parar_en` o al superar `limite`
+    (con corte por costo solo se visita la región alcanzable dentro del límite: O((V_R + A_R) log V_R))
     elegir_paso: O(4)
     distancia_de: O(1)
 """
@@ -43,7 +44,8 @@ class BuscadorRutas:
             return self.distancia[sala]
         return None
 
-    def distancias_hacia(self, destino: int, entrantes: list, usable, parar_en: int | None = None) -> None:
+    def distancias_hacia(self, destino: int, entrantes: list, usable, parar_en: int | None = None,
+                         limite: int | None = None) -> None:
         """Llena `distancia` desde `destino` recorriendo las salidas al revés.
 
         Args:
@@ -52,6 +54,11 @@ class BuscadorRutas:
             usable: Predicado que dice si una salida entra en la búsqueda.
             parar_en: Sala cuya distancia basta conocer; la búsqueda termina al
                 fijarla (puede ser nada para llenar todo lo alcanzable).
+            limite: Costo máximo de interés (FR-025). La búsqueda termina al extraer una
+                entrada vigente con prioridad mayor que `limite`: toda sala con distancia real
+                menor o igual que `limite` queda con su distancia exacta, y cualquier otra da
+                nada o un valor mayor que `limite`. Con nada, la búsqueda es la de siempre
+                («ir a» no cambia).
         """
         self.generacion += 1
         self.monticulo.vaciar()
@@ -64,6 +71,8 @@ class BuscadorRutas:
             prioridad, _, sala = self.monticulo.extraer_minimo()
             if prioridad != self.distancia[sala]:
                 continue   # entrada obsoleta: la sala ya se fijó con una distancia menor
+            if limite is not None and prioridad > limite:
+                return   # el resto de la región queda fuera del costo de interés
             if sala == parar_en:
                 return
             for salida in entrantes[sala]:

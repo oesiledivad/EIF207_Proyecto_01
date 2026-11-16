@@ -41,6 +41,7 @@ class EnemigoPartida:
     regeneracion: int | None = None
     tipo: str = ""                                          # id de catálogo
     suelta: list[str] = field(default_factory=list)         # botín (2.6)
+    rango: int | None = None                                # solo cazador (FR-008, FR-021)
 
 @dataclass
 class ObjetoSuelo:

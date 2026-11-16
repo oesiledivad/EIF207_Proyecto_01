@@ -28,24 +28,24 @@ def mundo(rastro_11, rastro_12, cerrada_12=False):
 
 # 1. Sigue el rastro más fresco (el de la sala 12, tiempo 300, frente al de la 11, tiempo 100)
 salas, r = mundo(100, 300)
-assert r._decidir_movimiento(salas, 350, None) == ["mover", 12]
+assert r._decidir_movimiento(salas, 350, None) == ["mover", 12, 100]
 
 # 2. Empate exacto: gana la sala de menor id
 salas, r = mundo(300, 300)
-assert r._decidir_movimiento(salas, 350, None) == ["mover", 11]
+assert r._decidir_movimiento(salas, 350, None) == ["mover", 11, 100]
 
 # 3. Caducidad: con 400 o más de antigüedad el rastro no sirve; con 399 sí
 salas, r = mundo(0, None)
-assert r._decidir_movimiento(salas, 399, None) == ["mover", 11]
-assert r._decidir_movimiento(salas, 400, None) == ["esperar", None]
+assert r._decidir_movimiento(salas, 399, None) == ["mover", 11, 100]
+assert r._decidir_movimiento(salas, 400, None) == ["esperar", None, None]
 
 # 4. Sin rastro en ninguna vecina: espera
 salas, r = mundo(None, None)
-assert r._decidir_movimiento(salas, 100, None) == ["esperar", None]
+assert r._decidir_movimiento(salas, 100, None) == ["esperar", None, None]
 
 # 5. Una puerta cerrada no se examina, aunque tenga el rastro más fresco
 salas, r = mundo(100, 300, cerrada_12=True)
-assert r._decidir_movimiento(salas, 350, None) == ["mover", 11]
+assert r._decidir_movimiento(salas, 350, None) == ["mover", 11, 100]
 
 # 6. El rastro de la sala actual se refresca en cada acción del jugador que consume tiempo
 servicio = CriptaService(AdaptadorOffline(DATOS))

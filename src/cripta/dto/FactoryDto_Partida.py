@@ -109,6 +109,7 @@ def parsear_contenido(entrada: dict, catalogo: Catalogo_Lista) -> ContenidoSala:
             velocidad=ficha.velocidad if ficha else 100,
             comportamiento=ficha.comportamiento if ficha else "errante",
             regeneracion=getattr(ficha, "regeneracion", None),
+            rango=getattr(ficha, "rango", None),
             tipo=tipo,
             suelta=list(ficha.suelta or []) if ficha else [],
         ))

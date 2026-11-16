@@ -258,7 +258,8 @@ class ExploracionControlador:
             return ResultadoAccion.fallo(str(error))
 
         resultado = app._accion_jugador(
-            "mover", lambda: self._ejecutar_movimiento(destino_id, direccion), direccion)
+            "mover", lambda: self._ejecutar_movimiento(destino_id, direccion), direccion,
+            costo=salida.costo)   # FR-003: mover cuesta lo que la salida (D1)
         if resultado.ok and app._partida_en_curso():
             app._avisar(self._servicio.precargar_alrededor(   # lista para la próxima puerta
                 self._estado.cripta_id, self.salas, self.max_id_sala,

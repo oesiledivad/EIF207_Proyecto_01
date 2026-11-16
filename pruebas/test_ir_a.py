@@ -167,16 +167,16 @@ class PruebasIrAViaje(unittest.TestCase):
         app = self._recorrido()
         # una puerta abierta a mano que se cierra sola durante el viaje (evento del reloj)
         cierre = app._salas.obtener(2).salidas.obtener("S")
-        cierre.cierre_automatico = 150
+        cierre.cierre_automatico = 60   # los pasos cuestan 50 y 50 (Parte II): cierra entre ambos
         abrir_salida(cierre, tiempo(app), app._simulacion.agenda)
         self.assertFalse(cierre.cerrada)
         acciones = _grabar(app)
         relojes = []
         original = app._ciclo.consumir_tiempo
 
-        def medir(nombre):
+        def medir(nombre, costo=None):
             antes = tiempo(app)
-            original(nombre)
+            original(nombre, costo)
             relojes.append(tiempo(app) - antes)
 
         app._ciclo.consumir_tiempo = medir
@@ -185,7 +185,7 @@ class PruebasIrAViaje(unittest.TestCase):
         self.assertTrue(resultado.ok, resultado.mensaje)
         self.assertFalse(resultado.activo)
         self.assertEqual(resultado.motivo, "llegada")
-        self.assertEqual(acciones, [["mover", "E"], ["mover", "N"]])   # costo 100, no 400
+        self.assertEqual(acciones, [["mover", "E"], ["mover", "N"]])   # costo 100 en total, no 400
         self.assertEqual(app._jugador.sala, 4)
         self.assertEqual(len(relojes), 2)
         for avance in relojes:

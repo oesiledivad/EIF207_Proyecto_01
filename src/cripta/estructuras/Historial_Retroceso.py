@@ -54,6 +54,9 @@ class Historial_Retroceso:
         self._max = max_intervalos
         self._intervalos: list[Intervalo] = []
         self._abierto: Intervalo | None = None
+        # Monótono: cuenta las reversiones (de un intervalo abierto o con pergamino). `limpiar` no
+        # lo reinicia. La persecución del cazador lo usa como parte de su clave (FR-017, FR-024).
+        self.reversiones = 0
 
     def abrir_intervalo(self) -> None:
         """Inicia un nuevo intervalo de cambios."""
@@ -103,6 +106,7 @@ class Historial_Retroceso:
 
     def revertir_abierto(self, aplicar) -> None:
         if self._abierto is not None:
+            self.reversiones += 1
             for i in range(len(self._abierto.cambios) - 1, -1, -1):
                 cambio = self._abierto.cambios[i]
                 aplicar(cambio.etiqueta, cambio.datos)
@@ -138,6 +142,7 @@ class Historial_Retroceso:
         """
         if not self._intervalos:
             return False
+        self.reversiones += 1
         intervalo = self._intervalos[-1]
         for i in range(len(intervalo.cambios) - 1, -1, -1):
             cambio = intervalo.cambios[i]
