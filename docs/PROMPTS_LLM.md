@@ -1270,4 +1270,30 @@ La regresión muestra una falla nueva: pruebas.test_bench.PruebasBench.test_benc
 ```
 
 Uso de la respuesta: Se ajustó solo bootstrap.py. Sin --semilla llama a bench.main() sin argumentos; con --semilla N valida el valor y llama a bench.main(semilla=N), devolviendo 2 si no es entero. bench.py no cambió porque ya usaba 42 por defecto, y la prueba de la Parte I quedó intacta. Se confirmó que test_bench_no_importa_arcade requiere ejecutarse con uv run, porque su subproceso usa python -I y solo encuentra el paquete en el entorno del proyecto.
+
+### Entrada #64
+
+Fecha: 16/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit (/speckit-implement).
+
+Objetivo: Implementar la Fase 1, la Fase 2 y la historia US1 de la especificación 002 (niebla de guerra e «ir a»).
+
+Prompt enviado:
+
+```text
+/speckit-implement Implementa únicamente la Fase 1 (Setup), la Fase 2 (Foundational) y la fase de US1 de specs/002-niebla-ir-a/tasks.md, en orden, y detente en el checkpoint de US1. Reglas:
+1. T001: reutiliza como línea base specs/001-resolubilidad/regresion.txt (205 pruebas; 6 fallas preexistentes: test_datos, test_ensamblador, 3 de test_offline_cache y 1 de test_stormlight). No vuelvas a correr la suite completa.
+2. Respeta la constitución: estructuras propias; prohibidos dict/set como índice o caché, heapq, bisect, collections, sorted(), list.sort() y equivalentes. --replay, --bench y --verificar no instancian la vista.
+3. Pruebas con unittest en pruebas/. No modifiques pruebas de la Parte I ni de la 001.
+4. No ejecutes unittest discover ni pruebas.test_guardar_llamadas (llama a la API y sobrescribe datos_offline). Para verificar usa la selección del README más las pruebas nuevas, siempre con uv run.
+5. Marca [X] cada tarea al terminarla. No hagas commits.
+6. Al final dame: tareas completadas, archivos creados o modificados, y el resultado de las pruebas.
+```
+
+Uso de la respuesta: Se implementaron T001 a T026. Base compartida: cambio de historial lista_asignada con reversión O(1) (Historial_Retroceso.asignar y GestorPartida), corrección de la reversión de lista_agregada para usar pop() del final según T002 y C8 (FR-037), costo e índice de dirección en Salidas, salidas entrantes, Monticulo_Minimo propio, y el modelo y DTO de Conocimiento. US1: niebla en el minimapa, panel del mapa conocido (tecla C y menú) y tooltip con estado, costo y puerta recordada. Las salas avistadas se muestran solo por su id ("Sala N") y la vecindad ya no expone enemigos ni objetos, según FR-006 y SC-002; se corrigió la cita de FR-004 a FR-006. Verificación: selección del README 58 OK, 30 pruebas nuevas OK y suite completa con 235 pruebas y las mismas 6 fallas preexistentes de la línea base, comparadas por nombre.
+
+
 ---
