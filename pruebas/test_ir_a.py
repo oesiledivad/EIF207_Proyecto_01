@@ -156,7 +156,14 @@ class PruebasIrAViaje(unittest.TestCase):
         return app
 
     def test_us3_7_llegada_detiene_viaje(self):
-        """FR-025 y FR-027: llega por la ruta de menor costo, cada paso gasta tiempo y corre el reloj."""
+        """FR-025 (enmendado) y FR-027: llega por la ruta de menor costo, cada paso avanza el reloj
+        lo mismo que un movimiento ordinario y corren los eventos del reloj entre pasos."""
+        referencia = self._recorrido()
+        ordinarios = []
+        for direccion in ["E", "N"]:
+            antes_ref = tiempo(referencia)
+            self.assertTrue(referencia.mover(direccion).ok)
+            ordinarios.append(tiempo(referencia) - antes_ref)
         app = self._recorrido()
         # una puerta abierta a mano que se cierra sola durante el viaje (evento del reloj)
         cierre = app._salas.obtener(2).salidas.obtener("S")
@@ -183,6 +190,7 @@ class PruebasIrAViaje(unittest.TestCase):
         self.assertEqual(len(relojes), 2)
         for avance in relojes:
             self.assertGreater(avance, 0)
+        self.assertEqual(relojes, ordinarios)   # igual que un movimiento ordinario
         self.assertGreater(tiempo(app), inicio)
         self.assertTrue(cierre.cerrada)   # el evento del reloj corrió entre los pasos
         self.assertEqual(_mensajes_viaje(app), ["Viaje detenido: llegaste a la sala 4."])
