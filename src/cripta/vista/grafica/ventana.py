@@ -170,6 +170,8 @@ class VentanaCripta(arcade.Window):
             """Aplica el resultado del inicio y cambia la pantalla desde la ventana."""
             if resultado.ok:
                 self.preparar_partida()
+                if resultado.aviso:
+                    self.mensaje = resultado.aviso
                 self.hide_view()
             else:
                 retorno.error = resultado.motivo

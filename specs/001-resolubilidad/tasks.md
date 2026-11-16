@@ -126,21 +126,21 @@
 
 ### Pruebas de US3 (escribir primero; DEBEN fallar)
 
-- [ ] T043 [P] [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_1_apendice_b_bloqueada_sin_forzar` (Apéndice B, caso 4): fuente falsa con cripta no resoluble; `ok` es falso, `estado.activa` es falso, no se crea registro de partida y `motivo` contiene el reporte con al menos una puerta bloqueada y la llave que exige. Docstring cita FR-015 y SC-007.
-- [ ] T044 [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_2_forzada_inicia`: con `forzar=True` la partida inicia, `aviso` trae el veredicto negativo y el reporte queda en la bitácora. Docstring cita FR-016.
-- [ ] T045 [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_3_resoluble_muestra_resultado`: la partida inicia sin intervención y `aviso` trae el veredicto y el orden de llaves. Docstring cita FR-014.
-- [ ] T046 [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_4_sin_ubicacion_no_verificada`: fuente que no tiene llaves; la partida inicia con `aviso` igual a "resolubilidad no verificada", sin las palabras "resoluble" ni "no resoluble", con y sin `forzar`. Docstring cita FR-022.
-- [ ] T047 [US3] En `pruebas/test_inicio_verificacion.py`, `test_presupuesto_agotado_da_no_verificada`: fuente con presupuesto que se agota justo en la consulta de llaves; la partida inicia con el aviso "resolubilidad no verificada" y sin veredicto. Docstring cita FR-019 y FR-022.
-- [ ] T048 [US3] En `pruebas/test_inicio_verificacion.py`, `test_replay_y_carga_no_verifican`: iniciar con `verificar=False` (replay y partida guardada) no llama a `key_locations` (la fuente cuenta llamadas) y no bloquea una cripta no resoluble. Docstring cita FR-016 y los supuestos de la spec.
+- [X] T043 [P] [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_1_apendice_b_bloqueada_sin_forzar` (Apéndice B, caso 4): fuente falsa con cripta no resoluble; `ok` es falso, `estado.activa` es falso, no se crea registro de partida y `motivo` contiene el reporte con al menos una puerta bloqueada y la llave que exige. Docstring cita FR-015 y SC-007.
+- [X] T044 [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_2_forzada_inicia`: con `forzar=True` la partida inicia, `aviso` trae el veredicto negativo y el reporte queda en la bitácora. Docstring cita FR-016.
+- [X] T045 [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_3_resoluble_muestra_resultado`: la partida inicia sin intervención y `aviso` trae el veredicto y el orden de llaves. Docstring cita FR-014.
+- [X] T046 [US3] En `pruebas/test_inicio_verificacion.py`, `test_us3_4_sin_ubicacion_no_verificada`: fuente que no tiene llaves; la partida inicia con `aviso` igual a "resolubilidad no verificada", sin las palabras "resoluble" ni "no resoluble", con y sin `forzar`. Docstring cita FR-022.
+- [X] T047 [US3] En `pruebas/test_inicio_verificacion.py`, `test_presupuesto_agotado_da_no_verificada`: fuente con presupuesto que se agota justo en la consulta de llaves; la partida inicia con el aviso "resolubilidad no verificada" y sin veredicto. Docstring cita FR-019 y FR-022.
+- [X] T048 [US3] En `pruebas/test_inicio_verificacion.py`, `test_replay_y_carga_no_verifican`: iniciar con `verificar=False` (replay y partida guardada) no llama a `key_locations` (la fuente cuenta llamadas) y no bloquea una cripta no resoluble. Docstring cita FR-016 y los supuestos de la spec.
 
 ### Implementación de US3
 
-- [ ] T049 [US3] Ampliar `ResultadoInicio` en `src/cripta/dto/Partida_dto.py` con `verificacion: ResultadoVerificacion | None = None` y `aviso: str = ""`, con valores por defecto para no cambiar los usos actuales. Cita FR-014, FR-022.
-- [ ] T050 [US3] Modificar `src/cripta/controlador/InicioPartidaControlador.py`: tras cargar el esqueleto y antes de cargar el contenido de salas, verificar con `VerificacionControlador`; no resoluble sin `forzar` devuelve `ResultadoInicio(ok=False, motivo=<reporte>)` sin crear registro; con `forzar` inicia y deja el reporte en la bitácora; `no_verificable` inicia con el aviso "resolubilidad no verificada". Cita FR-014, FR-015, FR-016, FR-022.
-- [ ] T051 [US3] Modificar `src/cripta/controlador/Aplicacion.py`: parámetros `forzar` y `verificar=True` en `iniciar_partida`; el replay y la carga de partidas guardadas pasan `verificar=False`. Cita FR-016 y los supuestos de la spec.
-- [ ] T052 [US3] Modificar `src/cripta/bootstrap.py`: bandera `--forzar` que llega a `Aplicacion` y no a la vista; se ignora con `--verificar`, `--bench` y `--replay`. Cita FR-016.
-- [ ] T053 [US3] Modificar `src/cripta/vista/grafica/ventana.py` (método `iniciar_partida`, cambio mínimo): mostrar `resultado.aviso` además de `resultado.motivo` cuando exista. Cita FR-014, FR-015.
-- [ ] T054 [US3] Ejecutar `uv run python -m unittest pruebas.test_inicio_verificacion` y la selección del README; deben pasar. Cita FR-014 a FR-016, FR-022.
+- [X] T049 [US3] Ampliar `ResultadoInicio` en `src/cripta/dto/Partida_dto.py` con `verificacion: ResultadoVerificacion | None = None` y `aviso: str = ""`, con valores por defecto para no cambiar los usos actuales. Cita FR-014, FR-022.
+- [X] T050 [US3] Modificar `src/cripta/controlador/InicioPartidaControlador.py`: tras cargar el esqueleto y antes de cargar el contenido de salas, verificar con `VerificacionControlador`; no resoluble sin `forzar` devuelve `ResultadoInicio(ok=False, motivo=<reporte>)` sin crear registro; con `forzar` inicia y deja el reporte en la bitácora; `no_verificable` inicia con el aviso "resolubilidad no verificada". Cita FR-014, FR-015, FR-016, FR-022.
+- [X] T051 [US3] Modificar `src/cripta/controlador/Aplicacion.py`: parámetros `forzar` y `verificar=True` en `iniciar_partida`; el replay y la carga de partidas guardadas pasan `verificar=False`. Cita FR-016 y los supuestos de la spec.
+- [X] T052 [US3] Modificar `src/cripta/bootstrap.py`: bandera `--forzar` que llega a `Aplicacion` y no a la vista; se ignora con `--verificar`, `--bench` y `--replay`. Cita FR-016.
+- [X] T053 [US3] Modificar `src/cripta/vista/grafica/ventana.py` (método `iniciar_partida`, cambio mínimo): mostrar `resultado.aviso` además de `resultado.motivo` cuando exista. Cita FR-014, FR-015.
+- [X] T054 [US3] Ejecutar `uv run python -m unittest pruebas.test_inicio_verificacion` y la selección del README; deben pasar. Cita FR-014 a FR-016, FR-022.
 
 **Punto de control**: US3 funciona de punta a punta sin romper la Parte I.
 
@@ -154,16 +154,16 @@
 
 ### Pruebas de US4 (escribir primero; DEBEN fallar)
 
-- [ ] T055 [P] [US4] En `pruebas/test_verificar_cli.py`, `test_us4_1_imprime_y_no_abre_vista`: `main(["--verificar", ...])` con fuente falsa imprime el resultado y `arcade` no está en `sys.modules` ni se instancia la vista. Docstring cita FR-017, FR-028.
-- [ ] T056 [US4] En `pruebas/test_verificar_cli.py`, `test_us4_2_offline_sin_red`: con `--offline` y una caché con llaves, la salida lleva `Solicitudes de red: 0/<presupuesto>` y la fuente de red nunca se invoca. Docstring cita FR-018, SC-006.
-- [ ] T057 [US4] En `pruebas/test_verificar_cli.py`, `test_us4_3_codigos_de_salida`: 0 si resoluble, 1 si no resoluble, 2 si la ubicación de llaves no está disponible, y 2 por error de uso (`--verificar` sin cripta, o junto con `--replay`); nunca 0 sin veredicto positivo. Docstring cita FR-018a.
-- [ ] T058 [US4] En `pruebas/test_verificar_cli.py`, `test_salida_determinista_y_primera_linea`: dos ejecuciones dan salida idéntica y la primera línea es el veredicto. Docstring cita FR-013, SC-002.
+- [X] T055 [P] [US4] En `pruebas/test_verificar_cli.py`, `test_us4_1_imprime_y_no_abre_vista`: `main(["--verificar", ...])` con fuente falsa imprime el resultado y `arcade` no está en `sys.modules` ni se instancia la vista. Docstring cita FR-017, FR-028.
+- [X] T056 [US4] En `pruebas/test_verificar_cli.py`, `test_us4_2_offline_sin_red`: con `--offline` y una caché con llaves, la salida lleva `Solicitudes de red: 0/<presupuesto>` y la fuente de red nunca se invoca. Docstring cita FR-018, SC-006.
+- [X] T057 [US4] En `pruebas/test_verificar_cli.py`, `test_us4_3_codigos_de_salida`: 0 si resoluble, 1 si no resoluble, 2 si la ubicación de llaves no está disponible, y 2 por error de uso (`--verificar` sin cripta, o junto con `--replay`); nunca 0 sin veredicto positivo. Docstring cita FR-018a.
+- [X] T058 [US4] En `pruebas/test_verificar_cli.py`, `test_salida_determinista_y_primera_linea`: dos ejecuciones dan salida idéntica y la primera línea es el veredicto. Docstring cita FR-013, SC-002.
 
 ### Implementación de US4
 
-- [ ] T059 [US4] Modificar `src/cripta/bootstrap.py`: bandera `--verificar CRIPTA` en el grupo mutuamente excluyente con `--replay`, `--bench` y `--grafica`; construir fuente, `AlmacenDisco`, `CriptaService` y `VerificacionControlador` con import diferido, sin importar `arcade` ni la vista. Cita FR-017, FR-018, FR-028.
-- [ ] T060 [US4] En `src/cripta/bootstrap.py`, imprimir `VerificacionControlador.formatear(...)` en la salida estándar, las advertencias en la salida de errores con el prefijo `Aviso:`, y devolver el código 0, 1 o 2 según contracts/verificar-cli.md; cripta inexistente y presupuesto agotado dan 2. Cita FR-018a, FR-022.
-- [ ] T061 [US4] Ejecutar `uv run python -m unittest pruebas.test_verificar_cli` y una verificación manual `uv run python -m cripta --verificar <cripta> --offline` con el paquete actual (debe dar código 2 y "resolubilidad no verificada"). Cita FR-017, FR-018a, FR-022.
+- [X] T059 [US4] Modificar `src/cripta/bootstrap.py`: bandera `--verificar CRIPTA` en el grupo mutuamente excluyente con `--replay`, `--bench` y `--grafica`; construir fuente, `AlmacenDisco`, `CriptaService` y `VerificacionControlador` con import diferido, sin importar `arcade` ni la vista. Cita FR-017, FR-018, FR-028.
+- [X] T060 [US4] En `src/cripta/bootstrap.py`, imprimir `VerificacionControlador.formatear(...)` en la salida estándar, las advertencias en la salida de errores con el prefijo `Aviso:`, y devolver el código 0, 1 o 2 según contracts/verificar-cli.md; cripta inexistente y presupuesto agotado dan 2. Cita FR-018a, FR-022.
+- [X] T061 [US4] Ejecutar `uv run python -m unittest pruebas.test_verificar_cli` y una verificación manual `uv run python -m cripta --verificar <cripta> --offline` con el paquete actual (debe dar código 2 y "resolubilidad no verificada"). Cita FR-017, FR-018a, FR-022.
 
 **Punto de control**: US4 funciona y se puede automatizar.
 
@@ -177,15 +177,15 @@
 
 ### Pruebas de US5 (escribir primero; DEBEN fallar)
 
-- [ ] T062 [P] [US5] En `pruebas/test_llaves_adaptadores.py`, `test_us5_1_reutiliza_misma_version`: dos llamadas a `obtener_ubicaciones_llaves` con la misma versión; la fuente recibe una sola consulta (la segunda lee `llaves.json`). Docstring cita FR-020, SC-005.
-- [ ] T063 [US5] En `pruebas/test_llaves_adaptadores.py`, `test_us5_2_version_distinta_no_reutiliza`: cambiar la versión de la cripta hace que `validar_cripta` borre `llaves.json` y se consulte de nuevo. Docstring cita FR-021.
-- [ ] T064 [US5] En `pruebas/test_llaves_adaptadores.py`, `test_us5_3_cuenta_en_presupuesto`: con `NetworkAdapter` y `unittest.mock.patch` sobre `requests.get` (el adaptador no tiene sesión inyectable y llama a `requests.get` directamente; NO modificar el adaptador para la prueba), `requests_made` aumenta en 1 por la consulta y con presupuesto agotado se lanza `PresupuestoAgotado`, que el servicio convierte en `UbicacionLlavesNoDisponible`. Docstring cita FR-019.
-- [ ] T065 [US5] En `pruebas/test_llaves_adaptadores.py`, pruebas de adaptadores: `AdaptadorOffline` lee de la caché y luego del paquete, da `FileNotFoundError` sin ninguno y no cuenta solicitudes; `Guardar_Llamadas_API` graba `cripta_<id>_llaves.json`; un `llaves.json` dañado equivale a `None`; una respuesta sin `llaves` es "no disponible" mientras una lista vacía válida es legítima. Docstrings citan FR-018, FR-020 y FR-022.
+- [X] T062 [P] [US5] En `pruebas/test_llaves_adaptadores.py`, `test_us5_1_reutiliza_misma_version`: dos llamadas a `obtener_ubicaciones_llaves` con la misma versión; la fuente recibe una sola consulta (la segunda lee `llaves.json`). Docstring cita FR-020, SC-005.
+- [X] T063 [US5] En `pruebas/test_llaves_adaptadores.py`, `test_us5_2_version_distinta_no_reutiliza`: cambiar la versión de la cripta hace que `validar_cripta` borre `llaves.json` y se consulte de nuevo. Docstring cita FR-021.
+- [X] T064 [US5] En `pruebas/test_llaves_adaptadores.py`, `test_us5_3_cuenta_en_presupuesto`: con `NetworkAdapter` y `unittest.mock.patch` sobre `requests.get` (el adaptador no tiene sesión inyectable y llama a `requests.get` directamente; NO modificar el adaptador para la prueba), `requests_made` aumenta en 1 por la consulta y con presupuesto agotado se lanza `PresupuestoAgotado`, que el servicio convierte en `UbicacionLlavesNoDisponible`. Docstring cita FR-019.
+- [X] T065 [US5] En `pruebas/test_llaves_adaptadores.py`, pruebas de adaptadores: `AdaptadorOffline` lee de la caché y luego del paquete, da `FileNotFoundError` sin ninguno y no cuenta solicitudes; `Guardar_Llamadas_API` graba `cripta_<id>_llaves.json`; un `llaves.json` dañado equivale a `None`; una respuesta sin `llaves` es "no disponible" mientras una lista vacía válida es legítima. Docstrings citan FR-018, FR-020 y FR-022.
 
 ### Implementación de US5
 
-- [ ] T066 [US5] Corregir en `src/cripta/servicio/CriptaService.py` y en los adaptadores lo que T062 a T065 muestren fallando (guardar solo tras una respuesta válida y solo si `_cripta_en_disco`; no reutilizar datos de otra versión). Cita FR-019, FR-020, FR-021.
-- [ ] T067 [US5] Ejecutar `uv run python -m unittest pruebas.test_llaves_adaptadores`; deben pasar. Cita FR-019 a FR-021, SC-005.
+- [X] T066 [US5] Corregir en `src/cripta/servicio/CriptaService.py` y en los adaptadores lo que T062 a T065 muestren fallando (guardar solo tras una respuesta válida y solo si `_cripta_en_disco`; no reutilizar datos de otra versión). Cita FR-019, FR-020, FR-021.
+- [X] T067 [US5] Ejecutar `uv run python -m unittest pruebas.test_llaves_adaptadores`; deben pasar. Cita FR-019 a FR-021, SC-005.
 
 **Punto de control**: US5 completa; el presupuesto de red queda protegido.
 

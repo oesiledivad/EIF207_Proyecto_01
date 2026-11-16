@@ -1,11 +1,15 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 
+from cripta.dto.Verificacion_dto import ResultadoVerificacion
+
 @dataclass
 class ResultadoInicio:
     ok: bool
     motivo: str = ""
     semilla_efectiva: int = 0
+    verificacion: ResultadoVerificacion | None = None   # None si no se verificó (FR-014)
+    aviso: str = ""                                     # Veredicto o "resolubilidad no verificada" (FR-022)
 
 @dataclass
 class SalidaVecina:

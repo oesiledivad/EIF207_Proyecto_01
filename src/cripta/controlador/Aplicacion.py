@@ -45,7 +45,8 @@ class Aplicacion:
 
     def __init__(self, data_source: CryptDataSource, capacidad_cache: int = 25,
                 almacen: AlmacenDisco | None = None, carpeta_logs=None, ruta_puntajes=None, ruta_guardado=None,
-                offline_dir=None) -> None:
+                offline_dir=None, forzar: bool = False) -> None:
+        self._forzar = forzar   # --forzar: la vista no lo conoce (FR-016)
         self._cripta_service = CriptaService(
             data_source, Cache_Fichas(capacidad=capacidad_cache), almacen
         )
@@ -80,8 +81,15 @@ class Aplicacion:
         semilla: str,
         cripta_id: str,
         registrar: bool = True,
+        forzar: bool = False,
+        verificar: bool = True,
     ) -> ResultadoInicio:
-        return self._inicio.iniciar(nombre_jugador, semilla, cripta_id, registrar)
+        """Inicia una partida; `forzar` permite jugar una cripta no resoluble (FR-016).
+
+        `verificar=False` omite la verificación de resolubilidad (replay y cargas).
+        """
+        return self._inicio.iniciar(nombre_jugador, semilla, cripta_id, registrar,
+                                    forzar or self._forzar, verificar)
 
     #  Salas y exploración (delegado a ExploracionControlador)
     @property

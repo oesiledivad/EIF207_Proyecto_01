@@ -51,6 +51,11 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
     modos = parser.add_mutually_exclusive_group()
     modos.add_argument("--replay", metavar="PARTIDA.LOG",
                        help="Reproduce acciones sin interfaz; exige versiones compatibles.")
+    modos.add_argument("--verificar", metavar="CRIPTA",
+                       help="Verifica la resolubilidad de la cripta sin abrir la vista. "
+                            "Código de salida: 0 resoluble, 1 no resoluble, 2 no verificada o error de uso.")
+    parser.add_argument("--forzar", action="store_true",
+                        help="Permite iniciar una cripta no resoluble (se ignora con --verificar, --bench y --replay).")
     parser.add_argument("--puntajes", help="Archivo de puntajes (por defecto, dentro de --log-dir).")
     parser.add_argument("--log-dir", default="partidas", help="Carpeta de registros de partida.")
     parser.add_argument("--offline-dir", default="datos_offline", help="Paquete de respuestas del curso (respaldo de --offline).")
@@ -80,6 +85,31 @@ def _construir_data_source(args: argparse.Namespace) -> CryptDataSource:
     return NetworkAdapter()
 
 
+def _verificar(args: argparse.Namespace) -> int:
+    """Verifica una cripta e imprime el resultado, sin importar arcade ni la vista.
+
+    Returns:
+        0 si es resoluble, 1 si no lo es y 2 si no se pudo emitir un veredicto.
+    """
+    # Imports diferidos: solo este modo necesita el servicio y el controlador.
+    from cripta.controlador.VerificacionControlador import VerificacionControlador
+    from cripta.servicio.CriptaService import CriptaService
+
+    data_source = _construir_data_source(args)
+    # En --offline el adaptador ya lee la caché; en línea el servicio la guarda por versión.
+    almacen = None if args.offline else AlmacenDisco(args.cache_dir)
+    controlador = VerificacionControlador(CriptaService(data_source, almacen=almacen))
+    resultado = controlador.verificar_cripta(args.verificar)
+    print(controlador.formatear(resultado))
+    for advertencia in resultado.advertencias:
+        print(f"Aviso: {advertencia}", file=sys.stderr)
+    if resultado.estado == "resoluble":
+        return 0
+    if resultado.estado == "no_resoluble":
+        return 1
+    return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     """Punto de entrada principal de la aplicación.
 
@@ -98,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
         from cripta.bench import main as medir
         medir()
         return 0
+    if args.verificar:
+        return _verificar(args)
 
     data_source = _construir_data_source(args)
     if args.replay:
@@ -118,7 +150,8 @@ def main(argv: list[str] | None = None) -> int:
     # En --offline los datos ya vienen de disco (la caché la lee el propio adaptador).
     almacen = None if args.offline else AlmacenDisco(args.cache_dir)
     controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen,
-                             carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes, offline_dir=args.offline_dir)
+                             carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes, offline_dir=args.offline_dir,
+                             forzar=args.forzar)
     # Ventana interactiva: la precarga va en un hilo para que cruzar puertas no se trabe.
     controlador.activar_precarga_en_segundo_plano()
 
