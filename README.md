@@ -201,21 +201,31 @@ El ejemplo usa los datos de `datos_offline/` y muestra cada acción y el estado 
 
 Para reproducir una partida propia, sustituye la ruta por su archivo `.log` dentro de `partidas/`. Esos registros se generan al jugar y no se incluyen en Git.
 
+### Mapa conocido y viaje «ir a»
+
+El jugador solo ve lo que conoce: una sala está desconocida, avistada (se sabe que existe) o explorada (entró o la iluminó la antorcha). Cada salida de una sala explorada muestra su costo y la última observación de su puerta (abierta, cerrada o sin observar).
+
+- **Mapa:** pulsa **C** (o elige «Mapa conocido (C)» en el menú de **Esc**) para ver las salas exploradas con sus salidas, costos y puertas, y los ids de las avistadas.
+- **Ir a:** en el mapa, haz clic sobre una sala explorada. El viaje avanza un paso por vez por la ruta de menor costo, cada paso es un movimiento ordinario y la ruta se recalcula antes de cada paso. Se detiene al llegar, al ver enemigos vivos en una sala, al recibir daño, si ya no hay ruta conocida, si un paso se rechaza o si termina la partida, y siempre muestra el motivo en la bitácora. Cualquier otra acción (incluido el pergamino con **P**) lo cancela. El viaje no abre puertas ni usa salas que no exploraste.
+- **Registro:** al aceptar la orden, `partida.log` recibe una línea de comentario `# ir_a <sala>` antes del primer paso y después un `["mover", "<dirección>"]` por paso. El reproductor ignora las líneas que empiezan por `#`, así que `--replay` llega al mismo estado final.
+
+Las decisiones, la complejidad y las mediciones están en la [sección 13 de decisiones.md](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
+
 ### Medir rendimiento
 
-Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y la sección «Resolubilidad» (M1 a M7). No consulta la red ni abre la interfaz.
+Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y las secciones «Resolubilidad» (M1 a M7) y «Niebla de guerra e ir a» (K1 a K9). No consulta la red ni abre la interfaz.
 
 ```sh
 uv run cripta --bench
 ```
 
-Con `--semilla N` las criptas sintéticas de la sección «Resolubilidad» se generan con esa semilla; vacía equivale a `42` y nunca es aleatoria. Con la misma semilla los conteos coinciden entre ejecuciones y los tiempos varían.
+Con `--semilla N` las criptas sintéticas de las secciones «Resolubilidad» y «Niebla de guerra e ir a» (K1 a K9) se generan con esa semilla; vacía equivale a `42` y nunca es aleatoria. Con la misma semilla los resultados deterministas coinciden entre ejecuciones y los tiempos varían.
 
 ```sh
 uv run cripta --bench --semilla 42
 ```
 
-Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
+Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54). Las de la niebla de guerra y «ir a» están en la [sección 13](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
 
 ### Verificar la resolubilidad de una cripta
 

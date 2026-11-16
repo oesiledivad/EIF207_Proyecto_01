@@ -262,3 +262,64 @@ El reporte cuesta cerca de 1 % a 3 % sobre la verificación y examina cada salid
 **M6: orden por ronda con `ordenar`**, a 20 000 salas (17 rondas muy anchas): ordenar las rondas cuesta 45,175 ms frente a 0,046 ms de solo copiarlas, un sobrecosto de 30,1 % de los 149,698 ms de la verificación completa. Es el costo de cumplir el empate por menor id (FR-008). Es aceptable porque el escalado de M2 sigue menor que 15; si dejara de serlo, la salida correcta sería enmendar la spec antes del código (principio VII) y no relajar el orden en silencio.
 
 **Límites de esta medición.** Una ejecución, una semilla, en un solo equipo. Las criptas sintéticas tienen una cadena lineal de llaves, que es el peor caso para la ingenua, y no representan todas las criptas posibles. M3 no tiene dato real mientras el paquete no traiga llaves.
+
+## 13. Niebla de guerra e ir a (Parte II, §3.3, §3.4 y §5.3)
+
+**Necesidad y elección.** El jugador debe ver solo lo que conoce y poder viajar a una sala explorada por la ruta de menor costo, con pasos ordinarios. El modelo (`modelo/Conocimiento.py`, `modelo/Rutas.py`) no conoce HTTP, archivos ni vista. Las razones completas de cada decisión (D1 a D15) están en [research.md](../specs/002-niebla-ir-a/research.md); aquí se resumen con las mediciones de [mediciones.txt](../specs/002-niebla-ir-a/mediciones.txt) (`--bench --semilla 42`, K1 a K9).
+
+**Estado de sala y memoria de puertas (D1, D2).** Dos listas planas de enteros pequeños: `estado_sala[id]` (0 desconocida, 1 avistada, 2 explorada) y `puerta[clave]` (0 sin observar, 1 abierta, 2 cerrada), con `clave = origen * 4 + dirección` (N 0, S 1, E 2, O 3). Un solo entero por sala evita estados imposibles y hace trivial serializar (`5n + 2` valores). Descartadas: dos listas booleanas, un atributo en `SalaJuego`, una lista de ids explorados con búsqueda lineal y `dict` o `set` (prohibidos por el principio I).
+
+**Entrantes (D3).** Una lista por id de sala con las salidas que llegan a ella, construida una vez en $O(E)$ al ensamblar. La usan la observación de puertas y el Dijkstra inverso. Recorrer todas las salas para hallarlas costaría $O(S)$ por consulta.
+
+**Observación al final de la acción (D4).** Las puertas se observan una vez por acción, al final de `consumir_tiempo` y antes de `finalizar`, dentro del intervalo del historial. Como la memoria solo guarda el último estado, produce el mismo estado final que un gancho por cada cambio de puerta, sin acoplar `Puertas` al conocimiento. El gancho queda como plan B. No se observa tras el pergamino: correría fuera de un intervalo y no sería invertible.
+
+**`lista_asignada` frente a copia completa (D5).** `Historial_Retroceso.asignar(lista, posicion, valor)` registra `[lista, posicion, valor_anterior]` y no registra si el valor no cambia. Cada cambio cuesta $O(1)$ al registrar y al invertir; la antorcha produce a lo sumo unos 16 por entrada. K3 con 20 000 salas y 1 000 cambios: registrar e invertir 6,5 ms frente a 197,3 ms copiando el conocimiento en cada cambio (100 002 000 valores copiados). Con 200 salas son 1,8 ms frente a 3,8 ms: la copia crece con el mapa y `lista_asignada` solo con los cambios.
+
+**Costo (D6).** `SalidaSimple` y `SalidaVecina` ganan `costo`. Una salida sin costo, o con costo menor que 1, vale 100 (el segundo caso deja un aviso en la bitácora de arranque). Con costo cero el criterio «costo más distancia» podría girar entre salas de igual distancia; además el viaje se corta a tantos pasos como salas exploradas (motivo `sin_ruta`).
+
+**Dijkstra inverso con parada anticipada (D7).** Una búsqueda desde el destino sobre las salidas entrantes sirve a cualquier origen y se detiene al fijar la sala actual. Con costos positivos todo candidato de costo mínimo ya está fijado cuando se fija la sala actual, así que la parada no pierde empates. El desempate es menor id de la sala destino y luego N, S, E, O. Dos listas (`distancia` y `marca` por generación) se reutilizan entre búsquedas y evitan reinicializar $S$ posiciones por paso. Complejidad $O((V + E)\log V)$ sobre lo explorado.
+
+| Alternativa | Resultado medido | Motivo |
+|-------------|------------------|--------|
+| BFS con `ColaLista` (K8) | En los 50 pares de 2 000 salas devolvió una ruta de mayor costo; ninguna igual ni menor | Correcto solo con costos iguales; FR-023 pide menor costo total, no menos salas |
+| Dijkstra desde el origen (K6) | 1 086 ms frente a 869 ms | El desempate del primer paso es más delicado y no gana |
+| Dijkstra inverso completo, sin parada (K6) | 4 042 ms frente a 869 ms | Recorre todo lo alcanzable en cada paso |
+| Reutilizar distancias entre pasos (K6) | 151 ms frente a 869 ms (5,75 veces menos) | No cumple FR-026 si el conocimiento cambia durante el viaje; ver abajo |
+| Floyd-Warshall o precálculo | $O(X^3)$ o memoria $O(X^2)$ | Se invalida con cada puerta observada |
+| A\* | No aplica | No hay coordenadas para una heurística admisible |
+
+**K6 y la regla de más de 2 veces.** La regla de D7 («se conserva el inverso con parada salvo que otra alternativa gane por más de 2 veces») compara solo alternativas que cumplen FR-026, que exige recalcular antes de cada paso con el conocimiento vigente. Reutilizar las distancias gana por 5,75 veces, pero no cumple FR-026 cuando el conocimiento cambia durante el viaje: una puerta recordada abierta que resulta cerrada invalida las distancias de forma no local. En K6 las cuatro estrategias coinciden en el costo de ruta solo porque en esa medición el conocimiento no cambia entre pasos. Por eso la alternativa queda fuera de la comparación y se conserva el inverso con parada. **Mejora futura:** reutilizar las distancias mientras el conocimiento no cambie y recalcular en cuanto cambie (por ejemplo, comparando la longitud del registro del conocimiento entre pasos).
+
+**Montículo propio (D8, K7).** `MonticuloMinimo` con tres listas paralelas (prioridad, desempate, elemento), comparación lexicográfica entera, sin `heapq` y con eliminación perezosa. No se reutiliza `HeapAgendaEventos`, atado a `Evento` y al historial. K7 (2 000 salas, búsqueda completa): perezoso 14,6 ms, con decremento de clave e índice 8,3 ms (el perezoso cuesta 1,75 veces, sin llegar a 2, así que se conserva) y selección lineal $O(V^2)$ 147,0 ms; las tres dan las mismas distancias.
+
+**Qué se comparte con el cazador (D9, §5.3).** Se comparten `MonticuloMinimo`, la regla de desempate y `modelo/Rutas.py`; el predicado `usable(salida)` lo aporta cada llamador. «Ir a» pasa uno sobre el conocimiento del jugador (salas exploradas, salidas recordadas abiertas); el cazador de la spec 003 conoce el mapa completo y pasará uno sobre el estado real. Costo de compartir: una llamada de predicado por arista relajada.
+
+**Viaje por pasos y registro como comentario (D10, D11).** `ViajeControlador` hace exactamente un paso por llamada con `Aplicacion.mover`, por el flujo común de acción: consume tiempo, corren los eventos, queda en `partida.log` y el pergamino revierte solo el último paso, sin continuar el viaje. La orden aceptada se escribe como `# ir_a <sala>` antes del primer paso; el lector del registro omite los comentarios y reproduce los `mover`. Descartadas: bucle bloqueante, encolar todos los pasos (viola FR-026) y registrar el viaje como una acción compuesta (el pergamino lo revertiría entero).
+
+**Fugas de información corregidas (D15).** `actualizar_vecindad` dejó de copiar `tiene_enemigos` y `tiene_objetos` de las vecinas, y `es_salida_final` se muestra solo para vecinas exploradas (FR-011, FR-014).
+
+**Complejidad medida.**
+
+| Operación | Costo | Medición |
+|-----------|-------|----------|
+| Estado de sala y puerta recordada | $O(1)$ | K1: 101, 112 y 112 ns (estado) con 200, 2 000 y 20 000 salas, razones ×1,11 y ×1,00; la búsqueda lineal crece ×9,6 y ×9,2 |
+| Explorar por sala revelada | $O(4)$, $O(16)$ con antorcha | K2: 2,0 cambios por sala en los tres tamaños (razón ×1,00) |
+| Registrar e invertir cambios | $O(1)$ por cambio | K3, arriba |
+| Un paso de «ir a», referencia | $O((V + E)\log V)$ | K4: la cripta de referencia del paquete tiene 50 salas; media 0,144 ms y máximo 0,239 ms, menor que 5 ms |
+| Un paso de «ir a», 2 000 y 20 000 salas | $O((V + E)\log V)$ | K5 (informativa): media 7,6 ms y 77,3 ms (×10,11; la cota $(V + E)\log V$ predice ×13,24) |
+| Determinismo | | K9: K4 y K6 dos veces con la misma semilla dan resultados idénticos, sin ventana |
+
+**K2 y el recolector de basura.** El criterio de K2 se evalúa por conteo de cambios al registro por sala revelada (no depende de la máquina), que da razón ×1,00. El tiempo por sala de 2 000 a 20 000 salas sube ×2,97 sin antorcha y ×1,98 con ella con el recolector de basura activo, porque este recorre las decenas de miles de entradas del registro. La segunda medición, con el recolector desactivado durante la exploración, da ×1,27 y ×1,13 (de 2,350 a 2,994 µs y de 5,661 a 6,408 µs por sala): el trabajo del algoritmo por sala no crece con el mapa y la diferencia es una pausa del entorno de ejecución. El tiempo con el recolector activo supera la razón de 1,5 y se informa así, sin cambiar el criterio.
+
+**Dependencias y limitaciones.**
+
+- **FR-025 depende de la spec 003.** Cada paso de «ir a» usa `mover`, así que consume el tiempo del movimiento ordinario; el costo de la salida como tiempo es de la spec 003. Mientras tanto consume el costo actual de mover.
+- **FR-015 depende de la spec 004.** Esta spec entrega `instantanea()` y `restaurar()`, pero incluir el conocimiento en el formato binario de guardado corresponde a la 004. Mientras un guardado no lo traiga, al cargar se arma el conocimiento desde la sala actual (la sala actual explorada con sus puertas observadas y los destinos de sus salidas avistados) con el registro vacío.
+- **Interfaz gráfica.** El mapa conocido es la tecla **C** y «ir a» es un clic sobre una sala explorada del mapa; no hay comandos de texto.
+- **Reversión de `lista_agregada` (C8, FR-037).** Pasó a `pop()` del final, $O(1)$; la búsqueda anterior queda solo como respaldo si el último elemento no coincide.
+- **Correcciones de pruebas.** T042 compara cada paso del viaje con un movimiento ordinario equivalente (FR-025 enmendado) en lugar de suponer el costo de la salida como tiempo; T054a comprueba que `mapa_conocido()` no escribe en la bitácora (FR-018 no se lo pide).
+- **Carga de contenido de red.** Un paso del viaje puede cargar contenido de red de forma síncrona si la caché lo descartó.
+- **Detección de daño.** Se compara la vida antes y después del paso: un daño y una curación iguales en el mismo paso no se detectan, y un daño calculado 0 por defensa no cuenta (C4).
+- **Pergamino fallido.** Un pergamino fallido no cancela el viaje.
+
+**Interpretación de FR-013.** El mapa conocido y el viaje leen nombre y salidas del esqueleto de la cripta, pero solo de las salas que ConocimientoJugador marca como exploradas (salidas_conocidas). El conocimiento no duplica nombres ni costos por diseño; lo que FR-013 prohíbe es usar el esqueleto completo, es decir, información de salas que el jugador no conoce.

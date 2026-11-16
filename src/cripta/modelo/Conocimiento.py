@@ -16,7 +16,7 @@ Complejidad:
     explorar: O(4)
     entrar: O(4), O(16) con la antorcha encendida
     observar: O(4 + entrantes)
-    salida_usable: O(1)
+    salida_usable / salidas_conocidas: O(1)
     iniciar: O(S) una vez
     instantanea / restaurar: O(S)
     longitud_registro: O(1)
@@ -93,6 +93,17 @@ class ConocimientoJugador:
         if 0 <= clave < len(self.puerta):
             return self.puerta[clave]
         return SIN_OBSERVAR
+
+    def salidas_conocidas(self, sala: int):
+        """Salidas de una sala que el jugador conoce: solo si está explorada; si no, ninguna. O(1).
+
+        Es la única puerta por la que las rutas leen el esqueleto: nada de una sala
+        avistada o desconocida sale de aquí (FR-013, FR-014).
+        """
+        if not self.inicializado or self.estado(sala) != EXPLORADA:
+            return []
+        modelo = self._salas.obtener(sala)
+        return [] if modelo is None else modelo.salidas
 
     def _asignar_estado(self, sala: int, valor: int, historial, tiempo: int) -> None:
         """Cambia el estado de una sala por el historial y lo anexa al registro."""

@@ -1404,4 +1404,57 @@ Enmienda de FR-015 en la spec 002 (sin commits):
 ```
 
 Uso de la respuesta: Se confirmó un defecto: al cargar una partida, el conocimiento se armaba desde la sala inicial de la cripta y la sala actual del jugador quedaba desconocida. FR-015 se enmendó (la inclusión en el formato binario corresponde a la spec 004 y se define el conocimiento por defecto al cargar) y se agregó T076a. GuardadoControlador.py ahora inicia el conocimiento desde la sala actual después de restaurar, sin tocar el formato de guardado. La prueba nueva falla sin el arreglo y pasa con él. Verificación: selección del README 58 OK y suite completa con las mismas 6 fallas preexistentes.
+
+
+
+
+### Entrada #69
+
+Fecha: 16/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit (/speckit-implement).
+
+Objetivo: Implementar US8 (medir el rendimiento de las consultas y de ir a) y el cierre de la especificación 002.
+
+Prompt enviado:
+
+```text
+/speckit-implement Implementa la Fase 10 (US8, T083-T098) y la Fase 11 (T099-T103) de specs/002-niebla-ir-a/tasks.md, en orden. NO ejecutes T104: la regresión final la corro yo; déjala sin marcar. Reglas:
+1. Respeta la constitución: estructuras propias; prohibidos dict/set como índice o caché, heapq, bisect, collections, sorted(), list.sort() y equivalentes. --bench no instancia la vista ni usa la red.
+2. Escribe las pruebas de US8 antes de implementar y confirma que fallan. No modifiques pruebas existentes (pruebas.test_bench de la Parte I debe seguir pasando).
+3. No ejecutes unittest discover ni pruebas.test_guardar_llamadas. Verifica con la selección del README más todas las pruebas de la 002, siempre con uv run.
+4. Si una medición no cumple un umbral del spec (por ejemplo, el paso de ir a menor a 5 ms), no cambies el umbral ni la prueba: detente y repórtalo con los números.
+5. Guarda la salida del bench de la 002 en specs/002-niebla-ir-a/mediciones.txt, salvo que tasks.md indique otro archivo.
+6. T099, sección 13 de docs/decisiones.md: además de lo que pide la tarea, documenta: (a) FR-025 depende de la spec 003 (cada paso de ir a usa mover); (b) FR-015 depende de la spec 004 (formato de guardado) y al cargar se arma el conocimiento desde la sala actual con el registro vacío; (c) en la interfaz gráfica, mapa es la tecla C e ir a es clic sobre una sala explorada del mapa; (d) la reversión de lista_agregada pasó a pop() O(1) (C8, FR-037); (e) las correcciones de T042 y T054a; (f) limitaciones y decisiones: un paso del viaje puede cargar contenido de red de forma síncrona si la caché lo descartó, el daño se detecta comparando la vida antes y después del paso (daño y curación iguales en el mismo paso no se detectan), y un pergamino fallido no cancela el viaje.
+7. T101: el README debe describir la interacción real (tecla C y clic), no comandos de texto.
+8. T103: ejecuta los escenarios del quickstart que se puedan automatizar sin ventana y dame la lista de los que requieren la GUI para que yo los pruebe a mano; no los marques como hechos.
+9. Si una tarea no coincide con el código o con el spec, detente y repórtalo. Si haces un ajuste fuera de las tareas, cita el FR exacto y copia su texto.
+10. Marca [X] cada tarea al terminarla (T103 solo si todos sus escenarios quedaron verificados). No hagas commits.
+11. Al final dame: tareas completadas, archivos creados o modificados, las mediciones K1-K9 con sus números, ajustes fuera de las tareas, tareas detenidas y el resultado de las pruebas.
+```
+
+Uso de la respuesta: Se implementaron T083 a T098: pruebas de US8 (vistas fallar antes de implementar) y mediciones K1 a K9 en bench.py, con la salida en mediciones.txt. Claude se detuvo antes del cierre porque K6 mostró que reutilizar distancias entre pasos era 5,6 veces más rápido que el Dijkstra inverso con parada, y la regla de D7 pedía cambiar de estrategia si otra alternativa ganaba por más de 2 veces. También documentó en K2 el efecto del recolector de basura sobre los tiempos.
+
+### Entrada #70
+
+Fecha: 16/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Resolver la decisión de K6 y completar el cierre de la especificación 002.
+
+Prompt enviado:
+
+```text
+Mantén el inverso con parada. La regla de D7 solo compara alternativas que cumplen los requisitos, y reutilizar las distancias viola FR-026 cuando el conocimiento cambia durante el viaje; en K6 las cuatro coinciden solo porque el conocimiento no cambia entre pasos. Continúa con T099 a T103 con las mismas reglas del prompt anterior, y además:
+1. research.md, D7: aclara que la regla de más de 2 veces compara solo alternativas que cumplen FR-026, y cita los números de K6. No cambies nada más de research.md.
+2. T099, sección 13: documenta K6 con sus números y esta razón, la segunda medición de K2, y como mejora futura reutilizar las distancias mientras el conocimiento no cambie y recalcular cuando cambie.
+3. Al final dame lo mismo que pedía el punto 11 del prompt anterior, más la lista de escenarios del quickstart que requieren la GUI.
+```
+
+Uso de la respuesta: Se conservó el Dijkstra inverso con parada, porque reutilizar distancias no adapta la ruta cuando la memoria de puertas cambia (FR-026), y research.md D7 se aclaró con los números de K6. Se completaron T099 a T102: sección 13 de decisiones.md, sección 8 de estructuras.md y README con la tecla C y el clic. La revisión contra la constitución detectó que ViajeControlador leía el esqueleto completo de la cripta (FR-013); se corrigió con ConocimientoJugador.salidas_conocidas, que solo devuelve salidas de salas exploradas. T103 quedó pendiente de la verificación visual en la GUI.
 ---

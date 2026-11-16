@@ -8,6 +8,8 @@ from types import SimpleNamespace
 
 from cripta.estructuras.Agenda_Eventos import HeapAgendaEventos
 from cripta.estructuras.Salidas import Salidas
+from cripta.estructuras.Historial_Retroceso import Historial_Retroceso
+from cripta.modelo.Rutas import BuscadorRutas
 from cripta.estructuras.Indice_Salas import IndiceSalas
 from cripta.estructuras.Cache_Fichas import Cache_Fichas
 from cripta.modelo.Sala import SalaJuego
@@ -819,6 +821,689 @@ def _bench_resolubilidad(semilla: int = SEMILLA_PREDETERMINADA) -> None:
     medir_m7(semilla)
 
 
+# Niebla de guerra e ir a (Parte II, 3.3, 3.4 y 5.3): mediciones K1 a K9.
+# Todo es sintetico y determinista por semilla; no usa red, disco ni vista (FR-039, FR-040).
+
+SALAS_REFERENCIA_SINTETICA = 2000   # Tamano de K4 cuando no esta el paquete datos_offline
+PARES_POR_MEDICION = 20
+
+
+class CriptaConocimiento:
+    """Esqueleto sintetico para medir el conocimiento y las rutas (sin contenido)."""
+
+    def __init__(self, salas, entrantes, n_salas, n_salidas):
+        self.salas = salas
+        self.entrantes = entrantes
+        self.n_salas = n_salas
+        self.n_salidas = n_salidas
+
+
+def generar_cripta_conocimiento(semilla: int, salas: int) -> CriptaConocimiento:
+    """Cuadricula determinista con salidas dirigidas, costos variados y puertas de un solo lado (FR-039, FR-041).
+
+    Cada sala se conecta con sus vecinas de la cuadricula, pero cerca del 3 % de las
+    salidas se omite (queda una sola direccion), cerca del 10 % de las salidas hacia el
+    este y el sur se declara cerrada solo en ese lado y cerca del 20 % no declara costo
+    (vale 100). Los ids son secuenciales.
+    """
+    from cripta.modelo.Sala import SalaJuego
+    from cripta.estructuras.Salidas import indice_direccion
+
+    azar = random.Random(semilla)
+    ancho = 1
+    while ancho * ancho < salas:
+        ancho += 1
+    indice = IndiceSalas(max(1, salas))
+    entrantes: list[list] = [[] for _ in range(salas)]
+    total = 0
+    for i in range(salas):
+        fila = i // ancho
+        columna = i % ancho
+        salidas = Salidas()
+        vecinas = []
+        if fila > 0:
+            vecinas.append(["N", i - ancho, False])
+        if i + ancho < salas:
+            vecinas.append(["S", i + ancho, True])
+        if columna + 1 < ancho and i + 1 < salas:
+            vecinas.append(["E", i + 1, True])
+        if columna > 0:
+            vecinas.append(["O", i - 1, False])
+        for direccion, destino, puede_cerrar in vecinas:
+            if azar.random() < 0.03:
+                continue
+            cerrada = puede_cerrar and azar.random() < 0.10
+            costo = 100 if azar.random() < 0.20 else azar.randint(1, 300)
+            salidas.agregar(direccion, destino, cerrada, None, None, costo)
+        for salida in salidas:
+            salida.clave = i * 4 + indice_direccion(salida.direccion)
+            entrantes[salida.sala_destino].append(salida)
+            total += 1
+        indice.insertar(i, SalaJuego(id=i, nombre=f"Sala {i}", salidas=salidas,
+                                     enemigos=[], objetos=[], trampas=[]))
+    return CriptaConocimiento(indice, entrantes, salas, total)
+
+
+def conocimiento_vacio(cripta: CriptaConocimiento):
+    """Conocimiento recien iniciado en la sala 0 sobre el esqueleto dado."""
+    from cripta.modelo.Conocimiento import ConocimientoJugador
+
+    conocimiento = ConocimientoJugador()
+    conocimiento.iniciar(cripta.salas, cripta.entrantes, 0)
+    return conocimiento
+
+
+def conocimiento_completo(cripta: CriptaConocimiento):
+    """Conocimiento con todas las salas exploradas y las puertas recordadas tal como son."""
+    from cripta.modelo.Conocimiento import EXPLORADA, ABIERTA, CERRADA
+
+    conocimiento = conocimiento_vacio(cripta)
+    for i in range(cripta.n_salas):
+        conocimiento.estado_sala[i] = EXPLORADA
+        for salida in cripta.salas.obtener(i).salidas:
+            conocimiento.puerta[salida.clave] = CERRADA if salida.cerrada else ABIERTA
+    return conocimiento
+
+
+def elegir_pares(semilla: int, salas: int, cantidad: int) -> list:
+    """Pares (origen, destino) distintos elegidos por semilla."""
+    azar = random.Random(semilla)
+    pares = []
+    if salas < 2:
+        return pares
+    while len(pares) < cantidad:
+        origen = azar.randrange(salas)
+        destino = azar.randrange(salas)
+        if origen != destino:
+            pares.append((origen, destino))
+    return pares
+
+
+def paso_ir_a(cripta, conocimiento, buscador, origen: int, destino: int):
+    """Un paso de «ir a»: Dijkstra inverso con parada anticipada y eleccion del primer paso."""
+    buscador.distancias_hacia(destino, cripta.entrantes, conocimiento.salida_usable, origen)
+    return buscador.elegir_paso(origen, cripta.salas.obtener(origen).salidas, conocimiento.salida_usable)
+
+
+def tamano_cripta_referencia(carpeta=None) -> int:
+    """Mayor esqueleto del paquete (criterio de la spec 001); 2 000 salas si no hay paquete."""
+    mayor = tamano_mayor_esqueleto(carpeta)
+    return mayor if mayor else SALAS_REFERENCIA_SINTETICA
+
+
+def medir_k1(tamanos=(200, 2000, 20000), semilla=SEMILLA_PREDETERMINADA, consultas=20000):
+    """K1: estado de sala y puerta recordada con listas indexadas frente a busqueda lineal. FR-035, SC-004."""
+    from cripta.modelo.Conocimiento import ConocimientoJugador, EXPLORADA, ABIERTA
+
+    print("K1 consulta de estado de sala y de puerta recordada: listas indexadas frente a busqueda lineal "
+          "(razon a lo sumo 1,5 con 10 veces el tamano; la lineal crece)")
+    filas = []
+    for salas in tamanos:
+        conocimiento = ConocimientoJugador()
+        conocimiento.estado_sala = [EXPLORADA] * salas
+        conocimiento.puerta = [ABIERTA] * (4 * salas)
+        conocimiento.inicializado = True
+        azar = random.Random(semilla)
+        ids = [azar.randrange(salas) for _ in range(consultas)]
+        claves = [azar.randrange(4 * salas) for _ in range(consultas)]
+        # Alternativa descartada: lista de ids explorados y de claves recordadas, con busqueda lineal.
+        explorados = list(range(salas))
+        recordadas = list(range(4 * salas))
+        lineales = 100
+
+        def consultar_estados():
+            for sala in ids:
+                conocimiento.estado(sala)
+
+        def consultar_puertas():
+            for clave in claves:
+                conocimiento.memoria_puerta(clave)
+
+        def buscar_lineal():
+            for k in range(lineales):
+                objetivo = ids[k]
+                for valor in explorados:
+                    if valor == objetivo:
+                        break
+                objetivo = claves[k]
+                for valor in recordadas:
+                    if valor == objetivo:
+                        break
+
+        t_estado = _mejor_de(7, consultar_estados) / consultas
+        t_puerta = _mejor_de(7, consultar_puertas) / consultas
+        t_lineal = _mejor_de(3, buscar_lineal) / (2 * lineales)
+        filas.append(SimpleNamespace(salas=salas, t_estado=t_estado, t_puerta=t_puerta, t_lineal=t_lineal))
+        print(f"  S={salas}: estado de sala={t_estado * 1e9:.1f}ns puerta recordada={t_puerta * 1e9:.1f}ns "
+              f"busqueda lineal={t_lineal * 1e9:.1f}ns por consulta")
+    for anterior, actual in zip(filas, filas[1:]):
+        print(f"  S {anterior.salas} -> {actual.salas}: estado x{actual.t_estado / max(anterior.t_estado, 1e-12):.2f} "
+              f"puerta x{actual.t_puerta / max(anterior.t_puerta, 1e-12):.2f} "
+              f"lineal x{actual.t_lineal / max(anterior.t_lineal, 1e-12):.2f}")
+    return filas
+
+
+def _explorar_todo(cripta, antorcha: bool, sin_recolector: bool) -> list:
+    """Entra a todas las salas en orden de id; devuelve [reveladas, cambios al registro, segundos]."""
+    import gc
+    from cripta.modelo.Conocimiento import DESCONOCIDA
+
+    conocimiento = conocimiento_vacio(cripta)
+    antes = 0
+    for estado in conocimiento.estado_sala:
+        if estado != DESCONOCIDA:
+            antes += 1
+    historial = Historial_Retroceso()
+    historial.abrir_intervalo()
+    reactivar = sin_recolector and gc.isenabled()
+    if reactivar:
+        gc.disable()
+    try:
+        inicio = time.perf_counter()
+        for sala in range(cripta.n_salas):
+            conocimiento.entrar(sala, antorcha, historial, sala)
+        transcurrido = time.perf_counter() - inicio
+    finally:
+        if reactivar:
+            gc.enable()
+    despues = 0
+    for estado in conocimiento.estado_sala:
+        if estado != DESCONOCIDA:
+            despues += 1
+    return [despues - antes, len(conocimiento.registro), transcurrido]
+
+
+def medir_k2(tamanos=(200, 2000, 20000), semilla=SEMILLA_PREDETERMINADA):
+    """K2: explorar salas nuevas con y sin antorcha, costo por sala revelada. FR-036, SC-004.
+
+    El criterio es el conteo de cambios por sala revelada (no depende de la maquina). El
+    tiempo se informa con el recolector de basura activo y, aparte, sin sus pausas: con
+    20 000 salas el recolector recorre las miles de entradas del registro y distorsiona
+    el tiempo sin que cambie el trabajo del algoritmo.
+    """
+    print("K2 explorar por sala revelada, con y sin antorcha (razon a lo sumo 1,5 con 10 veces el tamano)")
+    filas = []
+    for salas in tamanos:
+        cripta = generar_cripta_conocimiento(semilla, salas)
+        sin = _explorar_todo(cripta, False, False)
+        con = _explorar_todo(cripta, True, False)
+        sin_gc = _explorar_todo(cripta, False, True)
+        con_gc = _explorar_todo(cripta, True, True)
+        fila = SimpleNamespace(
+            salas=salas, reveladas=sin[0], ops_sin=sin[1] / sin[0], ops_con=con[1] / con[0],
+            t_sin=sin[2] / sin[0], t_con=con[2] / con[0],
+            t_sin_gc=sin_gc[2] / sin_gc[0], t_con_gc=con_gc[2] / con_gc[0])
+        filas.append(fila)
+        print(f"  S={salas}: reveladas={fila.reveladas} sin antorcha: {fila.ops_sin:.3f} cambios y "
+              f"{fila.t_sin * 1e6:.3f}us por sala, con antorcha: {fila.ops_con:.3f} cambios y "
+              f"{fila.t_con * 1e6:.3f}us por sala; sin pausas del recolector: "
+              f"{fila.t_sin_gc * 1e6:.3f}us (sin) {fila.t_con_gc * 1e6:.3f}us (con)")
+    for anterior, actual in zip(filas, filas[1:]):
+        print(f"  S {anterior.salas} -> {actual.salas}: cambios por sala x{actual.ops_sin / anterior.ops_sin:.2f} "
+              f"(sin) x{actual.ops_con / anterior.ops_con:.2f} (con); tiempo por sala "
+              f"x{actual.t_sin / max(anterior.t_sin, 1e-12):.2f} (sin) x{actual.t_con / max(anterior.t_con, 1e-12):.2f} (con); "
+              f"sin recolector x{actual.t_sin_gc / max(anterior.t_sin_gc, 1e-12):.2f} (sin) "
+              f"x{actual.t_con_gc / max(anterior.t_con_gc, 1e-12):.2f} (con)")
+    return filas
+
+
+def _invertir(etiqueta, datos) -> None:
+    """Inversion de los cambios de lista que usa el conocimiento (igual que `GestorPartida`)."""
+    if etiqueta == "lista_asignada":
+        lista, posicion, anterior = datos
+        lista[posicion] = anterior
+    elif etiqueta == "lista_agregada":
+        datos[0].pop()
+
+
+def _valor_alterno(j: int, salas: int) -> int:
+    """Valor distinto del anterior para el cambio `j`: alterna explorada y avistada en cada vuelta."""
+    from cripta.modelo.Conocimiento import AVISTADA, EXPLORADA
+    return EXPLORADA if (j // (salas - 1)) % 2 == 0 else AVISTADA
+
+
+def medir_k3(tamanos=(200, 20000), cambios=(10, 1000), semilla=SEMILLA_PREDETERMINADA):
+    """K3: registrar e invertir con `lista_asignada` frente a copiar el conocimiento en cada cambio. FR-037."""
+    print("K3 registrar e invertir con lista_asignada frente a copiar el conocimiento completo en cada cambio "
+          "(lineal en los cambios; la copia crece con el mapa)")
+    filas = []
+    for salas in tamanos:
+        cripta = generar_cripta_conocimiento(semilla, salas)
+        for k in cambios:
+            conocimiento = conocimiento_vacio(cripta)
+            antes = list(conocimiento.estado_sala)
+            historial = Historial_Retroceso()
+            historial.abrir_intervalo()
+            inicio = time.perf_counter()
+            for j in range(k):
+                conocimiento._asignar_estado(j % (salas - 1) + 1, _valor_alterno(j, salas), historial, j)
+            registrados = len(conocimiento.registro)
+            historial.cerrar_intervalo()
+            historial.deshacer(_invertir)
+            t_registro = time.perf_counter() - inicio
+            revertido = conocimiento.estado_sala == antes
+            conocimiento2 = conocimiento_vacio(cripta)
+            inicio = time.perf_counter()
+            copias = []
+            for j in range(k):
+                copias.append(conocimiento2.instantanea())
+                conocimiento2.estado_sala[j % (salas - 1) + 1] = _valor_alterno(j, salas)
+            t_copia = time.perf_counter() - inicio
+            ops_copia = len(copias) * len(copias[0])
+            filas.append(SimpleNamespace(salas=salas, cambios=k, registrados=registrados, revertido=revertido,
+                                         t_registro=t_registro, t_copia=t_copia, ops_copia=ops_copia))
+            print(f"  S={salas} cambios={k}: registrar+invertir={_ms(t_registro)} ({registrados} cambios, "
+                  f"revertido={'SI' if revertido else 'NO'}) copia completa={_ms(t_copia)} ({ops_copia} valores copiados)")
+    return filas
+
+
+def medir_k4(semilla=SEMILLA_PREDETERMINADA, imprimir=True, carpeta=None):
+    """K4: un paso de «ir a» con el mapa completo de la cripta de referencia. FR-038, SC-003."""
+    salas = tamano_cripta_referencia(carpeta)
+    cripta = generar_cripta_conocimiento(semilla, salas)
+    conocimiento = conocimiento_completo(cripta)
+    buscador = BuscadorRutas(salas)
+    pares = elegir_pares(semilla, salas, PARES_POR_MEDICION)
+    resultados = []
+    maximo = 0.0
+    total = 0.0
+    for origen, destino in pares:
+        mejor = None
+        for _ in range(3):
+            inicio = time.perf_counter()
+            paso = paso_ir_a(cripta, conocimiento, buscador, origen, destino)
+            transcurrido = time.perf_counter() - inicio
+            mejor = transcurrido if mejor is None else min(mejor, transcurrido)
+        distancia = buscador.distancia_de(origen)
+        resultados.append([origen, destino, paso.direccion if paso else "-", -1 if distancia is None else distancia])
+        maximo = max(maximo, mejor)
+        total += mejor
+    cumple = maximo < 0.005
+    if imprimir:
+        print(f"K4 paso de ir a con el mapa conocido completo de la cripta de referencia (S={salas}, "
+              f"{len(pares)} pares por semilla, mejor de 3)")
+        print(f"  media={_ms(total / len(pares))} maximo={_ms(maximo)} limite=5ms "
+              f"{'CUMPLE' if cumple else 'EXCEDE'}")
+    return SimpleNamespace(salas=salas, maximo=maximo, media=total / len(pares), cumple=cumple,
+                           resultados=resultados)
+
+
+def medir_k5(tamanos=(2000, 20000), semilla=SEMILLA_PREDETERMINADA):
+    """K5: un paso de «ir a» a 2 000 y 20 000 salas exploradas, informativa. FR-038."""
+    import math
+
+    print("K5 paso de ir a con 2000 y 20000 salas exploradas (informativa, esperado O((V + E) log V))")
+    filas = []
+    for salas in tamanos:
+        cripta = generar_cripta_conocimiento(semilla, salas)
+        conocimiento = conocimiento_completo(cripta)
+        buscador = BuscadorRutas(salas)
+        pares = elegir_pares(semilla, salas, PARES_POR_MEDICION)
+        maximo = 0.0
+        total = 0.0
+        for origen, destino in pares:
+            inicio = time.perf_counter()
+            paso_ir_a(cripta, conocimiento, buscador, origen, destino)
+            transcurrido = time.perf_counter() - inicio
+            maximo = max(maximo, transcurrido)
+            total += transcurrido
+        filas.append(SimpleNamespace(salas=salas, salidas=cripta.n_salidas, media=total / len(pares), maximo=maximo))
+        print(f"  S={salas} E={cripta.n_salidas}: media={_ms(total / len(pares))} maximo={_ms(maximo)}")
+    for anterior, actual in zip(filas, filas[1:]):
+        esperado = ((actual.salas + actual.salidas) * math.log(actual.salas)) / (
+            (anterior.salas + anterior.salidas) * math.log(anterior.salas))
+        print(f"  S {anterior.salas} -> {actual.salas}: media x{actual.media / max(anterior.media, 1e-12):.2f} "
+              f"maximo x{actual.maximo / max(anterior.maximo, 1e-12):.2f} "
+              f"(el factor (V + E) log V de la cota es x{esperado:.2f})")
+    return filas
+
+
+def _recorrer(cripta, destino: int, origen: int, siguiente_paso) -> list:
+    """Viaje paso a paso con una estrategia; devuelve [costo total, pasos]. Se corta a S pasos."""
+    actual = origen
+    costo = 0
+    pasos = 0
+    while actual != destino and pasos < cripta.n_salas:
+        salida = siguiente_paso(actual)
+        if salida is None:
+            return [-1, pasos]
+        costo += salida.costo
+        actual = salida.sala_destino
+        pasos += 1
+    return [costo, pasos]
+
+
+def _paso_desde_origen(cripta, conocimiento, estado, origen: int, destino: int):
+    """Alternativa K6: Dijkstra desde el origen con padres; devuelve la primera salida de la ruta."""
+    estado.generacion += 1
+    generacion = estado.generacion
+    monticulo = estado.monticulo
+    monticulo.vaciar()
+    estado.marca[origen] = generacion
+    estado.distancia[origen] = 0
+    monticulo.insertar(0, origen, origen)
+    while not monticulo.esta_vacio():
+        prioridad, _, sala = monticulo.extraer_minimo()
+        if prioridad != estado.distancia[sala]:
+            continue
+        if sala == destino:
+            break
+        for salida in cripta.salas.obtener(sala).salidas:
+            if not conocimiento.salida_usable(salida):
+                continue
+            vecina = salida.sala_destino
+            candidata = prioridad + salida.costo
+            if estado.marca[vecina] != generacion or candidata < estado.distancia[vecina]:
+                estado.marca[vecina] = generacion
+                estado.distancia[vecina] = candidata
+                estado.padre[vecina] = salida
+                monticulo.insertar(candidata, vecina, vecina)
+    if estado.marca[destino] != generacion:
+        return None
+    salida = estado.padre[destino]
+    while salida.clave // 4 != origen:
+        salida = estado.padre[salida.clave // 4]
+    return salida
+
+
+def medir_k6(salas=2000, semilla=SEMILLA_PREDETERMINADA, imprimir=True):
+    """K6: Dijkstra inverso con parada frente al completo, desde el origen y reutilizando distancias. D7, FR-024."""
+    from cripta.estructuras.Monticulo_Minimo import MonticuloMinimo
+
+    cripta = generar_cripta_conocimiento(semilla, salas)
+    conocimiento = conocimiento_completo(cripta)
+    usable = conocimiento.salida_usable
+    pares = elegir_pares(semilla, salas, 10)
+    buscador = BuscadorRutas(salas)
+    estado = SimpleNamespace(distancia=[0] * salas, marca=[0] * salas, padre=[None] * salas,
+                             generacion=0, monticulo=MonticuloMinimo())
+
+    def inverso_parada(origen, destino):
+        def siguiente(actual):
+            return paso_ir_a(cripta, conocimiento, buscador, actual, destino)
+        return _recorrer(cripta, destino, origen, siguiente)
+
+    def inverso_completo(origen, destino):
+        def siguiente(actual):
+            buscador.distancias_hacia(destino, cripta.entrantes, usable, None)
+            return buscador.elegir_paso(actual, cripta.salas.obtener(actual).salidas, usable)
+        return _recorrer(cripta, destino, origen, siguiente)
+
+    def desde_origen(origen, destino):
+        def siguiente(actual):
+            return _paso_desde_origen(cripta, conocimiento, estado, actual, destino)
+        return _recorrer(cripta, destino, origen, siguiente)
+
+    def reutilizar(origen, destino):
+        # Una sola busqueda por viaje: solo es correcta si el conocimiento no cambia entre pasos (FR-026).
+        buscador.distancias_hacia(destino, cripta.entrantes, usable, None)
+
+        def siguiente(actual):
+            return buscador.elegir_paso(actual, cripta.salas.obtener(actual).salidas, usable)
+        return _recorrer(cripta, destino, origen, siguiente)
+
+    estrategias = [["inverso con parada", inverso_parada], ["inverso completo", inverso_completo],
+                   ["desde el origen", desde_origen], ["reutilizar distancias", reutilizar]]
+    tiempos = []
+    resultados = []
+    for _, estrategia in estrategias:
+        total = 0.0
+        costos = []
+        for origen, destino in pares:
+            inicio = time.perf_counter()
+            costos.append(estrategia(origen, destino))
+            total += time.perf_counter() - inicio
+        tiempos.append(total)
+        resultados.append(costos)
+    # Las cuatro deben llegar con el mismo costo total (rutas de menor costo); los pasos pueden variar por empates.
+    mismo_costo = True
+    for i in range(len(pares)):
+        for costos in resultados[1:]:
+            if costos[i][0] != resultados[0][i][0]:
+                mismo_costo = False
+    deterministas = [[origen, destino, resultados[0][i][0], resultados[0][i][1]]
+                     for i, (origen, destino) in enumerate(pares)]
+    if imprimir:
+        print(f"K6 Dijkstra inverso con parada frente a alternativas (S={salas}, {len(pares)} viajes completos, "
+              f"recalculando en cada paso salvo reutilizar)")
+        for (nombre, _), t in zip(estrategias, tiempos):
+            print(f"  {nombre}: {_ms(t)} (inverso con parada / esta = {tiempos[0] / max(t, 1e-9):.2f}x)")
+        print(f"  mismo costo de ruta en las cuatro: {'SI' if mismo_costo else 'NO'}")
+        for (nombre, _), t in zip(estrategias[1:], tiempos[1:]):
+            gana = t > 0 and tiempos[0] / t > 2
+            print(f"  {nombre} {'gana por mas de 2 veces' if gana else 'no gana por mas de 2 veces'}")
+        if tiempos[0] / max(tiempos[3], 1e-9) > 2:
+            print("  nota: reutilizar solo es correcta si el conocimiento no cambia entre pasos; "
+                  "FR-026 exige recalcular porque la memoria de puertas cambia al observar")
+    return SimpleNamespace(salas=salas, t_inverso_parada=tiempos[0], t_inverso_completo=tiempos[1],
+                           t_desde_origen=tiempos[2], t_reutilizar=tiempos[3], mismo_costo=mismo_costo,
+                           resultados=deterministas)
+
+
+class _MonticuloIndexado:
+    """Alternativa K7: montículo con decremento de clave e indice de posicion por elemento."""
+
+    def __init__(self, tamano: int) -> None:
+        self.prioridad: list[int] = []
+        self.elemento: list[int] = []
+        self.posicion = [-1] * tamano
+
+    def vacio(self) -> bool:
+        return not self.elemento
+
+    def _intercambiar(self, i: int, j: int) -> None:
+        self.prioridad[i], self.prioridad[j] = self.prioridad[j], self.prioridad[i]
+        self.elemento[i], self.elemento[j] = self.elemento[j], self.elemento[i]
+        self.posicion[self.elemento[i]] = i
+        self.posicion[self.elemento[j]] = j
+
+    def _subir(self, i: int) -> None:
+        while i > 0:
+            padre = (i - 1) // 2
+            if self.prioridad[i] >= self.prioridad[padre]:
+                break
+            self._intercambiar(i, padre)
+            i = padre
+
+    def insertar_o_bajar(self, prioridad: int, elemento: int) -> None:
+        i = self.posicion[elemento]
+        if i == -1:
+            self.prioridad.append(prioridad)
+            self.elemento.append(elemento)
+            i = len(self.elemento) - 1
+            self.posicion[elemento] = i
+            self._subir(i)
+        elif prioridad < self.prioridad[i]:
+            self.prioridad[i] = prioridad
+            self._subir(i)
+
+    def extraer(self) -> list:
+        resultado = [self.prioridad[0], self.elemento[0]]
+        ultimo = len(self.elemento) - 1
+        self._intercambiar(0, ultimo)
+        self.posicion[self.elemento[ultimo]] = -1
+        self.prioridad.pop()
+        self.elemento.pop()
+        i = 0
+        total = len(self.elemento)
+        while True:
+            izquierdo = 2 * i + 1
+            if izquierdo >= total:
+                break
+            menor = izquierdo
+            if izquierdo + 1 < total and self.prioridad[izquierdo + 1] < self.prioridad[izquierdo]:
+                menor = izquierdo + 1
+            if self.prioridad[menor] >= self.prioridad[i]:
+                break
+            self._intercambiar(i, menor)
+            i = menor
+        return resultado
+
+
+def _distancias_indexado(cripta, usable, destino: int) -> list:
+    distancia = [-1] * cripta.n_salas
+    fijada = [False] * cripta.n_salas
+    monticulo = _MonticuloIndexado(cripta.n_salas)
+    distancia[destino] = 0
+    monticulo.insertar_o_bajar(0, destino)
+    while not monticulo.vacio():
+        prioridad, sala = monticulo.extraer()
+        fijada[sala] = True
+        for salida in cripta.entrantes[sala]:
+            origen = salida.clave // 4
+            if fijada[origen] or not usable(salida):
+                continue
+            candidata = prioridad + salida.costo
+            if distancia[origen] == -1 or candidata < distancia[origen]:
+                distancia[origen] = candidata
+                monticulo.insertar_o_bajar(candidata, origen)
+    return distancia
+
+
+def _distancias_lineales(cripta, usable, destino: int) -> list:
+    distancia = [-1] * cripta.n_salas
+    fijada = [False] * cripta.n_salas
+    distancia[destino] = 0
+    while True:
+        mejor = -1
+        for sala in range(cripta.n_salas):
+            if not fijada[sala] and distancia[sala] != -1 and (mejor == -1 or distancia[sala] < distancia[mejor]):
+                mejor = sala
+        if mejor == -1:
+            return distancia
+        fijada[mejor] = True
+        for salida in cripta.entrantes[mejor]:
+            origen = salida.clave // 4
+            if fijada[origen] or not usable(salida):
+                continue
+            candidata = distancia[mejor] + salida.costo
+            if distancia[origen] == -1 or candidata < distancia[origen]:
+                distancia[origen] = candidata
+
+
+def medir_k7(salas=2000, semilla=SEMILLA_PREDETERMINADA, imprimir=True):
+    """K7: montículo perezoso frente a decremento de clave con indice y a seleccion lineal. D8."""
+    cripta = generar_cripta_conocimiento(semilla, salas)
+    conocimiento = conocimiento_completo(cripta)
+    usable = conocimiento.salida_usable
+    buscador = BuscadorRutas(salas)
+    destino = elegir_pares(semilla, salas, 1)[0][1]
+
+    def perezoso():
+        buscador.distancias_hacia(destino, cripta.entrantes, usable, None)
+
+    t_perezoso = _mejor_de(3, perezoso)
+    t_indexado = _mejor_de(3, lambda: _distancias_indexado(cripta, usable, destino))
+    t_lineal = _mejor_de(1, lambda: _distancias_lineales(cripta, usable, destino))
+    indexado = _distancias_indexado(cripta, usable, destino)
+    lineal = _distancias_lineales(cripta, usable, destino)
+    iguales = True
+    for sala in range(salas):
+        esperado = -1 if buscador.distancia_de(sala) is None else buscador.distancia[sala]
+        if indexado[sala] != esperado or lineal[sala] != esperado:
+            iguales = False
+    if imprimir:
+        razon = t_perezoso / max(t_indexado, 1e-9)
+        print(f"K7 monticulo perezoso frente a decremento de clave con indice y a seleccion lineal (S={salas}, "
+              f"busqueda completa)")
+        print(f"  perezoso={_ms(t_perezoso)} indexado={_ms(t_indexado)} (perezoso/indexado={razon:.2f}x) "
+              f"seleccion lineal={_ms(t_lineal)} (lineal/perezoso={t_lineal / max(t_perezoso, 1e-9):.2f}x)")
+        print(f"  mismas distancias en las tres: {'SI' if iguales else 'NO'}; "
+              f"{'se conserva el perezoso (el indexado no gana por mas de 2 veces)' if razon <= 2 else 'el indexado gana por mas de 2 veces'}")
+    return SimpleNamespace(salas=salas, t_perezoso=t_perezoso, t_indexado=t_indexado, t_lineal=t_lineal,
+                           iguales=iguales)
+
+
+def _costo_ruta_bfs(cripta, usable, origen: int, destino: int) -> int:
+    """BFS con la cola de la spec 001 (`ColaLista`): costo de la ruta de menos saltos, o -1."""
+    from cripta.estructuras.Cola_Lista import ColaLista
+
+    previa = [None] * cripta.n_salas
+    visto = [False] * cripta.n_salas
+    cola = ColaLista()
+    cola.encolar(origen)
+    visto[origen] = True
+    while not cola.vacia():
+        sala = cola.sacar()
+        if sala == destino:
+            break
+        for salida in cripta.salas.obtener(sala).salidas:
+            if usable(salida) and not visto[salida.sala_destino]:
+                visto[salida.sala_destino] = True
+                previa[salida.sala_destino] = salida
+                cola.encolar(salida.sala_destino)
+    if not visto[destino]:
+        return -1
+    costo = 0
+    actual = destino
+    while actual != origen:
+        salida = previa[actual]
+        costo += salida.costo
+        actual = salida.clave // 4
+    return costo
+
+
+def medir_k8(salas=2000, semilla=SEMILLA_PREDETERMINADA, imprimir=True):
+    """K8: busqueda por costo frente a BFS (solo valida con costos iguales). D7, FR-023."""
+    cripta = generar_cripta_conocimiento(semilla, salas)
+    conocimiento = conocimiento_completo(cripta)
+    usable = conocimiento.salida_usable
+    buscador = BuscadorRutas(salas)
+    pares = elegir_pares(semilla, salas, 50)
+    mas_caras = mas_baratas = iguales = 0
+    t_dijkstra = t_bfs = 0.0
+    for origen, destino in pares:
+        inicio = time.perf_counter()
+        buscador.distancias_hacia(destino, cripta.entrantes, usable, origen)
+        optimo = buscador.distancia_de(origen)
+        t_dijkstra += time.perf_counter() - inicio
+        inicio = time.perf_counter()
+        costo_bfs = _costo_ruta_bfs(cripta, usable, origen, destino)
+        t_bfs += time.perf_counter() - inicio
+        if optimo is None or costo_bfs == -1:
+            continue
+        if costo_bfs > optimo:
+            mas_caras += 1
+        elif costo_bfs < optimo:
+            mas_baratas += 1
+        else:
+            iguales += 1
+    if imprimir:
+        print(f"K8 busqueda por costo frente a BFS con la cola de la spec 001 (S={salas}, {len(pares)} pares, "
+              f"costos variados)")
+        print(f"  BFS devuelve rutas de mayor costo en {mas_caras} pares, de igual costo en {iguales} y de menor "
+              f"costo en {mas_baratas}; tiempo busqueda por costo={_ms(t_dijkstra)} BFS={_ms(t_bfs)}")
+    return SimpleNamespace(salas=salas, rutas_mas_caras=mas_caras, rutas_mas_baratas=mas_baratas,
+                           rutas_iguales=iguales, t_dijkstra=t_dijkstra, t_bfs=t_bfs)
+
+
+def medir_k9(semilla=SEMILLA_PREDETERMINADA):
+    """K9: K4 y K6 dos veces con la misma semilla dan resultados identicos. FR-039, FR-040, SC-005, SC-008."""
+    a4 = medir_k4(semilla, imprimir=False)
+    b4 = medir_k4(semilla, imprimir=False)
+    a6 = medir_k6(2000, semilla, imprimir=False)
+    b6 = medir_k6(2000, semilla, imprimir=False)
+    identicos = a4.resultados == b4.resultados and a6.resultados == b6.resultados
+    print("K9 determinismo: K4 y K6 dos veces con la misma semilla, sin ventana")
+    print(f"  resultados de K4 ({len(a4.resultados)} pares) y de K6 ({len(a6.resultados)} viajes) identicos: "
+          f"{'SI' if identicos else 'NO'}")
+    return SimpleNamespace(identicos=identicos)
+
+
+def _bench_conocimiento(semilla: int = SEMILLA_PREDETERMINADA) -> None:
+    """Seccion Niebla de guerra e ir a: K1 a K9, con la misma semilla en todas."""
+    print(f"\n=== Niebla de guerra e ir a (semilla {semilla}) ===")
+    medir_k1((200, 2000, 20000), semilla)
+    medir_k2((200, 2000, 20000), semilla)
+    medir_k3((200, 20000), (10, 1000), semilla)
+    medir_k4(semilla)
+    medir_k5((2000, 20000), semilla)
+    medir_k6(2000, semilla)
+    medir_k7(2000, semilla)
+    medir_k8(2000, semilla)
+    medir_k9(semilla)
+
+
 def main(semilla: int = SEMILLA_PREDETERMINADA):
     import tempfile
     _bench_simulacion()
@@ -829,6 +1514,7 @@ def main(semilla: int = SEMILLA_PREDETERMINADA):
     with tempfile.TemporaryDirectory(prefix="cripta-bench-") as carpeta:
         _bench_estructuras_y_persistencia(carpeta)
     _bench_resolubilidad(semilla)
+    _bench_conocimiento(semilla)
 
 
 if __name__ == "__main__":

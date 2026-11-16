@@ -1,0 +1,139 @@
+=== Agenda: heap propio vs. lista ordenada (4.1) ===
+n=  100  heap: insertar=0.14ms extraer=0.19ms   |   lista: insertar=0.22ms extraer=0.01ms
+n=  500  heap: insertar=0.88ms extraer=1.26ms   |   lista: insertar=4.90ms extraer=0.06ms
+n= 2000  heap: insertar=6.01ms extraer=6.49ms   |   lista: insertar=88.10ms extraer=0.41ms
+
+=== Rastreador.decidir_accion vs. tamaño de la cripta (4.7) ===
+cripta de    20 salas -> 10000 llamadas en 7.31ms (0.731µs por llamada)
+cripta de   200 salas -> 10000 llamadas en 7.37ms (0.737µs por llamada)
+cripta de  2000 salas -> 10000 llamadas en 7.42ms (0.742µs por llamada)
+
+=== Cache_Fichas llena (25 fichas): acierto vs. fallo (4.4) ===
+50000 aciertos: 11.56ms   |   50000 fallos: 63.44ms
+referencia cripta-01: ciclos=61 media=0.136ms maximo=0.534ms limite=20ms CUMPLE
+
+=== Ciclo completo sintético (sin red, disco ni renderizado) ===
+ciclo completo: enemigos=20 n=100 media=0.285ms maximo=0.715ms limite=20ms CUMPLE
+ciclo completo: enemigos=200 n=100 media=2.817ms maximo=4.252ms limite=20ms CUMPLE
+ciclo completo: enemigos=500 n=100 media=8.107ms maximo=18.686ms limite=20ms CUMPLE
+ciclo completo: enemigos=1000 n=100 media=17.879ms maximo=39.954ms limite=20ms EXCEDE
+
+=== Inventario e historial ===
+inventario insertar + soltar: n=10000 total=6.104ms por_operacion=0.610us
+inventario recorrido bidireccional: n=10000 total=3.503ms por_operacion=0.350us
+inventario vista ordenada (100 objetos): n=100 total=14.032ms por_operacion=140.324us
+historial registrar + revertir 10 deltas: n=10000 total=71.432ms por_operacion=7.143us
+
+=== Ordenamientos: mismo conjunto para cada algoritmo ===
+insertion_sort n=16 aleatorio clave=simple: n=3 total=0.049ms por_operacion=16.467us
+insertion_sort n=16 aleatorio clave=costosa: n=3 total=0.213ms por_operacion=71.067us
+merge_sort n=16 aleatorio clave=simple: n=3 total=0.065ms por_operacion=21.700us
+merge_sort n=16 aleatorio clave=costosa: n=3 total=0.240ms por_operacion=80.133us
+ordenar n=16 aleatorio clave=simple: n=3 total=0.037ms por_operacion=12.433us
+ordenar n=16 aleatorio clave=costosa: n=3 total=0.213ms por_operacion=70.900us
+insertion_sort n=16 casi ordenado clave=simple: n=3 total=0.014ms por_operacion=4.767us
+insertion_sort n=16 casi ordenado clave=costosa: n=3 total=0.074ms por_operacion=24.567us
+merge_sort n=16 casi ordenado clave=simple: n=3 total=0.050ms por_operacion=16.767us
+merge_sort n=16 casi ordenado clave=costosa: n=3 total=0.172ms por_operacion=57.333us
+ordenar n=16 casi ordenado clave=simple: n=3 total=0.015ms por_operacion=4.867us
+ordenar n=16 casi ordenado clave=costosa: n=3 total=0.074ms por_operacion=24.600us
+insertion_sort n=128 aleatorio clave=simple: n=3 total=1.472ms por_operacion=490.700us
+insertion_sort n=128 aleatorio clave=costosa: n=3 total=9.874ms por_operacion=3291.367us
+merge_sort n=128 aleatorio clave=simple: n=3 total=0.655ms por_operacion=218.333us
+merge_sort n=128 aleatorio clave=costosa: n=3 total=3.514ms por_operacion=1171.300us
+ordenar n=128 aleatorio clave=simple: n=3 total=0.678ms por_operacion=226.100us
+ordenar n=128 aleatorio clave=costosa: n=3 total=3.800ms por_operacion=1266.567us
+insertion_sort n=128 casi ordenado clave=simple: n=3 total=0.089ms por_operacion=29.500us
+insertion_sort n=128 casi ordenado clave=costosa: n=3 total=0.575ms por_operacion=191.733us
+merge_sort n=128 casi ordenado clave=simple: n=3 total=0.476ms por_operacion=158.800us
+merge_sort n=128 casi ordenado clave=costosa: n=3 total=2.195ms por_operacion=731.567us
+ordenar n=128 casi ordenado clave=simple: n=3 total=0.115ms por_operacion=38.367us
+ordenar n=128 casi ordenado clave=costosa: n=3 total=0.842ms por_operacion=280.667us
+insertion_sort n=512 aleatorio clave=simple: n=3 total=21.516ms por_operacion=7171.967us
+insertion_sort n=512 aleatorio clave=costosa: n=3 total=177.841ms por_operacion=59280.300us
+merge_sort n=512 aleatorio clave=simple: n=3 total=3.377ms por_operacion=1125.533us
+merge_sort n=512 aleatorio clave=costosa: n=3 total=21.916ms por_operacion=7305.267us
+ordenar n=512 aleatorio clave=simple: n=3 total=3.253ms por_operacion=1084.400us
+ordenar n=512 aleatorio clave=costosa: n=3 total=22.195ms por_operacion=7398.233us
+insertion_sort n=512 casi ordenado clave=simple: n=3 total=0.370ms por_operacion=123.333us
+insertion_sort n=512 casi ordenado clave=costosa: n=3 total=2.757ms por_operacion=918.933us
+merge_sort n=512 casi ordenado clave=simple: n=3 total=2.188ms por_operacion=729.433us
+merge_sort n=512 casi ordenado clave=costosa: n=3 total=13.025ms por_operacion=4341.800us
+ordenar n=512 casi ordenado clave=simple: n=3 total=0.393ms por_operacion=131.133us
+ordenar n=512 casi ordenado clave=costosa: n=3 total=3.093ms por_operacion=1030.967us
+
+=== Recuperacion de fichas desalojadas desde disco ===
+liberar + desalojar + recuperar ficha: n=100 total=15.994ms por_operacion=159.941us
+
+=== Guardado/carga: mismo estado binario y JSON ===
+guardar binario: n=10 total=4.853ms por_operacion=485.320us
+guardar JSON: n=10 total=8.355ms por_operacion=835.540us
+cargar binario: n=10 total=39.258ms por_operacion=3925.780us
+cargar JSON: n=10 total=17.017ms por_operacion=1701.700us
+cargar sala especifica binario: n=10 total=1.747ms por_operacion=174.660us
+Tamano: binario=41917B JSON=40903B
+
+=== Resolubilidad de la cripta (semilla 42) ===
+M1 verificacion frente a la alternativa ingenua (la ingenua pierde y la brecha crece con K)
+  S=200 E=409 K=20 verificacion=1.000ms (429 ops) ingenua=1.355ms (8181 ops) ingenua/verificacion=1.4x PIERDE
+  S=2000 E=4121 K=200 verificacion=11.253ms (4321 ops) ingenua=139.190ms (824201 ops) ingenua/verificacion=12.4x PIERDE
+  S=20000 E=41237 K=2000 verificacion=150.106ms (43237 ops) ingenua=omitida (supera el tope)
+  la brecha crece con K: SI
+M2 escalado de la verificacion al multiplicar por 10 el tamano (limite 15)
+  S 200 -> 2000: tiempo x11.25 operaciones x10.07 menor que 15
+  S 2000 -> 20000: tiempo x13.34 operaciones x10.01 menor que 15
+M3 cripta de referencia del paquete (sin red, limite 200 ms)
+  sin llaves en el paquete
+M4 indice de llaves a 20000 salas (K=2000, 4092 consultas)
+  solo consultas: arreglo=5.704ms hash=6.112ms
+  construccion + consultas: arreglo=15.985ms hash=19.768ms arreglo/hash=0.81x
+  decision: se conserva el arreglo ordenado (el hash no gana por mas de 2 veces)
+M5 costo del reporte sobre la verificacion pura (variante con ciclo)
+  S=2000 E=4121 no_resoluble ciclos=1 pura=11.272ms con reporte=11.389ms salidas examinadas=4121 de 4121 (no repite exploraciones)
+  S=20000 E=41237 no_resoluble ciclos=1 pura=148.648ms con reporte=150.262ms salidas examinadas=41237 de 41237 (no repite exploraciones) tiempo con reporte x13.19 al multiplicar por 10
+M6 orden por ronda a 20000 salas (17 rondas)
+  con ordenar=44.642ms sin ordenar=0.069ms verificacion completa=145.126ms sobrecosto del orden=30.7% de la verificacion
+M7 cripta sintetica grande sin red (10 x 50 salas, limite 200 ms)
+  S=500 E=1027 K=50 resoluble en 2.602ms menor que 200 ms
+
+=== Niebla de guerra e ir a (semilla 42) ===
+K1 consulta de estado de sala y de puerta recordada: listas indexadas frente a busqueda lineal (razon a lo sumo 1,5 con 10 veces el tamano; la lineal crece)
+  S=200: estado de sala=101.3ns puerta recordada=114.1ns busqueda lineal=5303.0ns por consulta
+  S=2000: estado de sala=111.9ns puerta recordada=111.3ns busqueda lineal=51028.0ns por consulta
+  S=20000: estado de sala=112.4ns puerta recordada=111.1ns busqueda lineal=469137.0ns por consulta
+  S 200 -> 2000: estado x1.11 puerta x0.98 lineal x9.62
+  S 2000 -> 20000: estado x1.00 puerta x1.00 lineal x9.19
+K2 explorar por sala revelada, con y sin antorcha (razon a lo sumo 1,5 con 10 veces el tamano)
+  S=200: reveladas=197 sin antorcha: 2.005 cambios y 3.171us por sala, con antorcha: 2.010 cambios y 5.640us por sala; sin pausas del recolector: 2.337us (sin) 5.287us (con)
+  S=2000: reveladas=1997 sin antorcha: 1.999 cambios y 2.633us por sala, con antorcha: 2.001 cambios y 6.156us por sala; sin pausas del recolector: 2.350us (sin) 5.661us (con)
+  S=20000: reveladas=19997 sin antorcha: 1.999 cambios y 7.811us por sala, con antorcha: 2.000 cambios y 12.190us por sala; sin pausas del recolector: 2.994us (sin) 6.408us (con)
+  S 200 -> 2000: cambios por sala x1.00 (sin) x1.00 (con); tiempo por sala x0.83 (sin) x1.09 (con); sin recolector x1.01 (sin) x1.07 (con)
+  S 2000 -> 20000: cambios por sala x1.00 (sin) x1.00 (con); tiempo por sala x2.97 (sin) x1.98 (con); sin recolector x1.27 (sin) x1.13 (con)
+K3 registrar e invertir con lista_asignada frente a copiar el conocimiento completo en cada cambio (lineal en los cambios; la copia crece con el mapa)
+  S=200 cambios=10: registrar+invertir=0.032ms (10 cambios, revertido=SI) copia completa=0.047ms (10020 valores copiados)
+  S=200 cambios=1000: registrar+invertir=1.768ms (1000 cambios, revertido=SI) copia completa=3.797ms (1002000 valores copiados)
+  S=20000 cambios=10: registrar+invertir=0.031ms (10 cambios, revertido=SI) copia completa=3.271ms (1000020 valores copiados)
+  S=20000 cambios=1000: registrar+invertir=6.484ms (1000 cambios, revertido=SI) copia completa=197.307ms (100002000 valores copiados)
+K4 paso de ir a con el mapa conocido completo de la cripta de referencia (S=50, 20 pares por semilla, mejor de 3)
+  media=0.144ms maximo=0.239ms limite=5ms CUMPLE
+K5 paso de ir a con 2000 y 20000 salas exploradas (informativa, esperado O((V + E) log V))
+  S=2000 E=7550: media=7.643ms maximo=15.854ms
+  S=20000 E=77061: media=77.305ms maximo=191.312ms
+  S 2000 -> 20000: media x10.11 maximo x12.07 (el factor (V + E) log V de la cota es x13.24)
+K6 Dijkstra inverso con parada frente a alternativas (S=2000, 10 viajes completos, recalculando en cada paso salvo reutilizar)
+  inverso con parada: 869.140ms (inverso con parada / esta = 1.00x)
+  inverso completo: 4041.805ms (inverso con parada / esta = 0.22x)
+  desde el origen: 1086.334ms (inverso con parada / esta = 0.80x)
+  reutilizar distancias: 151.178ms (inverso con parada / esta = 5.75x)
+  mismo costo de ruta en las cuatro: SI
+  inverso completo no gana por mas de 2 veces
+  desde el origen no gana por mas de 2 veces
+  reutilizar distancias gana por mas de 2 veces
+  nota: reutilizar solo es correcta si el conocimiento no cambia entre pasos; FR-026 exige recalcular porque la memoria de puertas cambia al observar
+K7 monticulo perezoso frente a decremento de clave con indice y a seleccion lineal (S=2000, busqueda completa)
+  perezoso=14.556ms indexado=8.332ms (perezoso/indexado=1.75x) seleccion lineal=147.049ms (lineal/perezoso=10.10x)
+  mismas distancias en las tres: SI; se conserva el perezoso (el indexado no gana por mas de 2 veces)
+K8 busqueda por costo frente a BFS con la cola de la spec 001 (S=2000, 50 pares, costos variados)
+  BFS devuelve rutas de mayor costo en 50 pares, de igual costo en 0 y de menor costo en 0; tiempo busqueda por costo=378.139ms BFS=134.537ms
+K9 determinismo: K4 y K6 dos veces con la misma semilla, sin ventana
+  resultados de K4 (20 pares) y de K6 (10 viajes) identicos: SI

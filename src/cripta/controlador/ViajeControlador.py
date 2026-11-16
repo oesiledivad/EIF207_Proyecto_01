@@ -45,12 +45,10 @@ class ViajeControlador:
         conocimiento = app._exploracion.conocimiento
         if self._buscador is None or len(self._buscador.marca) != len(conocimiento.estado_sala):
             self._buscador = BuscadorRutas(len(conocimiento.estado_sala))
-        sala = app._salas.obtener(origen)
-        if sala is None:
-            return None
+        salidas = conocimiento.salidas_conocidas(origen)   # FR-013: solo lo que el jugador conoce
         self._buscador.distancias_hacia(self.destino, app._exploracion.entrantes,
                                         conocimiento.salida_usable, origen)
-        return self._buscador.elegir_paso(origen, sala.salidas, conocimiento.salida_usable)
+        return self._buscador.elegir_paso(origen, salidas, conocimiento.salida_usable)
 
     def _salas_exploradas(self) -> int:
         """Cantidad de salas exploradas; tope de pasos de un viaje (C1). O(S)."""
