@@ -1196,4 +1196,40 @@ Prompt enviado:
 ```
 
 Uso de la respuesta: Crear el DTO de verificación, ColaLista, IndiceLlaves, la consulta key_locations en las tres fuentes, la persistencia de llaves y el servicio (T002 a T015).
+
+
+
+### Entrada #58
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
+
+Objetivo: Implementar la Fase 3 (US1, veredicto y orden de llaves) de la resolubilidad con /speckit-implement.
+
+Prompt enviado:
+
+```text
+/speckit-implement Implementa solo la Fase 3 de specs/001-resolubilidad, tareas T016 a T029 (usa SPECIFY_FEATURE_DIRECTORY=specs/001-resolubilidad). Las Fases 1 y 2 ya están hechas y confirmadas. Escribe primero las pruebas T016 a T024, comprueba que fallan, y después T025 a T028. Respeta la constitución: nada de dict, set, sorted ni list.sort; usa ColaLista, IndiceLlaves y ordenar. No modifiques .gitignore ni archivos fuera de los que nombran las tareas. Comentarios y docstrings en español, sin guiones largos. Al terminar, ejecuta T029 y la selección de pruebas del README, marca con [X] las tareas completadas y detente: no avances a la Fase 4.
+```
+
+Uso de la respuesta: Crear modelo/Resolubilidad.py (exploración por rondas con listas de espera por llave), VerificacionControlador y las pruebas de US1 (T016 a T029).
+
+### Entrada #59
+
+Fecha: 15/11/2026
+
+Integrante: Kyara Anyelina Rojas
+
+Herramienta: Claude Code (Sonnet 5.5).
+
+Objetivo: Alinear la definición de ronda de data-model.md con research.md D2 y con el código.
+
+Prompt enviado:
+
+> En specs/001-resolubilidad/data-model.md corrige la invariante 3 para que coincida con research.md D2 y con src/cripta/modelo/Resolubilidad.py: toda sala nueva, alcanzada por una salida abierta o por una salida liberada al obtener una llave, entra en la ronda siguiente a la de la sala desde la que se alcanzó. No cambies nada más.
+
+Uso de la respuesta: Corregir la invariante 3 de data-model.md para que coincida con el código.
 ---

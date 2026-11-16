@@ -57,9 +57,9 @@ Invariantes:
 1. Una sala se encola como máximo una vez; una salida entra a una espera como máximo una vez; una
    llave se obtiene como máximo una vez.
 2. Si `obtenida[k]` entonces `espera[k]` está vacía (se liberó al obtenerla).
-3. La ronda de una sala es 1 más que la mínima ronda en la que se obtuvo la llave de la puerta que
-   la alcanzó, o la ronda de la sala que la alcanzó por una salida abierta; la sala inicial tiene
-   ronda 0.
+3. Toda sala nueva, alcanzada por una salida abierta o por una salida liberada al obtener una
+   llave, entra en la ronda siguiente a la de la sala desde la que se alcanzó; la sala inicial
+   tiene ronda 0.
 4. Toda llave del orden aparece después de todas las llaves necesarias para alcanzar su sala.
 
 ## Salidas (DTO)
