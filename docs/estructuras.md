@@ -154,3 +154,32 @@ Tres listas paralelas (prioridad, desempate, elemento) y un tamaño vivo. Compar
 `Historial_Retroceso.asignar(lista, posicion, valor)` registra `[lista, posicion, valor_anterior]` y asigna; si el valor no cambia no registra nada. Registrar e invertir cuestan $O(1)$ por cambio. `GestorPartida` lo invierte restaurando `lista[posicion]`; `lista_agregada` se invierte con `pop()` del final, $O(1)$.
 
 Código: [Monticulo_Minimo.py](../src/cripta/estructuras/Monticulo_Minimo.py), [Conocimiento.py](../src/cripta/modelo/Conocimiento.py), [Rutas.py](../src/cripta/modelo/Rutas.py), [Historial_Retroceso.py](../src/cripta/estructuras/Historial_Retroceso.py) y [GestorPartida.py](../src/cripta/controlador/GestorPartida.py).
+
+## 9. Terreno y cazador: persecución compartida y contadores (§5.1, §5.2)
+
+### `Persecucion`: distancias compartidas hacia el jugador
+
+Una instancia por `Simulacion` (`modelo/Persecucion.py`), no es estado del juego y no se guarda. Guarda un `BuscadorRutas`, las salidas entrantes del esqueleto, el mayor rango activo y la clave de la última búsqueda.
+
+| Operación | Costo |
+|-----------|-------|
+| `configurar(entrantes)` | $O(S)$, crea el buscador |
+| `registrar_rango(rango)` | $O(1)$; el máximo solo crece |
+| `distancias(...)` | $O(1)$ si la clave coincide; si no, $O((V_R + A_R)\log V_R)$ |
+| `paso(sala, salidas, rango)` | $O(4)$ |
+| `decidir(...)` | `distancias` más `paso` |
+
+**Invariantes:** la clave es `(sala_jugador, agenda.cambios_puertas, historial.reversiones)` más `limite_usado >= rango`; espera si no hay ruta abierta, si $d > \text{rango}$ o si ya está en la sala del jugador; solo lee `entrantes`, `cerrada` y `costo`.
+
+### Parámetro `limite` de `BuscadorRutas`
+
+`distancias_hacia(destino, entrantes, usable, parar_en=None, limite=None)` deja de extraer del montículo cuando la prioridad supera `limite`. Costo $O((V_R + A_R)\log V_R)$ sobre la región dentro del límite; sin límite, igual que antes. **Invariante:** con costos positivos, toda sala con $d \le \text{limite}$ queda con su distancia exacta.
+
+### Contadores monótonos
+
+| Contador | Dónde | Sube cuando | Costo |
+|----------|-------|-------------|-------|
+| `HeapAgendaEventos.cambios_puertas` | `estructuras/Agenda_Eventos.py` | una puerta se abre o se cierra (`abrir_salida`, `procesar_cierre_puerta`) | $O(1)$ |
+| `Historial_Retroceso.reversiones` | `estructuras/Historial_Retroceso.py` | se revierte un intervalo o un pergamino (`revertir_abierto`, `deshacer`) | $O(1)$ |
+
+Ninguno pasa por el historial, nunca baja y `limpiar` no lo reinicia, para que dos estados distintos del juego no compartan clave de invalidación.

@@ -19,7 +19,6 @@ los detalles están en [data-model.md](data-model.md) y en [contracts/](contract
 uv run python -m unittest discover -s pruebas -p "test_costo_movimiento.py"
 uv run python -m unittest discover -s pruebas -p "test_cazador.py"
 uv run python -m unittest discover -s pruebas -p "test_cazador_puertas.py"
-uv run python -m unittest discover -s pruebas -p "test_persecucion.py"
 uv run python -m unittest discover -s pruebas -p "test_ficha_cazador.py"
 uv run python -m unittest discover -s pruebas -p "test_cazador_guardado.py"
 uv run python -m unittest discover -s pruebas -p "test_bench_cazador.py"
@@ -98,3 +97,14 @@ uv run python -m unittest discover -s pruebas
   ningún `dict` ni `set` como índice (principio I).
 - Ningún id de sala, enemigo o cripta escrito en el código (principio IV).
 - Cada tarea cita sus FR y cada prompt quedó en `docs/PROMPTS_LLM.md`.
+
+## Resultado de la validación
+
+Validado en un entorno de trabajo con Python 3.10 (sin interfaz) el 16/11/2026.
+
+- Sección 0: spec confirmada en Git antes del código. La línea base está en `linea_base.txt` (T003, T004). La partida de regresión de determinismo (D2) no se grabó con la versión anterior: la cubre `test_decision_enemigo.py`, que comprueba que errante y rastreador eligen igual que antes y no tocan el azar.
+- Sección 1: todas las pruebas por historia pasan; los siete casos del Apéndice B tienen su prueba con el FR en el docstring.
+- Sección 2 (interfaz): las tres pruebas de `test_grafica.py` (US4) pasan con arcade simulado; **pendiente** abrir el juego una vez, con una cripta con costos y un cazador, y mirar las puertas y el contorno morado del cazador.
+- Sección 3: replay, guardar y cargar a mitad de una persecución y pergamino tras un movimiento costoso pasan en `test_cazador_guardado.py`.
+- Sección 4: la sección «Terreno y cazador» del bench se corrió dos veces con la semilla 42 y dio las mismas decisiones y conteos (`mediciones.txt`); H5 CUMPLE con 10, 50 y 100 cazadores. **Pendiente** correr `--bench` completo en el equipo de la entrega.
+

@@ -211,9 +211,17 @@ El jugador solo ve lo que conoce: una sala está desconocida, avistada (se sabe 
 
 Las decisiones, la complejidad y las mediciones están en la [sección 13 de decisiones.md](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
 
+### Terreno y cazador
+
+Cada salida tiene un costo (1 a 300; vale 100 si no lo declara) y moverse por ella consume ese tiempo, para el jugador y para los enemigos; las demás acciones cuestan lo mismo que antes. La interfaz escribe el costo junto a cada puerta y en su ayuda.
+
+El **cazador** es un enemigo que conoce todo el mapa y persigue al jugador por la ruta de menor costo, pero solo si está dentro de su `rango` (en costo de movimiento); fuera de él espera. En la interfaz lleva un contorno morado bajo los pies y su texto emergente dice «cazador · rango N». Su ficha debe traer el campo `rango` (entero ≥ 0). No usa azar, se guarda y se reproduce igual que los demás enemigos.
+
+Las decisiones, la complejidad y las mediciones (H1 a H8) están en las secciones [14](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51), [15](docs/decisiones.md#15-enemigo-cazador-y-búsqueda-compartida-parte-ii-52) y [16](docs/decisiones.md#16-agenda-de-eventos-con-cazadores-parte-ii-56) de decisiones.md.
+
 ### Medir rendimiento
 
-Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y las secciones «Resolubilidad» (M1 a M7) y «Niebla de guerra e ir a» (K1 a K9). No consulta la red ni abre la interfaz.
+Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y las secciones «Resolubilidad» (M1 a M7), «Niebla de guerra e ir a» (K1 a K9) y «Terreno y cazador» (H1 a H8: búsqueda compartida frente a individual, corte por rango, reutilizar frente a recalcular, coincidencia con la búsqueda completa, ciclo con decenas de cazadores frente al límite de 20 ms, agenda, predicado y determinismo). No consulta la red ni abre la interfaz.
 
 ```sh
 uv run cripta --bench
@@ -225,7 +233,7 @@ Con `--semilla N` las criptas sintéticas de las secciones «Resolubilidad» y �
 uv run cripta --bench --semilla 42
 ```
 
-Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54). Las de la niebla de guerra y «ir a» están en la [sección 13](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
+Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54). Las de la niebla de guerra y «ir a» están en la [sección 13](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53) y las de terreno y cazador en las secciones [14 a 16](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51); la salida de referencia está en [mediciones.txt](specs/003-terreno-cazador/mediciones.txt).
 
 ### Verificar la resolubilidad de una cripta
 

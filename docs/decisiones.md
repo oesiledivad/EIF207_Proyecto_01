@@ -323,3 +323,89 @@ El reporte cuesta cerca de 1 % a 3 % sobre la verificación y examina cada salid
 - **Pergamino fallido.** Un pergamino fallido no cancela el viaje.
 
 **Interpretación de FR-013.** El mapa conocido y el viaje leen nombre y salidas del esqueleto de la cripta, pero solo de las salas que ConocimientoJugador marca como exploradas (salidas_conocidas). El conocimiento no duplica nombres ni costos por diseño; lo que FR-013 prohíbe es usar el esqueleto completo, es decir, información de salas que el jugador no conoce.
+
+## 14. Costo del movimiento por terreno (Parte II, §5.1)
+
+**Necesidad y elección.** Cada conexión entre salas tiene un costo y moverse por ella consume ese costo de tiempo, igual para el jugador y para los enemigos. Las razones completas (D1 a D3) están en [research.md](../specs/003-terreno-cazador/research.md); aquí se resumen con las mediciones de [mediciones.txt](../specs/003-terreno-cazador/mediciones.txt) (`--bench --semilla 42`, H1 a H8).
+
+**Jugador (D1).** `ExploracionControlador.mover` ya tiene la `SalidaSimple` antes de mover y pasa su `costo` por `Aplicacion._accion_jugador` y `CicloAccionesControlador.ejecutar` hasta `consumir_tiempo`. Esa función usa el costo recibido en lugar del costo base de la acción y calcula `intervalo = max(1, costo × 100 // velocidad)` con la fórmula de siempre (`calcular_intervalo`). Las demás acciones (esperar, atacar, usar, abrir) no pasan costo y valen lo mismo que en la Parte I.
+
+**Enemigos (D2).** `decidir_accion` devuelve `[tipo, destino, costo]`; para `mover`, el costo es el de la salida elegida y se decide antes de mover. `Simulacion._ejecutar_turno_enemigo` usa ese costo para reprogramar el turno. Un `mover` sin costo es un error de programación y lanza `ValueError`. El errante sigue eligiendo con `azar.choice` sobre las mismas salidas abiertas y el rastreador con la misma regla, así que **el azar y los ids elegidos no cambian** frente a la spec 002; el cazador no usa azar (FR-022).
+
+**Cambio de velocidad (D3).** No se cambió código: `Actor.actualizar_velocidad` ya reescala el tiempo restante del evento pendiente sin importar de qué acción venga el intervalo (§2.3), y el Apéndice B caso 7 queda cubierto por una prueba.
+
+**Costo mínimo 1.** Con velocidad alta y costo bajo, `costo × 100 // velocidad` puede dar 0; se fija en 1 para que el tiempo siempre avance (Apéndice B caso 6). Un costo no declarado o menor que 1 vale 100 desde la spec 002.
+
+**Complejidad.** Es $O(1)$ por acción: una lectura del costo y la misma aritmética entera. No agrega estructuras.
+
+**Medición H6 (carga de la agenda con costos).** 2 200 eventos con intervalos de costos de 1 a 300, velocidades de 50 a 200 y 200 cierres de puertas: heap propio 15,1 ms y 29,4 ms en dos corridas frente a 191,5 ms y 190,5 ms de la lista ordenada. Conclusión en la sección 16.
+
+---
+
+## 15. Enemigo cazador y búsqueda compartida (Parte II, §5.2)
+
+**Necesidad y elección.** El cazador conoce el mapa completo y persigue al jugador por la ruta de menor costo total, solo si su distancia está dentro de su `rango`; fuera de él espera. La búsqueda es compartida: **una sola** por ciclo, desde la sala del jugador, sirve a todos los cazadores.
+
+**Clase y ficha (D4, D9).** `Cazador(Enemigo)` en `modelo/enemigos/Cazador.py` con atributo `rango`. `FichaEnemigo` agrega `rango: int | None`; `parsear_ficha` exige para un cazador un entero mayor o igual que 0 (no booleano) y rechaza la ficha nombrando su id. Los demás comportamientos no lo piden. `CombateControlador.crear_enemigo` copia el rango y `activar_enemigo` lo registra en la búsqueda.
+
+**Compartida frente a individual (D5, H1).** Se reutilizan `MonticuloMinimo` y `BuscadorRutas` (spec 002) con un predicado distinto: `not salida.cerrada` sobre el estado real, no sobre el conocimiento del jugador. Con costos simétricos (el mismo en ambos sentidos) la distancia desde cada cazador hasta el jugador sale de una sola búsqueda inversa desde el jugador. Medido con 2 000 salas:
+
+| Cazadores | Rango 300: compartida / individual | Razón | Sin límite: compartida / individual | Razón |
+|----------:|-----------------------------------:|------:|------------------------------------:|------:|
+| 1   | 0,11 ms / 0,09 ms | 0,8 | 20,0 ms / 18,1 ms | 0,9 |
+| 10  | 0,10 ms / 0,80 ms | 7,7 | 20,1 ms / 234,7 ms | 11,7 |
+| 50  | 0,14 ms / 3,76 ms | 27,0 | 18,1 ms / 1 401,8 ms | 77,4 |
+| 100 | 0,26 ms / 8,53 ms | 33,3 | 19,5 ms / 2 232,2 ms | 114,4 |
+
+Con un solo cazador son equivalentes; con diez o más la compartida gana de 7 a 114 veces. Se conserva (regla de D5: cambiar solo si una alternativa gana por más de 2 veces).
+
+**Corte por rango (D6, H2).** `distancias_hacia(destino, entrantes, usable, parar_en, limite)` deja de extraer cuando la prioridad supera `limite`. **Invariante:** una distancia provisional mayor que el límite nunca puede mejorar una distancia final menor o igual que él, porque todo costo es positivo; por eso, para toda sala con $d \le \text{rango} \le \text{limite}$, el resultado es idéntico al de la búsqueda completa (H4 lo comprueba en 10 000 turnos). El costo pasa a depender de la región dentro del rango, no del tamaño de la cripta: con rango 300 se alcanzan unas 33 salas en cripta de 200, 2 000 y 20 000 salas (0,10 ms, 0,13 ms y 0,13 ms), mientras que sin corte son 1,3 ms, 27,4 ms y 275,7 ms. Crecimiento con corte de 2 000 a 20 000 salas: 1,00 veces (criterio: menos de 1,5). CUMPLE.
+
+**Límite usado (D7).** `limite = rango_maximo`, el mayor rango de los cazadores registrados, que solo crece. Si aparece un cazador con rango mayor que el usado, se recalcula con el límite nuevo.
+
+**Invalidación con contadores monótonos (D8, H3).** Las distancias se reutilizan mientras la clave `(sala_jugador, agenda.cambios_puertas, historial.reversiones)` y `limite_usado >= rango` se mantengan.
+
+| Evento | Efecto |
+|--------|--------|
+| El jugador cambia de sala | Invalida (cambia la sala de la clave) |
+| Una puerta se abre o se cierra (incluido el cierre automático) | Invalida (`cambios_puertas` sube en `abrir_salida` y `procesar_cierre_puerta`) |
+| Se revierte un intervalo o un pergamino | Invalida (`reversiones` sube en `deshacer` y `revertir_abierto`) |
+| Aparece un cazador con rango mayor | Invalida (`limite_usado < rango`) |
+| Muere, se mueve o cambia de velocidad otro actor | No invalida: los actores no bloquean salas y el costo no depende de la velocidad |
+
+Los contadores nunca bajan, ni siquiera cuando el historial revierte, para que dos estados distintos no compartan clave. Medido en 200 decisiones con 20 cazadores y 2 000 salas: con puertas estables, la clave hace 1 recálculo y tarda 3,6 ms frente a 21,5 ms recalculando por ciclo y 418,7 ms por turno; con puertas inestables hace 200 recálculos, igual que por ciclo (29,8 ms frente a 19,0 ms, diferencia dentro del ruido de una sola corrida). Ninguna alternativa gana por más de 2 veces: se conserva la clave.
+
+**Predicado frente a banderas (H7).** Un arreglo de banderas por clave de salida (alternativa de D9 de la spec 002) da 37,6 ms frente a 39,5 ms del predicado: equivalentes, se conserva el predicado.
+
+**Guardado y reproducción (D10, H4, H8).** El rango se guarda solo para cazadores, como un entero al final de la ficha del enemigo, sin cambiar `VERSION_CUERPO`; un guardado sin cazadores es idéntico al de antes. La búsqueda no se guarda: al cargar se vuelve a configurar con las salidas entrantes y se registra el rango de cada cazador con turno pendiente. Como la decisión no usa azar y es determinista, el reproductor llega al mismo estado final (`pruebas/test_cazador_guardado.py`). H4: 10 000 de 10 000 turnos coinciden con una búsqueda completa desde cero; H8: dos corridas con la misma semilla dan `identico=si`.
+
+**Complejidad.**
+
+| Operación | Costo |
+|-----------|-------|
+| Decisión de un cazador con la clave vigente | $O(1)$ para la distancia y $O(4)$ para elegir la salida |
+| Recálculo | $O((V_R + A_R)\log V_R)$ sobre la región $R$ dentro del rango |
+| Invalidación | $O(1)$: comparar tres enteros |
+
+---
+
+## 16. Agenda de eventos con cazadores (Parte II, §5.6)
+
+**Pregunta.** ¿Sigue siendo el heap propio la mejor agenda ahora que los intervalos dependen del costo del terreno y hay decenas de cazadores actuando?
+
+**Carga nueva (H6).** 2 000 eventos de acción con intervalos `max(1, costo × 100 // velocidad)` (costos de 1 a 300, velocidades de 50 a 200) más 200 cierres de puertas; se insertan todos y se vacía la agenda, con `random.Random(42)`. Heap propio: 15,1 ms y 29,4 ms en dos corridas; lista ordenada: 191,5 ms y 190,5 ms. El heap gana unas 6 a 13 veces, la misma conclusión de la sección 1 con la carga anterior, y los intervalos más variados favorecen aún más a la estructura con inserción $O(\log n)$.
+
+**Ciclo completo (H5).** Entre dos decisiones del jugador (movimiento más `avanzar_hasta_turno_jugador`) con cazadores activos persiguiendo y el jugador cambiando de sala en cada ciclo, 200 ciclos con semilla 42:
+
+| Cripta | Cazadores | Media | Máximo | Límite 20 ms |
+|--------|----------:|------:|-------:|--------------|
+| 50 salas (paquete) | 10 | 0,30 ms | 1,71 ms | CUMPLE |
+| 50 salas (paquete) | 50 | 0,99 ms | 2,95 ms | CUMPLE |
+| 50 salas (paquete) | 100 | 2,19 ms | 6,49 ms | CUMPLE |
+| 2 000 salas | 10 | 0,35 ms | 1,44 ms | CUMPLE |
+| 2 000 salas | 50 | 0,85 ms | 2,64 ms | CUMPLE |
+| 2 000 salas | 100 | 1,89 ms | 9,44 ms | CUMPLE |
+
+El mayor esqueleto del paquete tiene 50 salas, por eso se mide también con 2 000. Con decenas de cazadores el ciclo queda muy por debajo de 20 ms.
+
+**Conclusión.** El heap propio sigue siendo la elección: gana a la lista con la carga de la Parte II, ninguna regla de decisión pide cambiarlo y el ciclo con 50 y 100 cazadores cumple el límite. Los tiempos dependen del equipo (se midieron con Python 3.10 en una VM de trabajo); lo reproducible es el orden de magnitud, las razones y los conteos deterministas.

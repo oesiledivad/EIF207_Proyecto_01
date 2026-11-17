@@ -45,7 +45,7 @@ class CazadorPuertasPruebas(unittest.TestCase):
         self.assertEqual(p.recalculos, recalculos + 1)
 
     def test_cierre_automatico_invalida(self):
-        """FR-017: el cierre de una puerta también invalida las distancias."""
+        """Apéndice B caso 5 (FR-017): una puerta que se cierra entre dos turnos da la misma decisión que buscar desde cero."""
         m = _dos_caminos()
         puerta = m.salas.obtener(2).salidas.obtener("E")
         abrir_salida(puerta, 0, m.sim.agenda)

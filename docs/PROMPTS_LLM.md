@@ -1548,3 +1548,26 @@ Prompt enviado:
 ```
 
 Uso de la respuesta: Informe de solo lectura, sin cambios en archivos. Cobertura de 27 de 28 FR (96 %) y de los 7 SC, sin problemas críticos ni tareas sin requisito. Hallazgos principales: E1, FR-002 no tiene tareas y el código convierte con int() un costo no entero sin avisar; I1, la redacción de FR-009 no coincide con el rechazo de la ficha durante la partida (C1); D1, la spec aún no está confirmada en Git; D2, el registro de prompts quedaba para la fase de cierre; además faltan pruebas de algunos casos límite (C1, C2) y dos tareas no precisan bien archivo o método (U1, U2).
+
+### Entrada #76
+
+Fecha: 16/11/2026
+
+Integrante: Fiorella Porras Mora.
+
+Herramienta: Claude (chat con acceso al repositorio, modelo Sonnet 5.5), siguiendo specs/003-terreno-cazador/tasks.md.
+
+Objetivo: Implementar la parte de la Persona B de la spec 003 (costo de movimiento, cazador, vista, guardado, bench y documentos) a partir de la spec ya confirmada en Git.
+
+Prompt enviado:
+
+```text
+Este es mi proyecto, necesito hacer todas las funcionalidades de la persona B, como empiezo?
+```
+
+```text
+ahora hagamos lo que nos falta de nuestra parte persona B
+```
+
+Uso de la respuesta: El asistente preparó el código y las pruebas por incrementos (costo de movimiento y cazador; vista, guardado y retroceso; bench H1 a H8; documentos) como archivos .diff que se aplicaron con git apply y se probaron localmente antes de cada commit. Se corrigieron a mano dos errores que aparecieron al ejecutar las pruebas en el equipo real: una prueba de test_ir_a.py con rutas de costo 50 y un enemigo de prueba sin el campo comportamiento en la escena. Las mediciones de specs/003-terreno-cazador/mediciones.txt se corrieron con Python 3.10 en un entorno de trabajo, no en el equipo de la entrega; deben repetirse con `uv run python -m cripta --bench --semilla 42` antes de citarlas como definitivas. Las secciones 14 a 16 de docs/decisiones.md deben revisarse contra el enunciado (T092).
+

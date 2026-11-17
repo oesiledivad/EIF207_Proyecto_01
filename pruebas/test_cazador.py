@@ -32,7 +32,7 @@ def _linea(costos, rango, cazador_en, jugador_en):
 
 class CazadorPruebas(unittest.TestCase):
     def test_persigue_por_ruta_mas_barata(self):
-        """FR-011: el cazador elige la ruta de menor costo total, no la de menos puertas."""
+        """Apéndice B caso 3 (FR-011): elige la ruta de menor costo total, no la de menos salas."""
         # 1 -> 4 directo cuesta 500; 1 -> 2 -> 3 -> 4 cuesta 300
         m = armar_modelo([
             sala(1, [["E", 4, {"costo": 500}], ["S", 2, {"costo": 100}]]),
@@ -44,7 +44,7 @@ class CazadorPruebas(unittest.TestCase):
         self.assertEqual(c.sala, 2)
 
     def test_dentro_y_fuera_de_rango(self):
-        """FR-012, FR-013: persigue si d <= rango y espera si d > rango (frontera incluida)."""
+        """Apéndice B caso 2 (FR-012, FR-013): persigue si d <= rango y espera con costo 100 si d > rango (frontera incluida)."""
         m, c = _linea([100, 100], 200, 1, 3)
         turno(m, c)
         self.assertEqual(c.sala, 2)                   # d = 200 = rango: persigue
@@ -60,7 +60,7 @@ class CazadorPruebas(unittest.TestCase):
         self.assertEqual(c.sala, 1)
 
     def test_empate_menor_id_y_luego_N_S_E_O(self):
-        """FR-014: entre salidas de igual costo total gana el menor id de destino y luego N,S,E,O."""
+        """Apéndice B caso 4 (FR-014): entre salidas de igual costo total gana el menor id de destino y luego N,S,E,O."""
         m = armar_modelo([
             sala(1, [["N", 7, {"costo": 100}], ["S", 5, {"costo": 100}], ["E", 6, {"costo": 100}]]),
             sala(5, [["E", 9, {"costo": 100}]]), sala(6, [["N", 9, {"costo": 100}]]),
@@ -76,12 +76,13 @@ class CazadorPruebas(unittest.TestCase):
         self.assertEqual(m.sim.persecucion.decidir(2, 1, m.salas.obtener(1).salidas, 1000).direccion, "N")
 
     def test_puerta_cerrada_no_cuenta_y_sin_ruta_espera(self):
-        """FR-011, FR-013: una puerta cerrada no se atraviesa; sin ruta abierta espera."""
+        """Apéndice B caso 1 (FR-011, FR-013): sin ruta abierta el cazador espera y su turno siguiente llega 100 después."""
         m = armar_modelo([sala(1, [["E", 2, {"cerrada": True}]]), sala(2, [])], 2)
         c = crear_enemigo(m, "cazador", "c-1", 1, rango=10 ** 6)
         programar(m, c, 0)
         turno(m, c)
         self.assertEqual(c.sala, 1)
+        self.assertEqual(c.tiempo_siguiente, 100)
 
     def test_no_usa_azar(self):
         """FR-022: la decisión del cazador no consume el azar compartido."""

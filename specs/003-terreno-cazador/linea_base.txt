@@ -1,0 +1,16 @@
+Linea base de la spec 003 (T003, T004, T102)
+Entorno de trabajo: Python 3.10 (el proyecto pide 3.13), sin arcade ni uv; PYTHONPATH=src:raiz.
+Comando: python3 -m unittest discover -s pruebas -t .
+Base: rama fiore en da8c1d5 (spec 003 confirmada, sin codigo), 294 pruebas, 3 errores y 4 fallos:
+
+ERROR: pruebas.test_datos (ImportError: ficha_desde_dict no existe en FactoryDto_Ficha)
+ERROR: pruebas.test_ensamblador (el mismo ImportError)
+ERROR: pruebas.test_guardar_llamadas
+FAIL: test_bench_no_abre_vista (pruebas.test_bench_conocimiento) - entorno: falta el paquete cripta/arcade en el subproceso
+FAIL: test_bench_no_importa_arcade (pruebas.test_bench_resolubilidad) - entorno
+FAIL: test_menu_partida_volumen_limites_y_retorno (pruebas.test_configuracion) - entorno: falta arcade
+FAIL: test_respeta_audio_configurado_por_entorno (pruebas.test_sonidos) - entorno
+
+En el equipo de la integrante (Python 3.13, con arcade) la base fallaba en test_datos y test_ensamblador (ImportError de
+ficha_desde_dict). Las demas fallas que aparecieron en una corrida (test_offline_cache, test_stormlight, test_trampas_estado)
+venian de que la propia suite reescribe datos_offline; pasan tras `git restore datos_offline`.
