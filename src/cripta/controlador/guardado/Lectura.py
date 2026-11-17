@@ -24,7 +24,9 @@ def _leer_enemigo(r: LectorBinario) -> EnemigoG:
     comportamiento = r.texto()
     tipo = r.texto()
     suelta = [r.texto() for _ in range(r.entero())]
-    return EnemigoG(actor, nombre, comportamiento, tipo, suelta, r.entero_opcional())  
+    regeneracion = r.entero_opcional()
+    rango = r.entero() if comportamiento == "cazador" else None
+    return EnemigoG(actor, nombre, comportamiento, tipo, suelta, regeneracion, rango)
 
 def _leer_sala(datos: bytes) -> SalaG:
     r = LectorBinario(datos)

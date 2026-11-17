@@ -91,7 +91,7 @@ def restaurar_partida(app, datos: DatosGuardado) -> None:
                 id=a.identificador, nombre=eg.nombre, vida=a.vida, ataque=a.ataque,
                 defensa=a.defensa, vida_max=a.vida_max, velocidad=a.velocidad,
                 comportamiento=eg.comportamiento, regeneracion=eg.regeneracion_objetivo,
-                tipo=eg.tipo, suelta=list(eg.suelta),
+                tipo=eg.tipo, suelta=list(eg.suelta), rango=eg.rango,
             ), sala.id)
             _aplicar_actor(enemigo, a)
             sala.enemigos.append(enemigo)
@@ -105,6 +105,7 @@ def restaurar_partida(app, datos: DatosGuardado) -> None:
     sim = Simulacion(datos.semilla, app._gestor.historial)
     sim.reloj.tiempo_actual = datos.tiempo_actual
     sim.azar.setstate((datos.azar_version, tuple(datos.azar_interno), datos.azar_gauss))  # random exige tupla
+    sim.persecucion.configurar(app._exploracion.entrantes)   # FR-015: la búsqueda no se guarda
     app._simulacion = sim
 
     j = datos.jugador
@@ -122,6 +123,12 @@ def restaurar_partida(app, datos: DatosGuardado) -> None:
         actor = _buscar_actor(app, ev)
         nuevo = sim.agenda.insertar(ev.tiempo, actor, ev.tipo)
         _enlazar_evento(actor, ev.tipo, nuevo)
+
+    # El rango máximo activo se reconstruye con los cazadores que tienen turno pendiente.
+    for sala_g in datos.salas:
+        for enemigo in app._salas.obtener(sala_g.sala_id).enemigos:
+            if enemigo.comportamiento == "cazador" and enemigo._proximo_evento is not None:
+                sim.persecucion.registrar_rango(enemigo.rango)
 
     # Inventario: agregar() inserta al frente, así que se recorre al revés para conservar el orden.
     app._gestor.reiniciar_inventario(datos.capacidad_inventario)

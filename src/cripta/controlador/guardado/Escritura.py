@@ -45,6 +45,8 @@ def _escribir_enemigo(w: EscritorBinario, e) -> None:
     for objeto in e.suelta:
         w.texto(objeto)
     w.entero_opcional(e.regeneracion_objetivo)
+    if e.comportamiento == "cazador":
+        w.entero(e.rango)   # FR-023: el formato no cambia para los demás enemigos
 
 
 def _cuerpo_sala(sala) -> bytes:

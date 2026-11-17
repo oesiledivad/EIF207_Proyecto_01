@@ -41,6 +41,7 @@ class EnemigoG:
     tipo: str
     suelta: list[str]
     regeneracion_objetivo: int | None
+    rango: int | None = None   # solo el cazador (FR-023)
 
 
 @dataclass

@@ -39,6 +39,9 @@ BARRA_X, BARRA_Y, BARRA_ANCHO, BARRA_ALTO = [8, 8, 784, 70]
 # Compatibilidad con pantallas que usan estos nombres
 FONDO = FONDO
 
+# Marca propia del cazador bajo sus pies (distinta del rojo de la selección; FR-021)
+COLOR_CAZADOR = [150, 90, 230]
+
 
 def lineas_bitacora(mensajes, ancho):
     """Ajusta mensajes a `ancho` píxeles virtuales sin perder contenido."""
@@ -296,7 +299,22 @@ class Escena:
                 ayuda = f"Ir al {salida.direccion}: {destino}"
             if salida.es_salida_final:
                 ayuda += " · ¡SALIDA!"
+            self.costo_puerta(salida, x, y, ancho, alto)
+            ayuda += f" · costo {salida.costo}"
             l.zona(x, y, ancho, alto, "abrir" if salida.cerrada else "mover", salida.direccion, ayuda)
+
+    def costo_puerta(self, salida, x, y, ancho, alto):
+        """Escribe el costo de la salida junto a su puerta, hacia el interior de la sala (FR-020)."""
+        l = self.lienzo
+        texto = str(salida.costo)
+        if salida.direccion == "N":
+            l.texto(texto, x + ancho / 2, y - 12, 1, TEXTO, ancla="centro", sombra=True)
+        elif salida.direccion == "S":
+            l.texto(texto, x + ancho / 2, y + alto + 6, 1, TEXTO, ancla="centro", sombra=True)
+        elif salida.direccion == "O":
+            l.texto(texto, x + ancho + 4, y + alto / 2 - 3, 1, TEXTO, ancla="izquierda", sombra=True)
+        else:
+            l.texto(texto, x - 4, y + alto / 2 - 3, 1, TEXTO, ancla="derecha", sombra=True)
 
     #  Personajes y objetos
 
@@ -451,6 +469,9 @@ class Escena:
             if seleccionado and not muerto:
                 pulso = 160 + int(80 * math.sin(vista.animacion * 6))
                 l.elipse(cx, pies + 1, 34, 11, [210, 50, 44, pulso], borde=2)
+            es_cazador = getattr(enemigo, "comportamiento", "") == "cazador" and not muerto
+            if es_cazador:
+                l.elipse(cx, pies + 1, 40, 13, COLOR_CAZADOR + [220], borde=2)   # FR-021
             l.elipse(cx, pies + 1, 26, 7, [0, 0, 0, 110])
             alto = self.personaje(cuadros[indice], r.enemigo(enemigo)[0], cx, pies, izquierda=izquierda)
             if muerto:
@@ -461,8 +482,9 @@ class Escena:
             l.rect(cx - 12, barra_y, 24 * enemigo.vida / max(1, enemigo.vida_max), 4, ROJO)
             if atacando:
                 l.rect(cx - 12, pies - 4, 24, 2, ROJO)
+            rasgo = f" · cazador · rango {getattr(enemigo, 'rango', None)}" if es_cazador else ""
             zona = l.zona(cx - 22, pies - 4, 44, alto + 14, "seleccionar", enemigo.id,
-                          f"{enemigo.nombre} · {enemigo.vida}/{enemigo.vida_max} · doble clic: atacar")
+                          f"{enemigo.nombre} · {enemigo.vida}/{enemigo.vida_max}{rasgo} · doble clic: atacar")
             if seleccionado or zona.contiene(*l.raton):
                 nombre = fp.recortar(enemigo.nombre, 120)
                 ancho = fp.ancho_texto(nombre) + 6

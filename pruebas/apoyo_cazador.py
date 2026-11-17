@@ -151,6 +151,9 @@ class FuenteCazador(FuenteNiebla):
         super().__init__(salas, sala_inicial, sala_salida, contenidos)
         self._fichas = fichas or []
 
+    def get_catalog_version(self):
+        return {"version": "catalogo-cazador-1"}
+
     def catalog(self, ids):
         entidades = []
         for id_ in ids:
@@ -164,11 +167,18 @@ class FuenteCazador(FuenteNiebla):
         return {"entidades": entidades}
 
 
-def armar_aplicacion_cazador(salas, fichas, contenidos, sala_inicial=1, sala_salida=None):
-    """`Aplicacion` con la partida iniciada sobre el esqueleto, las fichas y el contenido de la prueba."""
+def armar_aplicacion_cazador(salas, fichas, contenidos, sala_inicial=1, sala_salida=None,
+                             ruta_guardado=None, carpeta_logs=None):
+    """`Aplicacion` con la partida iniciada sobre el esqueleto, las fichas y el contenido de la prueba.
+
+    Con `carpeta_logs` la partida se registra (para el replay); sin ella no se registra nada.
+    """
     fuente = FuenteCazador(salas, sala_inicial, sala_salida, contenidos, fichas)
-    app = Aplicacion(fuente)
-    resultado = app.iniciar_partida("Jugador", "42", "cripta-01", registrar=False, verificar=False)
+    app = Aplicacion(fuente, ruta_guardado=ruta_guardado, carpeta_logs=carpeta_logs)
+    if carpeta_logs is None:
+        resultado = app.iniciar_partida("Jugador", "42", "cripta-01", registrar=False, verificar=False)
+    else:
+        resultado = app.iniciar_partida("Jugador", "42", "cripta-01")
     if not resultado.ok:
         raise AssertionError(resultado.motivo)
     return app

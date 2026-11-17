@@ -1,0 +1,75 @@
+Mediciones de la spec 003 (terreno y cazador), semilla 42 (T091)
+Fuente: bench._bench_cazador(42), la misma funcion que llama `uv run python -m cripta --bench --semilla 42`.
+Se corrio solo esa seccion (en la VM de trabajo, Python 3.10) porque la seccion K2 del bench de la spec 002
+tarda varios minutos con 20 000 salas. Las dos corridas dan las mismas decisiones y conteos; solo cambian los tiempos.
+El paquete datos_offline tiene como mayor esqueleto 50 salas, por eso H5 se mide a 50 y tambien a 2 000.
+
+Reglas de decision aplicadas
+- D5 (busqueda compartida frente a una por cazador): con 10 o mas cazadores la compartida gana de 7 a 114 veces;
+  con 1 cazador son equivalentes. Se conserva la compartida.
+- D6 (corte por rango): con corte el tiempo crece 1.00 veces de 2 000 a 20 000 salas (limite 1.5) y fija unas
+  33 salas, frente a 20 000 sin corte. Se conserva el corte.
+- D8 (reutilizar con clave): con puertas estables la clave hace 1 recalculo en 200 decisiones y es unas 6 veces mas
+  rapida que recalcular por ciclo y 100 veces que por turno. Con puertas inestables hace tantos recalculos como
+  por ciclo (200) y los tiempos son equivalentes (la diferencia esta dentro del ruido). Ninguna alternativa gana
+  por mas de 2 veces: se conserva la clave.
+- H7 (predicado frente a banderas): equivalentes (menos de 2 veces de diferencia). Se conserva el predicado.
+- H6 (agenda): el heap propio gana unas 10 veces a la lista ordenada con la carga nueva. Se conserva el heap.
+- H5: el maximo del ciclo es menor que 20 ms en todos los casos, incluidos 50 y 100 cazadores. CUMPLE.
+- H4: 10 000 de 10 000 turnos coinciden con la busqueda completa desde cero. H8: identico=si.
+
+=== Corrida 1 ===
+
+=== Terreno y cazador (spec 003), semilla 42 ===
+H1 salas=2000: cazadores=1 rango=300 compartida_ms=0.114 individual_ms=0.089 razon=0.8 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=300 compartida_ms=0.104 individual_ms=0.800 razon=7.7 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=300 compartida_ms=0.139 individual_ms=3.763 razon=27.0 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=300 compartida_ms=0.256 individual_ms=8.525 razon=33.3 [INFORMATIVA]
+H1 salas=2000: cazadores=1 rango=sin_limite compartida_ms=19.969 individual_ms=18.118 razon=0.9 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=sin_limite compartida_ms=20.119 individual_ms=234.743 razon=11.7 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=sin_limite compartida_ms=18.104 individual_ms=1401.815 razon=77.4 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=sin_limite compartida_ms=19.516 individual_ms=2232.245 razon=114.4 [INFORMATIVA]
+H2 salas=200: con_corte_fijadas=34 con_corte_ms=0.096 sin_corte_fijadas=200 sin_corte_ms=1.339 [INFORMATIVA]
+H2 salas=2000: con_corte_fijadas=32 con_corte_ms=0.130 sin_corte_fijadas=2000 sin_corte_ms=27.388 [INFORMATIVA]
+H2 salas=20000: con_corte_fijadas=33 con_corte_ms=0.130 sin_corte_fijadas=20000 sin_corte_ms=275.721 [INFORMATIVA]
+H2 criterio D6: con corte crece 1.00 veces entre 2000 y 20000 salas (limite 1.5) [CUMPLE]
+H3 salas=2000: puertas=estables clave_ms=3.563 por_turno_ms=418.739 por_ciclo_ms=21.543 recalculos=1 [INFORMATIVA]
+H3 salas=2000: puertas=inestables clave_ms=29.814 por_turno_ms=443.184 por_ciclo_ms=19.002 recalculos=200 [INFORMATIVA]
+H4 salas=300: turnos=10000 coinciden=10000 [CUMPLE]
+H5 salas=50: cazadores=10 ciclos=200 media_ms=0.297 maximo_ms=1.712 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=50 ciclos=200 media_ms=0.992 maximo_ms=2.954 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=100 ciclos=200 media_ms=2.189 maximo_ms=6.491 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=10 ciclos=200 media_ms=0.350 maximo_ms=1.443 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=50 ciclos=200 media_ms=0.854 maximo_ms=2.644 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=100 ciclos=200 media_ms=1.893 maximo_ms=9.442 limite=20ms [CUMPLE]
+H6 eventos=2200: heap_ms=15.075 lista_ms=191.488 [INFORMATIVA]
+H7 salas=2000: predicado_ms=39.512 banderas_ms=37.606 [INFORMATIVA]
+H8 semilla=42: identico=si [CUMPLE]
+
+=== Corrida 2 ===
+
+=== Terreno y cazador (spec 003), semilla 42 ===
+H1 salas=2000: cazadores=1 rango=300 compartida_ms=0.165 individual_ms=0.150 razon=0.9 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=300 compartida_ms=0.187 individual_ms=0.781 razon=4.2 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=300 compartida_ms=0.300 individual_ms=4.840 razon=16.1 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=300 compartida_ms=0.360 individual_ms=9.022 razon=25.1 [INFORMATIVA]
+H1 salas=2000: cazadores=1 rango=sin_limite compartida_ms=23.568 individual_ms=22.207 razon=0.9 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=sin_limite compartida_ms=16.597 individual_ms=181.226 razon=10.9 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=sin_limite compartida_ms=16.253 individual_ms=1029.698 razon=63.4 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=sin_limite compartida_ms=20.209 individual_ms=1932.161 razon=95.6 [INFORMATIVA]
+H2 salas=200: con_corte_fijadas=34 con_corte_ms=0.096 sin_corte_fijadas=200 sin_corte_ms=1.104 [INFORMATIVA]
+H2 salas=2000: con_corte_fijadas=32 con_corte_ms=0.147 sin_corte_fijadas=2000 sin_corte_ms=16.854 [INFORMATIVA]
+H2 salas=20000: con_corte_fijadas=33 con_corte_ms=0.189 sin_corte_fijadas=20000 sin_corte_ms=293.670 [INFORMATIVA]
+H2 criterio D6: con corte crece 1.29 veces entre 2000 y 20000 salas (limite 1.5) [CUMPLE]
+H3 salas=2000: puertas=estables clave_ms=4.933 por_turno_ms=376.764 por_ciclo_ms=18.857 recalculos=1 [INFORMATIVA]
+H3 salas=2000: puertas=inestables clave_ms=23.544 por_turno_ms=368.619 por_ciclo_ms=26.835 recalculos=200 [INFORMATIVA]
+H4 salas=300: turnos=10000 coinciden=10000 [CUMPLE]
+H5 salas=50: cazadores=10 ciclos=200 media_ms=0.338 maximo_ms=3.171 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=50 ciclos=200 media_ms=1.593 maximo_ms=13.034 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=100 ciclos=200 media_ms=2.501 maximo_ms=13.113 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=10 ciclos=200 media_ms=0.306 maximo_ms=1.264 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=50 ciclos=200 media_ms=1.048 maximo_ms=5.802 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=100 ciclos=200 media_ms=2.353 maximo_ms=8.195 limite=20ms [CUMPLE]
+H6 eventos=2200: heap_ms=23.458 lista_ms=196.329 [INFORMATIVA]
+H7 salas=2000: predicado_ms=27.723 banderas_ms=24.307 [INFORMATIVA]
+H8 semilla=42: identico=si [CUMPLE]

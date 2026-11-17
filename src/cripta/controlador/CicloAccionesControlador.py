@@ -113,6 +113,7 @@ class CicloAccionesControlador:
                     id=e.identificador, nombre=e.nombre, vida=e.vida, vida_max=e.vida_max,
                     ataque=e.ataque, defensa=e.defensa, velocidad=e.velocidad,
                     comportamiento=e.comportamiento, tipo=getattr(e, "tipo", ""),
+                    rango=getattr(e, "rango", None),
                 )
                 for e in sala_actual.enemigos if esta_vivo(e)
             ]

@@ -1504,6 +1504,357 @@ def _bench_conocimiento(semilla: int = SEMILLA_PREDETERMINADA) -> None:
     medir_k9(semilla)
 
 
+# --- Terreno y cazador (spec 003): FR-025 a FR-028 -----------------------------------------------
+LIMITE_CICLO_MS = 20.0
+RANGO_SIN_LIMITE = 10 ** 9
+
+
+def _abierta(salida) -> bool:
+    return not salida.cerrada
+
+
+class CriptaCazadores(CriptaConocimiento):
+    """Esqueleto sintetico con la sala del jugador y las salas de los cazadores (FR-026)."""
+
+    def __init__(self, base, jugador, cazadores, rango):
+        super().__init__(base.salas, base.entrantes, base.n_salas, base.n_salidas)
+        self.jugador = jugador
+        self.cazadores = cazadores
+        self.rango = rango
+
+
+def generar_cripta_cazadores(semilla: int, salas: int, cazadores: int, rango: int,
+                             puertas_inestables: bool = False) -> CriptaCazadores:
+    """Cuadricula de `generar_cripta_conocimiento` con jugador y cazadores colocados por semilla.
+
+    Ningun cazador empieza en la sala del jugador. Con `puertas_inestables`, cerca del 30 % de las
+    salidas abiertas declara un cierre automatico corto. Los ids son secuenciales y no hay datos de
+    ninguna cripta concreta (FR-028).
+    """
+    base = generar_cripta_conocimiento(semilla, salas)
+    azar = random.Random(semilla)
+    jugador = azar.randrange(salas)
+    colocados = []
+    while len(colocados) < cazadores:
+        sala = azar.randrange(salas)
+        if sala != jugador:
+            colocados.append(sala)
+    if puertas_inestables:
+        for i in range(salas):
+            for salida in base.salas.obtener(i).salidas:
+                if not salida.cerrada and azar.random() < 0.30:
+                    salida.cierre_automatico = azar.randint(50, 300)
+    return CriptaCazadores(base, jugador, colocados, rango)
+
+
+def _persecucion(cripta):
+    from cripta.modelo.Persecucion import Persecucion
+    persecucion = Persecucion(HeapAgendaEventos(None))
+    persecucion.configurar(cripta.entrantes)
+    persecucion.registrar_rango(cripta.rango)
+    return persecucion
+
+
+def _decidir_todos(persecucion, cripta, rango):
+    """Decision de cada cazador con la busqueda compartida; devuelve el destino de cada uno."""
+    resultado = []
+    for sala in cripta.cazadores:
+        salida = persecucion.decidir(cripta.jugador, sala, cripta.salas.obtener(sala).salidas, rango)
+        resultado.append(-1 if salida is None else salida.sala_destino)
+    return resultado
+
+
+def _decidir_individual(buscador, cripta, rango):
+    """Una busqueda por cazador (la alternativa que D5 descarta)."""
+    resultado = []
+    for sala in cripta.cazadores:
+        buscador.distancias_hacia(cripta.jugador, cripta.entrantes, _abierta, None, rango)
+        d = buscador.distancia_de(sala)
+        if d is None or d == 0 or d > rango:
+            resultado.append(-1)
+            continue
+        salida = buscador.elegir_paso(sala, cripta.salas.obtener(sala).salidas, _abierta)
+        resultado.append(-1 if salida is None else salida.sala_destino)
+    return resultado
+
+
+def medir_h1(semilla=SEMILLA_PREDETERMINADA, salas=SALAS_REFERENCIA_SINTETICA, cantidades=(1, 10, 50, 100),
+             imprimir=True):
+    """H1: decision de C cazadores por ciclo, busqueda compartida frente a una busqueda por cazador."""
+    huella = []
+    for rango in (300, RANGO_SIN_LIMITE):
+        for c in cantidades:
+            cripta = generar_cripta_cazadores(semilla, salas, c, rango)
+            buscador = BuscadorRutas(salas)
+            persecucion = _persecucion(cripta)
+
+            def compartida():
+                persecucion.valida = False     # un ciclo nuevo: se busca una vez
+                return _decidir_todos(persecucion, cripta, rango)
+
+            t_compartida = _mejor_de(3, compartida)
+            t_individual = _mejor_de(3, lambda: _decidir_individual(buscador, cripta, rango))
+            decisiones = compartida()
+            if decisiones != _decidir_individual(buscador, cripta, rango):
+                raise AssertionError("H1: la decision compartida no coincide con la individual")
+            huella.append([rango, c, decisiones])
+            if imprimir:
+                razon = t_individual / t_compartida if t_compartida > 0 else float("inf")
+                rango_txt = "sin_limite" if rango == RANGO_SIN_LIMITE else rango
+                print(f"H1 salas={salas}: cazadores={c} rango={rango_txt} compartida_ms={t_compartida * 1000:.3f} "
+                      f"individual_ms={t_individual * 1000:.3f} razon={razon:.1f} [INFORMATIVA]")
+    return SimpleNamespace(huella=huella)
+
+
+def medir_h2(semilla=SEMILLA_PREDETERMINADA, tamanos=(200, 2000, 20000), rango=300, imprimir=True):
+    """H2: un recalculo con y sin corte por rango; criterio de D6 entre los dos tamanos mayores."""
+    tiempos = []
+    for n in tamanos:
+        cripta = generar_cripta_conocimiento(semilla, n)
+        buscador = BuscadorRutas(n)
+        destino = n // 2
+
+        def con_corte():
+            buscador.distancias_hacia(destino, cripta.entrantes, _abierta, None, rango)
+
+        def sin_corte():
+            buscador.distancias_hacia(destino, cripta.entrantes, _abierta, None, None)
+
+        def alcanzadas():
+            return sum(1 for i in range(n) if buscador.marca[i] == buscador.generacion)
+
+        t_con = _mejor_de(3, con_corte)
+        f_con = alcanzadas()
+        t_sin = _mejor_de(3, sin_corte)
+        f_sin = alcanzadas()
+        tiempos.append(t_con)
+        if imprimir:
+            print(f"H2 salas={n}: con_corte_fijadas={f_con} con_corte_ms={t_con * 1000:.3f} "
+                  f"sin_corte_fijadas={f_sin} sin_corte_ms={t_sin * 1000:.3f} [INFORMATIVA]")
+    crecimiento = tiempos[-1] / tiempos[-2] if len(tiempos) >= 2 and tiempos[-2] > 0 else 1.0
+    cumple = crecimiento < 1.5
+    if imprimir:
+        print(f"H2 criterio D6: con corte crece {crecimiento:.2f} veces entre {tamanos[-2]} y {tamanos[-1]} salas "
+              f"(limite 1.5) [{'CUMPLE' if cumple else 'EXCEDE'}]")
+    return SimpleNamespace(crecimiento=crecimiento, cumple=cumple)
+
+
+def medir_h3(semilla=SEMILLA_PREDETERMINADA, salas=SALAS_REFERENCIA_SINTETICA, cazadores=20, decisiones=200,
+             imprimir=True):
+    """H3: 200 decisiones del jugador; reutilizar con la clave frente a recalcular por turno o por ciclo."""
+    recalculos_de = []
+    for inestables in (False, True):
+        cripta = generar_cripta_cazadores(semilla, salas, cazadores, 300, puertas_inestables=inestables)
+        azar = random.Random(semilla)
+        puertas = []
+        for _ in range(decisiones):
+            origen = azar.randrange(salas)
+            abiertas = [s for s in cripta.salas.obtener(origen).salidas]
+            puertas.append(abiertas[azar.randrange(len(abiertas))] if abiertas else None)
+
+        def correr(estrategia):
+            persecucion = _persecucion(cripta)
+            agenda = persecucion.agenda
+            inicio = time.perf_counter()
+            for k in range(decisiones):
+                puerta = puertas[k] if inestables else None
+                if puerta is not None and k % 2 == 0:
+                    puerta.cerrada = not puerta.cerrada     # una puerta cambia entre decisiones
+                    agenda.cambios_puertas += 1
+                if estrategia == "ciclo":
+                    persecucion.valida = False
+                for sala in cripta.cazadores:
+                    if estrategia == "turno":
+                        persecucion.valida = False
+                    persecucion.decidir(cripta.jugador, sala, cripta.salas.obtener(sala).salidas, 300)
+                if puerta is not None and k % 2 == 0:
+                    puerta.cerrada = not puerta.cerrada     # se restaura: el estado inicial no cambia
+                    agenda.cambios_puertas += 1
+            return time.perf_counter() - inicio, persecucion.recalculos
+
+        t_clave, recalculos = correr("clave")
+        t_turno, _ = correr("turno")
+        t_ciclo, _ = correr("ciclo")
+        recalculos_de.append(recalculos)
+        if imprimir:
+            print(f"H3 salas={salas}: puertas={'inestables' if inestables else 'estables'} "
+                  f"clave_ms={t_clave * 1000:.3f} por_turno_ms={t_turno * 1000:.3f} "
+                  f"por_ciclo_ms={t_ciclo * 1000:.3f} recalculos={recalculos} [INFORMATIVA]")
+    return SimpleNamespace(recalculos=recalculos_de)
+
+
+def medir_h4(semilla=SEMILLA_PREDETERMINADA, salas=300, turnos=10000, imprimir=True):
+    """H4: la decision de `Persecucion` coincide con la busqueda completa desde cero en cada turno."""
+    cripta = generar_cripta_cazadores(semilla, salas, 1, 300)
+    persecucion = _persecucion(cripta)
+    persecucion.registrar_rango(1000)
+    referencia = BuscadorRutas(salas)
+    azar = random.Random(semilla)
+    todas = []
+    for i in range(salas):
+        for salida in cripta.salas.obtener(i).salidas:
+            todas.append(salida)
+    coinciden = 0
+    for _ in range(turnos):
+        if todas and azar.random() < 0.05:
+            puerta = todas[azar.randrange(len(todas))]
+            puerta.cerrada = not puerta.cerrada
+            persecucion.agenda.cambios_puertas += 1
+        jugador = azar.randrange(salas)
+        sala = azar.randrange(salas)
+        rango = (0, 100, 300, 1000)[azar.randrange(4)]
+        salidas = cripta.salas.obtener(sala).salidas
+        obtenida = persecucion.decidir(jugador, sala, salidas, rango)
+        referencia.distancias_hacia(jugador, cripta.entrantes, _abierta)
+        d = referencia.distancia_de(sala)
+        esperada = None
+        if d is not None and d != 0 and d <= rango:
+            esperada = referencia.elegir_paso(sala, salidas, _abierta)
+        if (None if obtenida is None else obtenida.clave) == (None if esperada is None else esperada.clave):
+            coinciden += 1
+    if imprimir:
+        print(f"H4 salas={salas}: turnos={turnos} coinciden={coinciden} "
+              f"[{'CUMPLE' if coinciden == turnos else 'EXCEDE'}]")
+    return SimpleNamespace(turnos=turnos, coinciden=coinciden, recalculos=persecucion.recalculos)
+
+
+def _ciclo_cazadores(cripta, semilla, ciclos):
+    """Ciclos de eventos con cazadores activos; devuelve los tiempos (ms) y el estado final."""
+    from cripta.modelo.Jugador import Jugador
+    from cripta.modelo.Simulacion import Simulacion
+    from cripta.modelo.enemigos.Cazador import Cazador
+    from cripta.util.Costo_Acciones import calcular_intervalo
+
+    sim = Simulacion(semilla)
+    sim.persecucion.configurar(cripta.entrantes)
+    sim.persecucion.registrar_rango(cripta.rango)
+    vida = 10 ** 9
+    jugador = Jugador("jugador", vida, vida, 6, 100, 100, cripta.jugador, 0, 10)
+    sim.agenda.reprogramar(jugador, 0, "accion_actor")
+    for i, sala in enumerate(cripta.cazadores):
+        c = Cazador(f"c{i}", 10, 10, 1, 0, 50 + (i * 37) % 151, sala, None, rango=cripta.rango)
+        cripta.salas.obtener(sala).agregar_enemigo(c)
+        evento = sim.agenda.insertar(i % 100, c, "accion_actor")
+        c._proximo_evento = evento
+        c.tiempo_siguiente = i % 100
+    azar = random.Random(semilla)
+    medidas = []
+    for _ in range(ciclos):
+        abiertas = [s for s in cripta.salas.obtener(jugador.sala).salidas if not s.cerrada]
+        if abiertas:
+            salida = abiertas[azar.randrange(len(abiertas))]
+            jugador.sala = salida.sala_destino
+            costo = salida.costo
+        else:
+            costo = 100
+        inicio = time.perf_counter()
+        sim.agenda.reprogramar(jugador, sim.reloj.tiempo_actual + calcular_intervalo(costo, 100), "accion_actor")
+        sim.avanzar_hasta_turno_jugador(jugador, cripta.salas)
+        medidas.append((time.perf_counter() - inicio) * 1000)
+    estado = [jugador.sala, sim.reloj.tiempo_actual, sim.persecucion.recalculos,
+              sum(c.sala for i in range(cripta.n_salas) for c in cripta.salas.obtener(i).enemigos)]
+    return medidas, estado
+
+
+def medir_h5(semilla=SEMILLA_PREDETERMINADA, salas=None, cantidades=(10, 50, 100), ciclos=200, imprimir=True,
+             carpeta=None):
+    """H5: ciclo de eventos entre dos decisiones del jugador con cazadores activos (limite 20 ms)."""
+    salas = salas or tamano_cripta_referencia(carpeta)
+    resultados = []
+    for c in cantidades:
+        cripta = generar_cripta_cazadores(semilla, salas, c, 300)
+        medidas, estado = _ciclo_cazadores(cripta, semilla, ciclos)
+        maximo = max(medidas)
+        media = sum(medidas) / len(medidas)
+        cumple = maximo < LIMITE_CICLO_MS
+        resultados.append(SimpleNamespace(cazadores=c, media=media, maximo=maximo, cumple=cumple, estado=estado))
+        if imprimir:
+            print(f"H5 salas={salas}: cazadores={c} ciclos={ciclos} media_ms={media:.3f} maximo_ms={maximo:.3f} "
+                  f"limite=20ms [{'CUMPLE' if cumple else 'EXCEDE'}]")
+    return SimpleNamespace(resultados=resultados)
+
+
+def medir_h6(semilla=SEMILLA_PREDETERMINADA, eventos=2000, cierres=200, imprimir=True):
+    """H6 (§5.6): agenda con heap propio frente a lista ordenada con la carga de la parte II."""
+    azar = random.Random(semilla)
+    tiempos = []
+    for _ in range(eventos):
+        costo = azar.randint(1, 300)
+        velocidad = azar.choice([50, 100, 150, 200])
+        tiempos.append(max(1, costo * 100 // velocidad))
+    cierres_t = [azar.randint(50, 900) for _ in range(cierres)]
+    carga = tiempos + cierres_t
+
+    def con_heap():
+        agenda = HeapAgendaEventos()
+        actor = _ActorFalso("a")
+        for t in carga:
+            agenda.insertar(t, actor, "accion_actor")
+        while agenda.extraer_siguiente() is not None:
+            pass
+
+    def con_lista():
+        lista = _ListaOrdenada()
+        for secuencia, t in enumerate(carga):
+            lista.insertar(t, secuencia)
+        for _ in carga:
+            lista.extraer_siguiente()
+
+    t_heap = _mejor_de(3, con_heap)
+    t_lista = _mejor_de(3, con_lista)
+    if imprimir:
+        print(f"H6 eventos={len(carga)}: heap_ms={t_heap * 1000:.3f} lista_ms={t_lista * 1000:.3f} [INFORMATIVA]")
+    return SimpleNamespace(heap=t_heap, lista=t_lista)
+
+
+def medir_h7(semilla=SEMILLA_PREDETERMINADA, salas=SALAS_REFERENCIA_SINTETICA, imprimir=True):
+    """H7: predicado por arista relajada frente a un arreglo de banderas por clave de salida."""
+    cripta = generar_cripta_conocimiento(semilla, salas)
+    buscador = BuscadorRutas(salas)
+    banderas = [False] * (salas * 4)
+    for i in range(salas):
+        for salida in cripta.salas.obtener(i).salidas:
+            banderas[salida.clave] = not salida.cerrada
+    destino = salas // 2
+    t_predicado = _mejor_de(3, lambda: buscador.distancias_hacia(destino, cripta.entrantes, _abierta, None, None))
+    t_banderas = _mejor_de(3, lambda: buscador.distancias_hacia(
+        destino, cripta.entrantes, lambda s: banderas[s.clave], None, None))
+    if imprimir:
+        print(f"H7 salas={salas}: predicado_ms={t_predicado * 1000:.3f} banderas_ms={t_banderas * 1000:.3f} "
+              f"[INFORMATIVA]")
+    return SimpleNamespace(predicado=t_predicado, banderas=t_banderas)
+
+
+def medir_h8(semilla=SEMILLA_PREDETERMINADA, escala=None, imprimir=True):
+    """H8: H1, H4 y H5 dos veces con la misma semilla dan las mismas decisiones y conteos."""
+    escala = escala or {}
+    def una():
+        h1 = medir_h1(semilla, escala.get("h1_salas", 300), escala.get("h1_cantidades", (1, 10)), imprimir=False)
+        h4 = medir_h4(semilla, escala.get("h4_salas", 100), escala.get("h4_turnos", 500), imprimir=False)
+        h5 = medir_h5(semilla, escala.get("h5_salas", 300), escala.get("h5_cantidades", (10,)),
+                      escala.get("h5_ciclos", 30), imprimir=False)
+        return [h1.huella, [h4.turnos, h4.coinciden, h4.recalculos], [r.estado for r in h5.resultados]]
+    identico = una() == una()
+    if imprimir:
+        print(f"H8 semilla={semilla}: identico={'si' if identico else 'no'} [{'CUMPLE' if identico else 'EXCEDE'}]")
+    return SimpleNamespace(identico=identico)
+
+
+def _bench_cazador(semilla: int = SEMILLA_PREDETERMINADA) -> None:
+    """Seccion Terreno y cazador: H1 a H8 con la misma semilla; no abre la vista (FR-026, FR-027)."""
+    print(f"\n=== Terreno y cazador (spec 003), semilla {semilla} ===")
+    medir_h1(semilla)
+    medir_h2(semilla)
+    medir_h3(semilla)
+    medir_h4(semilla)
+    medir_h5(semilla)
+    if tamano_cripta_referencia() != SALAS_REFERENCIA_SINTETICA:
+        medir_h5(semilla, SALAS_REFERENCIA_SINTETICA)   # el paquete es pequeño: tambien a 2 000 salas
+    medir_h6(semilla)
+    medir_h7(semilla)
+    medir_h8(semilla)
+
+
 def main(semilla: int = SEMILLA_PREDETERMINADA):
     import tempfile
     _bench_simulacion()
@@ -1515,6 +1866,7 @@ def main(semilla: int = SEMILLA_PREDETERMINADA):
         _bench_estructuras_y_persistencia(carpeta)
     _bench_resolubilidad(semilla)
     _bench_conocimiento(semilla)
+    _bench_cazador(semilla)
 
 
 if __name__ == "__main__":
