@@ -108,3 +108,15 @@ Validado en un entorno de trabajo con Python 3.10 (sin interfaz) el 16/11/2026.
 - Sección 3: replay, guardar y cargar a mitad de una persecución y pergamino tras un movimiento costoso pasan en `test_cazador_guardado.py`.
 - Sección 4: la sección «Terreno y cazador» del bench se corrió dos veces con la semilla 42 y dio las mismas decisiones y conteos (`mediciones.txt`); H5 CUMPLE con 10, 50 y 100 cazadores. **Pendiente** correr `--bench` completo en el equipo de la entrega.
 
+
+
+### Validación en el equipo de entrega (17/11/2026, Windows 11, Python 3.13)
+
+- Sección 2 (interfaz), con una cripta de prueba local armada fuera del repositorio (copia de cripta-01 con salidas de costo 1, 250 y sin costo, un cazador de rango 600 y un errante en la sala 3; `--offline-dir` y `--cache-dir` temporales):
+  1. En la sala 2 las puertas muestran N 250, S 1 y E 100 (la que no declara costo). Verificado.
+  2. El cazador tiene contorno morado propio y su texto emergente dice «Sabueso de prueba · 8/8 · cazador · rango 600»; el errante no. Verificado.
+  3. Al derrotar al cazador, la bitácora dice «Sabueso de prueba (c-301) muere» y desaparece como cualquier enemigo. Verificado.
+  4. La salida de costo 1 avanzó el reloj de t=25 a t=26 y la de costo 250, de t=26 a t=276 (velocidad 100). Verificado.
+  5. Con el cazador ya activado (entrar a su sala, Parte I §2.4), el jugador vuelve a la sala 2 y espera: el cazador entra y ataca («Sabueso de prueba (c-301) te ataca por 4»). Verificado.
+- Sección 4: `--bench --semilla 42` completo en el equipo de entrega; H1 a H8 sin ventana, H5 máximo 3,2 ms con 100 cazadores, H4 10 000 de 10 000 y H8 idéntico. Salida en [mediciones_equipo_entrega.txt](mediciones_equipo_entrega.txt).
+- Sección 5: suite completa de 377 pruebas sin fallas (specs/004-linea-tiempo/regresion.txt).
