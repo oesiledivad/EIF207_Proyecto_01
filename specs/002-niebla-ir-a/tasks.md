@@ -324,3 +324,11 @@
 | US7.1 y US7.2 | T077, T078 | FR-033 |
 | US8.1 a US8.3 | T083, T084, T085 | FR-039, FR-038, FR-035 a FR-037 |
 | Apéndice B 1 a 6 (SC-001) | T039, T049, T051, T062, T069, T070 | FR-020, FR-026, FR-028, FR-011, FR-016, FR-034 |
+
+## Fase 12: US9 - Oscuridad de la sala y radio de la antorcha (aclaración del 2026-11-17)
+
+La spec se enmendó antes del código (commits 2077502 y 0324a79).
+
+- [X] T105 [US9] `pruebas/test_oscuridad.py`: radio mínimo y al menos el triple con antorcha (FR-042, FR-043); área visible sin antorcha menor que 1/5 y con antorcha al menos 1/2, y niebla por debajo del 85 % de opacidad (SC-009); dibujar no cambia reloj, azar ni historial y al apagar la antorcha vuelve el radio mínimo (FR-044).
+- [X] T106 [US9] `src/cripta/vista/grafica/escena.py`: capa `oscuridad` entre las entidades y los paneles, con máscara RGBA de anillos concéntricos centrada en el jugador y caché acotada de máscaras; el inventario, la bitácora, la barra inferior y el minimapa no se cubren (FR-042, FR-043, FR-045).
+- [X] T107 [US9] Verificar en la ventana real, sin antorcha y con antorcha, en una sala con enemigos lejos del jugador, y anotar el resultado en `quickstart.md` (FR-042 a FR-045).
