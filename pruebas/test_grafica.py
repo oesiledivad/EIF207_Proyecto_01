@@ -780,3 +780,96 @@ with tempfile.TemporaryDirectory() as carpeta:
                 self.assertEqual(main(argumentos), 0)
                 red.assert_called_once()
                 self.assertFalse(iniciar.call_args.args[-1])
+
+
+class PruebasVistaTerreno(unittest.TestCase):
+    """US4 de la spec 003: costos de las salidas y cazador distinguible (FR-020, FR-021).
+
+    Dibuja la escena sobre un lienzo falso que solo anota lo que se le pide, sin ventana.
+    """
+
+    def _escena(self):
+        from types import SimpleNamespace
+        from unittest.mock import MagicMock
+        from cripta.vista.grafica.escena import Escena
+        from cripta.vista.grafica.lienzo import Zona
+
+        class LienzoFalso:
+            def __init__(self):
+                self.textos, self.elipses, self.zonas, self.raton, self.ayuda = [], [], [], [-1, -1], ""
+
+            def texto(self, texto, *argumentos, **datos):
+                self.textos.append(str(texto))
+                return 0
+
+            def elipse(self, cx, cy, ancho, alto, color, borde=0):
+                self.elipses.append([color, borde])
+
+            def zona(self, x, y, ancho, alto, accion, argumento="", ayuda=""):
+                zona = Zona(x, y, ancho, alto, accion, argumento, ayuda)
+                self.zonas.append(zona)
+                return zona
+
+            def bajo_raton(self, *argumentos):
+                return False
+
+            def __getattr__(self, nombre):      # imagen, marco, rect...: no dibujan nada
+                return lambda *argumentos, **datos: None
+
+        recursos = MagicMock()
+        recursos.enemigo.return_value = ["cuadro"]
+        escena = Escena(recursos, lienzo=LienzoFalso())
+        escena.posicion = lambda p, clase, id_: [150 + 40 * (len(str(id_)) % 3), 200]
+        escena.personaje = lambda *argumentos, **datos: 40
+        vista = SimpleNamespace(modo_mover=False, animacion=0, pausa_visual=0, duracion_visual=1,
+                                enemigos_muertos=[], atacantes=[], cambios_enemigos=[], enemigo=None,
+                                accion_visual="")
+        return escena, vista
+
+    @staticmethod
+    def _enemigo(id_, comportamiento, rango=None):
+        from types import SimpleNamespace
+        return SimpleNamespace(id=id_, nombre=id_, vida=5, vida_max=10, tipo="t",
+                               comportamiento=comportamiento, rango=rango)
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_us4_1_costos_de_las_salidas(self):
+        """FR-020: cada puerta muestra su costo (1, 100 sin declarar y 250) junto a ella."""
+        from types import SimpleNamespace
+        from cripta.dto.Partida_dto import SalidaVecina
+        escena, vista = self._escena()
+        vecindad = [SalidaVecina(direccion=d, sala_id=i + 2, nombre="", cerrada=False, llave="",
+                                 transitable=True, es_salida_final=False, tiene_enemigos=False,
+                                 tiene_objetos=False, costo=c)
+                    for i, (d, c) in enumerate([["N", 1], ["E", 100], ["O", 250]])]
+        escena.puertas(vista, SimpleNamespace(vecindad=vecindad))
+        self.assertEqual(escena.lienzo.textos, ["1", "100", "250"])
+        ayudas = [z.ayuda for z in escena.lienzo.zonas]
+        self.assertTrue(all(f"costo {c}" in a for c, a in zip([1, 100, 250], ayudas)))
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_us4_2_cazador_distinguible(self):
+        """FR-021: solo el cazador lleva la marca propia y su texto emergente dice «cazador» y el rango."""
+        from types import SimpleNamespace
+        from cripta.vista.grafica.escena import COLOR_CAZADOR
+        escena, vista = self._escena()
+        p = SimpleNamespace(sala_actual_id=1, enemigos=[self._enemigo("c1", "cazador", 300),
+                                                         self._enemigo("erra", "errante")])
+        escena.enemigos(vista, p, 0)
+        marcas = [e for e in escena.lienzo.elipses if e[0][:3] == COLOR_CAZADOR]
+        self.assertEqual(len(marcas), 1)
+        ayudas = {z.argumento: z.ayuda for z in escena.lienzo.zonas if z.accion == "seleccionar"}
+        self.assertIn("cazador · rango 300", ayudas["c1"])
+        self.assertNotIn("cazador", ayudas["erra"])
+
+    @unittest.skipUnless(importlib.util.find_spec("arcade"), "Falta arcade (uv sync)")
+    def test_us4_3_cazador_derrotado_como_los_demas(self):
+        """FR-021: un cazador que acaba de morir se dibuja sin la marca de cazador."""
+        from types import SimpleNamespace
+        from cripta.vista.grafica.escena import COLOR_CAZADOR
+        escena, vista = self._escena()
+        caido = self._enemigo("c1", "cazador", 300)
+        vista.enemigos_muertos = [caido]
+        vista.pausa_visual = vista.duracion_visual = 1.2
+        escena.enemigos(vista, SimpleNamespace(sala_actual_id=1, enemigos=[]), 0)
+        self.assertFalse([e for e in escena.lienzo.elipses if e[0][:3] == COLOR_CAZADOR])

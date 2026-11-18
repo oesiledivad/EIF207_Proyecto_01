@@ -1458,3 +1458,116 @@ Mantén el inverso con parada. La regla de D7 solo compara alternativas que cump
 
 Uso de la respuesta: Se conservó el Dijkstra inverso con parada, porque reutilizar distancias no adapta la ruta cuando la memoria de puertas cambia (FR-026), y research.md D7 se aclaró con los números de K6. Se completaron T099 a T102: sección 13 de decisiones.md, sección 8 de estructuras.md y README con la tecla C y el clic. La revisión contra la constitución detectó que ViajeControlador leía el esqueleto completo de la cripta (FR-013); se corrigió con ConocimientoJugador.salidas_conocidas, que solo devuelve salidas de salas exploradas. T103 quedó pendiente de la verificación visual en la GUI.
 ---
+
+### Entrada #71
+
+Fecha: 16/11/2026
+
+Integrante: Fiorella Porras Mora.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Crear la especificación 003 de terreno con costo y enemigo cazador.
+
+Prompt enviado:
+
+```text
+/speckit-specify Terreno y cazador. Cada salida puede declarar un costo (entero >= 1, por defecto 100, igual en ambos sentidos); el costo ya se lee en el esqueleto (FR-023 de la spec 002), esta spec implementa el consumo de tiempo del movimiento y el enemigo cazador. Moverse por una salida cuesta su costo en lugar de 100 y el intervalo es max(1, costo*100 // velocidad), para el jugador y todos los enemigos (el costo de atacar, esperar y demás acciones no cambia). Nuevo enemigo con comportamiento "cazador" y campo rango (en unidades de costo). En su turno: si comparte sala con el jugador, ataca; si no, calcula el costo mínimo d hasta la sala del jugador usando solo salidas abiertas en ese instante; si no hay ruta o d > rango, espera (costo 100); si no, da un paso por una ruta de costo d, y esa acción cuesta lo que la salida. Desempate: entre las vecinas v con costo(u,v)+dist(v,jugador)=d, va a la de menor id. Conoce el esqueleto completo y el estado actual de las puertas, no le afecta la niebla de guerra, no abre puertas, y su decisión debe ser idéntica a calcularla desde cero en ese instante. La vista muestra los costos de las salidas de la sala actual y distingue a los cazadores de los demás enemigos. Escenarios de aceptación obligatorios (Apéndice B): (1) cazador sin ruta abierta hacia el jugador espera con costo 100; (2) ruta más barata con costo mayor que su rango: espera con costo 100; (3) ruta de menos salas pero mayor costo frente a otra de más salas y menor costo: sigue la de menor costo; (4) dos vecinas inician rutas de costo mínimo: va a la de menor id; (5) una puerta de la ruta se cierra entre dos turnos: en el turno siguiente decide como si calculara desde cero; (6) actor de velocidad alta atraviesa una salida de costo 1: el intervalo es al menos 1; (7) cambia la velocidad de un actor que atraviesa una salida costosa: el tiempo restante se escala según P1 §2.3. Requisito de rendimiento: el ciclo de eventos entre dos decisiones del jugador, con decenas de cazadores activos, tarda menos de 20 ms.
+```
+
+Uso de la respuesta: Se creó specs/003-terreno-cazador/spec.md con 6 historias de usuario, FR-001 a FR-028 y SC-001 a SC-007, y el checklist de calidad en checklists/requirements.md (todos los puntos aprobados, sin marcas de clarificación). Los 7 casos del Apéndice B quedaron como escenarios de US1 y US2. Claude dejó anotados como supuestos a confirmar: rango obligatorio, «decenas» fijado en al menos 50 cazadores, salidas duplicadas hacia la misma vecina y costo inválido tratado como 100.
+
+### Entrada #72
+
+Fecha: 16/11/2026
+
+Integrante: Fiorella Porras Mora.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Aclarar seis puntos de la especificación 003 y registrarlos en la spec.
+
+Prompt enviado:
+
+```text
+/speckit-clarify Aclara estos puntos de la spec de terreno y cazador y registra cada respuesta en la spec: (1) La muerte de otros actores: ¿invalida las distancias del cazador? Como los actores no bloquean salas, decisión: NO invalida; solo cambian la decisión el movimiento del jugador y la apertura o cierre de puertas (pendiente de confirmar con el profesor). (2) Dos salidas distintas hacia la misma sala: se usa la de menor costo; si empatan, el orden N, S, E, O. (3) Cazador dormido: sigue las reglas de P1 §2.4, no actúa hasta que el jugador entre a su sala, y su primera acción es de costo 100 desde la activación. (4) Límite del rango: si d es igual al rango, SÍ se mueve; solo espera si d es mayor que el rango. (5) Cambio de velocidad con un movimiento ya programado: el tiempo restante se reescala según P1 §2.3, con mínimo 1. (6) Costo de atacar, esperar y demás acciones: no cambia.
+```
+
+Uso de la respuesta: Se agregó la sección Clarifications (sesión 2026-11-16) con las seis respuestas. Se ampliaron FR-014 (orden N, S, E, O), FR-017, FR-018 (los actores no bloquean salas) y FR-019 (cazador dormido), se agregaron los escenarios 9 a 11 de US2 y sus casos límite, y en Supuestos quedó que FR-018 está pendiente de confirmar con el profesor. Los puntos 4, 5 y 6 ya estaban en FR-012, FR-006 y FR-005. El checklist siguió en 16/16.
+
+### Entrada #73
+
+Fecha: 16/11/2026
+
+Integrante: Fiorella Porras Mora.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Planificar la especificación 003 sobre el código existente de la rama.
+
+Prompt enviado:
+
+```text
+/speckit-plan Planifica la spec 003 terreno y cazador sobre el código existente de la rama (revisa antes src/cripta/modelo/Rutas.py y src/cripta/estructuras/Monticulo_Minimo.py de la spec 002; no crees otra cola de prioridad). Decisiones a tomar y justificar con alternativas, complejidad y mediciones previstas: (1) Búsqueda del cazador: reutilizar MonticuloMinimo y BuscadorRutas (confirma la propuesta C11/D9 de la spec 002) con una sola búsqueda desde la sala del jugador cuyas distancias sirven a todos los cazadores; la búsqueda se corta al superar el mayor rango activo, así que cuesta según la región del rango y no según el tamaño de la cripta; cada cazador aplica el desempate de menor id con esas distancias. Si hace falta un parámetro de corte por costo en BuscadorRutas, debe ser opcional y compatible con «ir a». (2) Cálculo compartido frente a individual por cazador: plan de medición para un cazador frente a decenas, rango pequeño frente a rango grande. (3) Invalidación: las distancias se reutilizan solo si no cambió la sala del jugador ni el estado de las puertas; define qué evento invalida qué y cómo se detecta (por ejemplo un contador de cambios de puertas), y mide reutilizar frente a recalcular siempre, con puertas estables y con puertas inestables. (4) Costo del movimiento: dónde se calcula el costo de la salida para el jugador (CicloAccionesControlador) y para los enemigos (Simulacion), calculándolo antes de mover; el reescalado por cambio de velocidad ya existe en Actor.actualizar_velocidad. (5) Cazador: nueva clase de enemigo, campo rango en la ficha, ensamblado, guardado de partida y reproducción (--replay) deterministas. (6) Vista: costos de las salidas de la sala actual (ya llegan en la vecindad) y cazadores distinguibles en la vista gráfica Arcade. (7) --bench: generador de criptas sintéticas deterministas por semilla y los escenarios de rendimiento; repetir la medición de la agenda de eventos con la carga nueva (§5.6) y verificar el límite de 20 ms con decenas de cazadores. Restricciones: sin dict ni set como índice, sin heapq, bisect, collections ni bibliotecas de grafos. El plan no puede agregar reglas que no estén en spec.md.
+```
+
+Uso de la respuesta: Se generaron plan.md, research.md (decisiones D1 a D12 y mediciones H1 a H8), data-model.md, quickstart.md y tres contratos (decision-enemigo.md, ficha-cazador.md y bench-cazador.md). Se confirmó D9 de la spec 002: una sola búsqueda inversa desde la sala del jugador, con un parámetro opcional limite en BuscadorRutas, cuya validez se comprueba con la sala del jugador y dos contadores monótonos (cambios de puertas e historial). El costo del jugador se pasa desde ExploracionControlador.mover y el de los enemigos llega en la decisión [tipo, destino, costo]. Quedaron como puntos a confirmar C1 (redacción de FR-009), C2 (FR-018 con el profesor), C3 (costo de errante y rastreador con dos salidas a la misma sala), C4 (sin mensaje nuevo) y C5 (confirmar la spec en Git).
+
+### Entrada #74
+
+Fecha: 16/11/2026
+
+Integrante: Fiorella Porras Mora.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Descomponer el plan de la especificación 003 en tareas.
+
+Prompt enviado:
+
+```text
+/speckit-tasks Descompón el plan de la spec 003 en tareas pequeñas y verificables, con el mismo formato y numeración que las tasks.md de las specs 001 y 002. Reglas: cada tarea cita el FR que atiende y no hay tareas sin requisito; cada uno de los 7 escenarios del Apéndice B (terreno y cazador) tiene una prueba unittest en pruebas/ cuyo docstring cita su FR; las pruebas de cada historia van antes del código que las hace pasar; las tareas indican el archivo exacto que tocan. Incluye tareas para: costo de movimiento del jugador (CicloAccionesControlador) y de los enemigos (Simulacion, calculado antes de mover); campo rango en la ficha y clase Cazador con su ensamblado y registro en CombateControlador y la vista; búsqueda compartida con corte por rango reutilizando MonticuloMinimo y BuscadorRutas; invalidación con contador de cambios de puertas; guardado y --replay deterministas con cazadores; vista gráfica con costos de salidas y cazadores distinguibles; generador de criptas sintéticas deterministas por semilla en bench.py; mediciones del --bench (un cazador frente a muchos, rango pequeño frente a grande, compartido frente a individual, puertas estables frente a inestables, reutilizar frente a recalcular siempre, y la agenda de eventos con la carga nueva); verificación del límite de 20 ms con decenas de cazadores; secciones de docs/decisiones.md para 5.1, 5.2 y 5.6 (agenda de eventos) usando el siguiente número libre; y las líneas de PROMPTS_LLM.md. Marca las dependencias entre tareas y cuáles pueden hacerse en paralelo. No uses heapq, bisect, collections, dict ni set en ninguna tarea.
+```
+
+Uso de la respuesta: Se generó specs/003-terreno-cazador/tasks.md con 102 tareas (T001 a T102) en 9 fases: preparación, fundamentos, US1 a US6 y cierre. Todas citan al menos un FR y 17 están marcadas como paralelizables. Los casos 1 a 5 del Apéndice B quedaron en T032 a T036 y los casos 6 y 7 en T015 y T016. Las secciones nuevas de docs/decisiones.md son la 14 (§5.1), la 15 (§5.2) y la 16 (§5.6); sus títulos quedan por comprobar contra el enunciado (T092). research.md se ajustó para remitir a esas tres secciones.
+
+### Entrada #75
+
+Fecha: 16/11/2026
+
+Integrante: Fiorella Porras Mora.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Analizar la consistencia entre spec.md, plan.md y tasks.md de la especificación 003 antes de implementar.
+
+Prompt enviado:
+
+```text
+/speckit-analyze
+```
+
+Uso de la respuesta: Informe de solo lectura, sin cambios en archivos. Cobertura de 27 de 28 FR (96 %) y de los 7 SC, sin problemas críticos ni tareas sin requisito. Hallazgos principales: E1, FR-002 no tiene tareas y el código convierte con int() un costo no entero sin avisar; I1, la redacción de FR-009 no coincide con el rechazo de la ficha durante la partida (C1); D1, la spec aún no está confirmada en Git; D2, el registro de prompts quedaba para la fase de cierre; además faltan pruebas de algunos casos límite (C1, C2) y dos tareas no precisan bien archivo o método (U1, U2).
+
+### Entrada #76
+
+Fecha: 16/11/2026
+
+Integrante: Fiorella Porras Mora.
+
+Herramienta: Claude (chat con acceso al repositorio, modelo Sonnet 5.5), siguiendo specs/003-terreno-cazador/tasks.md.
+
+Objetivo: Implementar la parte de la Persona B de la spec 003 (costo de movimiento, cazador, vista, guardado, bench y documentos) a partir de la spec ya confirmada en Git.
+
+Prompt enviado:
+
+```text
+Este es mi proyecto, necesito hacer todas las funcionalidades de la persona B, como empiezo?
+```
+
+```text
+ahora hagamos lo que nos falta de nuestra parte persona B
+```
+
+Uso de la respuesta: El asistente preparó el código y las pruebas por incrementos (costo de movimiento y cazador; vista, guardado y retroceso; bench H1 a H8; documentos) como archivos .diff que se aplicaron con git apply y se probaron localmente antes de cada commit. Se corrigieron a mano dos errores que aparecieron al ejecutar las pruebas en el equipo real: una prueba de test_ir_a.py con rutas de costo 50 y un enemigo de prueba sin el campo comportamiento en la escena. Las mediciones de specs/003-terreno-cazador/mediciones.txt se corrieron con Python 3.10 en un entorno de trabajo, no en el equipo de la entrega; deben repetirse con `uv run python -m cripta --bench --semilla 42` antes de citarlas como definitivas. Las secciones 14 a 16 de docs/decisiones.md deben revisarse contra el enunciado (T092).
+

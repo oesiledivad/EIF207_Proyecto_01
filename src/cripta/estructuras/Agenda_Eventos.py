@@ -21,6 +21,10 @@ class HeapAgendaEventos:
         self._heap: list[Evento] = []
         self._secuencia_actual = 0
         self.historial = historial
+        # Monótono: lo suben abrir_salida y procesar_cierre_puerta. No pasa por el historial
+        # a propósito: la persecución del cazador lo compara con el valor de su último cálculo
+        # (FR-017) y cualquier reversión se detecta con `historial.reversiones`.
+        self.cambios_puertas = 0
 
     def registrar(self, etiqueta, datos):
         if self.historial is not None:

@@ -110,7 +110,7 @@ class PruebasApendiceB(unittest.TestCase):
         salas = IndiceSalas()
         salas.insertar(1, _sala(1, [["N", 2, True]]))
         errante = Errante("e", 10, 10, 1, 0, 100, 1, None)
-        self.assertEqual(errante.decidir_accion(99, salas, 0, random.Random(1)), ["esperar", None])
+        self.assertEqual(errante.decidir_accion(99, salas, 0, random.Random(1)), ["esperar", None, None])
 
     def test_rastreador_empate_elige_menor_id_y_rastro_caduca(self):
         salas = IndiceSalas()
@@ -120,8 +120,8 @@ class PruebasApendiceB(unittest.TestCase):
             vecina.ultimo_tiempo_visita = 100
             salas.insertar(id_, vecina)
         rastreador = Rastreador("r", 10, 10, 1, 0, 100, 5, None)
-        self.assertEqual(rastreador.decidir_accion(99, salas, 499, random.Random(1)), ["mover", 7])
-        self.assertEqual(rastreador.decidir_accion(99, salas, 500, random.Random(1)), ["esperar", None])
+        self.assertEqual(rastreador.decidir_accion(99, salas, 499, random.Random(1)), ["mover", 7, 100])
+        self.assertEqual(rastreador.decidir_accion(99, salas, 500, random.Random(1)), ["esperar", None, None])
 
     def test_antidoto_cancela_pulsos_y_veneno_hace_5(self):
         for cancelar, vida_esperada in [[True, 30], [False, 20]]:
@@ -191,7 +191,7 @@ class PruebasPuertasYRetroceso(unittest.TestCase):
         salas.insertar(2, _sala(2, [["O", 1, True]]))
         errante = Errante("e", 10, 10, 1, 0, 100, 1, None)
         salas.obtener(1).agregar_enemigo(errante)
-        self.assertEqual(errante.decidir_accion(99, salas, 0, sim.azar), ["esperar", None])
+        self.assertEqual(errante.decidir_accion(99, salas, 0, sim.azar), ["esperar", None, None])
 
         abrir_salida(salas.obtener(1).salidas.obtener("E"), 0, sim.agenda)  # se cierra en t=150
         sim.agenda.reprogramar(errante, 100, "accion_actor")

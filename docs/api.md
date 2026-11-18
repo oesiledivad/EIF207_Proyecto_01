@@ -233,8 +233,9 @@ Todas las entidades comparten un discriminador `clase`. El valor de `clase` dete
 | `ataque`         | `integer`          |                                             |
 | `defensa`        | `integer`          |                                             |
 | `velocidad`      | `integer`          | > 0                                         |
-| `comportamiento` | `string`           | uno de: `guardián`, `errante`, `rastreador` |
+| `comportamiento` | `string`           | uno de: `guardián`, `errante`, `rastreador`, `cazador` |
 | `suelta`         | `string[] \| null` | ids de objetos que suelta al morir          |
+| `rango`          | `integer`          | ≥ 0; obligatorio con `cazador`, ignorado en los demás |
 
 ### `Weapon`
 | Campo          | Tipo      |

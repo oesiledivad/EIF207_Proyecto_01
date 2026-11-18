@@ -135,6 +135,8 @@ class Aplicacion:
 
     def _crear_salas_desde_esqueleto(self, esqueleto: list[SalaModelo]) -> None:
         self._exploracion.ensamblar_salas(esqueleto)
+        if self._simulacion is not None:   # los cazadores buscan sobre el esqueleto completo (FR-015)
+            self._simulacion.persecucion.configurar(self._exploracion.entrantes)
 
     def _cargar_lote(self, origen_id: int) -> None:
         self._exploracion.cargar_lote(origen_id)
@@ -153,13 +155,13 @@ class Aplicacion:
         return (self._simulacion is not None and self._jugador is not None
                 and self._gestor.estado.activa)
 
-    def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None) -> ResultadoAccion:
+    def _accion_jugador(self, nombre_costo: str, ejecutar, argumento=None, costo=None) -> ResultadoAccion:
         # FR-034: toda acción del jugador que no sea un paso del propio viaje lo cancela.
         if self._viaje.activo and not self._viaje.en_paso:
             self._viaje.cancelar()
         # Punto fijo para incorporar la precarga en segundo plano (determinista, 4.2).
         self._avisar(self._cripta_service.completar_precarga())
-        return self._ciclo.ejecutar(nombre_costo, ejecutar, argumento)
+        return self._ciclo.ejecutar(nombre_costo, ejecutar, argumento, costo)
 
     def activar_precarga_en_segundo_plano(self) -> None:
         """Solo la vista interactiva: replay, bench y pruebas quedan sincrónicos."""

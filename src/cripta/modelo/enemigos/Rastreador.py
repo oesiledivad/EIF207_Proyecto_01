@@ -15,7 +15,7 @@ class Rastreador(Enemigo):
         super().__init__(identificador, vida, vida_max, ataque, defensa,
                           velocidad, sala, tiempo_siguiente, comportamiento)
 
-    def _decidir_movimiento(self, salas, tiempo_actual, azar):
+    def _decidir_movimiento(self, salas, tiempo_actual, azar, persecucion=None, sala_jugador_id=None):
         sala_actual = salas.obtener(self.sala)
         candidatos = []
         for s in sala_actual.salidas:  # ya no .values()
@@ -26,11 +26,12 @@ class Rastreador(Enemigo):
                 continue
             antiguedad = tiempo_actual - vecina.ultimo_tiempo_visita
             if antiguedad < DURACION_RASTRO:
-                candidatos.append([vecina.ultimo_tiempo_visita, vecina.id])
+                candidatos.append([vecina.ultimo_tiempo_visita, vecina.id, s])
 
         if not candidatos:
-            return ["esperar", None]
+            return ["esperar", None, None]
 
+        # Misma elección que antes; la salida solo viaja para informar su costo (FR-003, FR-022).
         candidatos = ordenar(candidatos, key=lambda par: [-par[0], par[1]])
-        _, destino = candidatos[0]
-        return ["mover", destino]
+        _, destino, salida = candidatos[0]
+        return ["mover", destino, salida.costo]

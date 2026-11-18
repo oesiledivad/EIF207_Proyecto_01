@@ -1,0 +1,17 @@
+Regresion de la spec 003 (T102)
+Mismo entorno y comando que linea_base.txt. Rama fiore con los cuatro incrementos de la Persona B.
+
+ERROR: pruebas.test_datos (unittest.loader._FailedTest)
+ERROR: pruebas.test_ensamblador (unittest.loader._FailedTest)
+ERROR: pruebas.test_guardar_llamadas (unittest.loader._FailedTest)
+FAIL: test_bench_no_abre_vista (pruebas.test_bench_conocimiento.PruebasBenchConocimiento)
+FAIL: test_bench_no_importa_arcade (pruebas.test_bench_resolubilidad.PruebasBenchResolubilidad)
+FAIL: test_menu_partida_volumen_limites_y_retorno (pruebas.test_configuracion.PruebasConfiguracion)
+FAIL: test_respeta_audio_configurado_por_entorno (pruebas.test_sonidos.PruebasAudio)
+Ran 341 tests in 32.534s
+FAILED (failures=4, errors=3, skipped=11)
+
+Comparacion nombre por nombre con linea_base.txt: las 7 fallas son exactamente las mismas (3 errores y 4 fallos).
+Fallas nuevas: ninguna. Pruebas: 294 en la base y 341 ahora (47 nuevas, todas pasan; las de test_grafica se omiten sin arcade).
+Seleccion del README (partida, inventario, retroceso, guardado, replay, bench, grafica): OK (10 omitidas por falta de arcade en este entorno).
+Pendiente en el equipo real: repetir con `uv run` (Python 3.13, con arcade) y confirmar que solo fallan test_datos y test_ensamblador.

@@ -112,5 +112,74 @@ class PruebasRutas(unittest.TestCase):
         self.assertIsNone(buscador.elegir_paso(5, salas.obtener(5).salidas, c.salida_usable))
 
 
+def _cuadricula(azar, lado):
+    """Cuadrícula lado x lado con salidas en ambos sentidos y costos 1 a 300 al azar."""
+    n = lado * lado
+    aristas = []
+    for fila in range(lado):
+        for col in range(lado):
+            a = fila * lado + col
+            if col + 1 < lado:
+                costo = azar.randint(1, 300)
+                aristas.append([a, "E", a + 1, costo])
+                aristas.append([a + 1, "O", a, costo])
+            if fila + 1 < lado:
+                costo = azar.randint(1, 300)
+                aristas.append([a, "S", a + lado, costo])
+                aristas.append([a + lado, "N", a, costo])
+    return _grafo(aristas, n) + (n,)
+
+
+class PruebasLimite(unittest.TestCase):
+    """Corte por costo de `distancias_hacia` (spec 003, T006)."""
+
+    def test_limite_nada_igual_que_antes(self):
+        """FR-025: con `limite` omitido las distancias son las de siempre."""
+        import random
+        azar = random.Random(11)
+        _, entrantes, n = _cuadricula(azar, 6)
+        a, b = BuscadorRutas(n), BuscadorRutas(n)
+        a.distancias_hacia(0, entrantes, _siempre)
+        b.distancias_hacia(0, entrantes, _siempre, None, None)
+        for sala in range(n):
+            self.assertEqual(a.distancia_de(sala), b.distancia_de(sala))
+
+    def test_limite_corta_busqueda(self):
+        """FR-025: con límite L ninguna sala con distancia real mayor que L queda fijada."""
+        import random
+        azar = random.Random(12)
+        _, entrantes, n = _cuadricula(azar, 8)
+        completa, cortada = BuscadorRutas(n), BuscadorRutas(n)
+        completa.distancias_hacia(0, entrantes, _siempre)
+        cortada.distancias_hacia(0, entrantes, _siempre, None, 250)
+        for sala in range(n):
+            real = completa.distancia_de(sala)
+            if real <= 250:
+                self.assertEqual(cortada.distancia_de(sala), real)
+            else:
+                valor = cortada.distancia_de(sala)
+                self.assertTrue(valor is None or valor > 250)
+
+    def test_limite_invariante(self):
+        """FR-017, FR-025: 500 cuadrículas con límites al azar cumplen el invariante del corte."""
+        import random
+        azar = random.Random(13)
+        for _ in range(500):
+            lado = azar.randint(2, 7)
+            _, entrantes, n = _cuadricula(azar, lado)
+            destino = azar.randrange(n)
+            limite = azar.randint(0, 900)
+            completa, cortada = BuscadorRutas(n), BuscadorRutas(n)
+            completa.distancias_hacia(destino, entrantes, _siempre)
+            cortada.distancias_hacia(destino, entrantes, _siempre, None, limite)
+            for sala in range(n):
+                real = completa.distancia_de(sala)
+                if real is not None and real <= limite:
+                    self.assertEqual(cortada.distancia_de(sala), real)
+                else:
+                    valor = cortada.distancia_de(sala)
+                    self.assertTrue(valor is None or valor > limite)
+
+
 if __name__ == "__main__":
     unittest.main()

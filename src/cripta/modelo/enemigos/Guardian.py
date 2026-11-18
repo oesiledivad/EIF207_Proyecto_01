@@ -13,5 +13,5 @@ class Guardian(Enemigo):
         super().__init__(identificador, vida, vida_max, ataque, defensa,
                           velocidad, sala, tiempo_siguiente, comportamiento)
 
-    def _decidir_movimiento(self, salas, tiempo_actual, azar):
-        return ["esperar", None]
+    def _decidir_movimiento(self, salas, tiempo_actual, azar, persecucion=None, sala_jugador_id=None):
+        return ["esperar", None, None]
