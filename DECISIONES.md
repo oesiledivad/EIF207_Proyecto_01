@@ -2,7 +2,7 @@
 
 EIF 207 · Estructuras de Datos.
 
-Este documento reúne las decisiones de diseño, sus costos y limitaciones. El detalle de operaciones está en [estructuras.md](estructuras.md).
+Este documento reúne las decisiones de diseño, sus costos y limitaciones. El detalle de operaciones está en [estructuras.md](docs/estructuras.md).
 
 ## 1. Agenda de eventos (§4.1)
 
@@ -21,7 +21,7 @@ Este documento reúne las decisiones de diseño, sus costos y limitaciones. El d
 | 2000        |        2,46 ms |       6,00 ms |        79,06 ms |        0,35 ms |
 
 **Reproducción:** `uv run cripta --bench`, sección «Agenda», implementada en
-[src/cripta/bench.py](../src/cripta/bench.py). Ejecución en el entorno de §11; una muestra por tamaño. Ambos reciben los mismos tiempos
+[src/cripta/bench.py](src/cripta/bench.py). Ejecución en el entorno de §11; una muestra por tamaño. Ambos reciben los mismos tiempos
 pseudoaleatorios, con `random.Random(42)`. Se mide primero insertar los $n$
 eventos y después vaciar la estructura, sin cancelaciones ni historial.
 
@@ -51,7 +51,7 @@ y actores de prueba; la alternativa almacena pares de tiempo y secuencia.
 | 2000  |                            6,22 ms |    0,622 µs |
 
 **Reproducción:** `uv run cripta --bench`, sección «Rastreador.decidir_accion»,
-en [src/cripta/bench.py](../src/cripta/bench.py). Entorno de §11;
+en [src/cripta/bench.py](src/cripta/bench.py). Entorno de §11;
 una muestra por tamaño, cripta lineal y `random.Random(1)`. La construcción de
 la cripta queda fuera del tiempo. Cada llamada consulta la sala central y sus
 salidas; no hay rastro vigente, por lo que se mide la decisión de esperar.
@@ -149,9 +149,9 @@ El flujo de fichas es:
 
 **JSON de red o disco → `parsear_ficha` → ficha `dataclass` → catálogo en memoria → juego.**
 
-[CatalogoService](../src/cripta/servicio/CatalogoService.py) llama a [parsear_ficha](../src/cripta/dto/FactoryDto_Ficha.py), que selecciona `FichaEnemigo`, `FichaArma` u otra clase según `clase`. [FactoryDto_Partida.py](../src/cripta/dto/FactoryDto_Partida.py) convierte detalles y salas, aplicando valores predeterminados. Los datos crudos quedan en la frontera de transporte y pueden persistirse en disco; el catálogo de juego recibe fichas, tanto en red como en offline.
+[CatalogoService](src/cripta/servicio/CatalogoService.py) llama a [parsear_ficha](src/cripta/dto/FactoryDto_Ficha.py), que selecciona `FichaEnemigo`, `FichaArma` u otra clase según `clase`. [FactoryDto_Partida.py](src/cripta/dto/FactoryDto_Partida.py) convierte detalles y salas, aplicando valores predeterminados. Los datos crudos quedan en la frontera de transporte y pueden persistirse en disco; el catálogo de juego recibe fichas, tanto en red como en offline.
 
-**Evidencia.** [FichaEnemigo](../src/cripta/dto/EnemigoDto.py) hereda los campos de `FichaCatalogo` sin repetir un constructor; [ResultadoAccion](../src/cripta/dto/ResultadoAccion.py) declara `motivo=""` y `datos=None`. [Puntaje](../src/cripta/adaptadores/Puntajes.py) mantiene validación en `__post_init__` y usa `asdict` para preparar el JSON.
+**Evidencia.** [FichaEnemigo](src/cripta/dto/EnemigoDto.py) hereda los campos de `FichaCatalogo` sin repetir un constructor; [ResultadoAccion](src/cripta/dto/ResultadoAccion.py) declara `motivo=""` y `datos=None`. [Puntaje](src/cripta/adaptadores/Puntajes.py) mantiene validación en `__post_init__` y usa `asdict` para preparar el JSON.
 
 **Límites.** El parser rechaza clases desconocidas y el constructor rechaza campos obligatorios ausentes o argumentos no declarados. `dataclass` no valida tipos ni rangos, no hace inmutables los objetos por defecto y no reduce solicitudes HTTP. Con $f$ campos escalares realiza $O(f)$ asignaciones, igual que un constructor manual: su beneficio es la claridad y el mantenimiento.
 
@@ -191,7 +191,7 @@ Leer una sala binaria promedió **0,192 ms**. El acceso selectivo es su ventaja;
 
 ## 12. Resolubilidad de la cripta (Parte II, §3.5 y §5.4)
 
-**Necesidad y elección.** Decidir, antes de jugar y sin red durante la decisión, si la cripta se puede ganar, en qué orden se obtienen las llaves y, si no se puede, por qué. El modelo (`modelo/Resolubilidad.py`) recibe el esqueleto de salas y la ubicación publicada de las llaves; no conoce HTTP, archivos ni vista. Elegimos una única exploración en anchura por rondas con una lista de espera por llave (D1 y D2 de [research.md](../specs/001-resolubilidad/research.md)). Cada salida cerrada cuya llave aún no se tiene queda en la espera de esa llave; al obtener la llave se liberan sus salidas. La exploración no se detiene al ganar, porque la spec exige todas las llaves obtenibles (FR-007).
+**Necesidad y elección.** Decidir, antes de jugar y sin red durante la decisión, si la cripta se puede ganar, en qué orden se obtienen las llaves y, si no se puede, por qué. El modelo (`modelo/Resolubilidad.py`) recibe el esqueleto de salas y la ubicación publicada de las llaves; no conoce HTTP, archivos ni vista. Elegimos una única exploración en anchura por rondas con una lista de espera por llave (D1 y D2 de [research.md](specs/001-resolubilidad/research.md)). Cada salida cerrada cuya llave aún no se tiene queda en la espera de esa llave; al obtener la llave se liberan sus salidas. La exploración no se detiene al ganar, porque la spec exige todas las llaves obtenibles (FR-007).
 
 **Orden determinista.** La exploración avanza por rondas y cada ronda se ordena por id de sala con `ordenar` del proyecto. Las salidas de una sala se recorren por (destino, dirección) y las llaves de una sala por id. Con ello una llave publicada en varias salas se obtiene en la alcanzable primero y, en empate de ronda, en la de menor id (FR-008). Dos ejecuciones con los mismos datos dan el mismo orden.
 
@@ -223,7 +223,7 @@ Decisión tomada: se reportan los ciclos del grafo de testigos y no las combinac
 
 ### Comparación medida
 
-**Reproducción:** `uv run python -m cripta --bench --semilla 42`, sección «Resolubilidad», implementada en [src/cripta/bench.py](../src/cripta/bench.py). Entorno y semilla como en §11; cada tiempo es el mejor de 3 a 5 corridas, salvo la ingenua, que se ejecuta una vez. Las cifras completas están en [mediciones.txt](../specs/001-resolubilidad/mediciones.txt); con la misma semilla los conteos coinciden entre ejecuciones y los tiempos varían. Las criptas se generan por semilla: región base conectada, cadena de $K=S/10$ llaves donde la puerta $j$ exige la llave $j-1$, ramas decorativas, ubicaciones repetidas e ids de sala permutados.
+**Reproducción:** `uv run python -m cripta --bench --semilla 42`, sección «Resolubilidad», implementada en [src/cripta/bench.py](src/cripta/bench.py). Entorno y semilla como en §11; cada tiempo es el mejor de 3 a 5 corridas, salvo la ingenua, que se ejecuta una vez. Las cifras completas están en [mediciones.txt](specs/001-resolubilidad/mediciones.txt); con la misma semilla los conteos coinciden entre ejecuciones y los tiempos varían. Las criptas se generan por semilla: región base conectada, cadena de $K=S/10$ llaves donde la puerta $j$ exige la llave $j-1$, ramas decorativas, ubicaciones repetidas e ids de sala permutados.
 
 **M1: verificación frente a repetir la exploración por llave.**
 
@@ -265,7 +265,7 @@ El reporte cuesta cerca de 1 % a 3 % sobre la verificación y examina cada salid
 
 ## 13. Niebla de guerra e ir a (Parte II, §3.3, §3.4 y §5.3)
 
-**Necesidad y elección.** El jugador debe ver solo lo que conoce y poder viajar a una sala explorada por la ruta de menor costo, con pasos ordinarios. El modelo (`modelo/Conocimiento.py`, `modelo/Rutas.py`) no conoce HTTP, archivos ni vista. Las razones completas de cada decisión (D1 a D15) están en [research.md](../specs/002-niebla-ir-a/research.md); aquí se resumen con las mediciones de [mediciones.txt](../specs/002-niebla-ir-a/mediciones.txt) (`--bench --semilla 42`, K1 a K9).
+**Necesidad y elección.** El jugador debe ver solo lo que conoce y poder viajar a una sala explorada por la ruta de menor costo, con pasos ordinarios. El modelo (`modelo/Conocimiento.py`, `modelo/Rutas.py`) no conoce HTTP, archivos ni vista. Las razones completas de cada decisión (D1 a D15) están en [research.md](specs/002-niebla-ir-a/research.md); aquí se resumen con las mediciones de [mediciones.txt](specs/002-niebla-ir-a/mediciones.txt) (`--bench --semilla 42`, K1 a K9).
 
 **Estado de sala y memoria de puertas (D1, D2).** Dos listas planas de enteros pequeños: `estado_sala[id]` (0 desconocida, 1 avistada, 2 explorada) y `puerta[clave]` (0 sin observar, 1 abierta, 2 cerrada), con `clave = origen * 4 + dirección` (N 0, S 1, E 2, O 3). Un solo entero por sala evita estados imposibles y hace trivial serializar (`5n + 2` valores). Descartadas: dos listas booleanas, un atributo en `SalaJuego`, una lista de ids explorados con búsqueda lineal y `dict` o `set` (prohibidos por el principio I).
 
@@ -326,7 +326,7 @@ El reporte cuesta cerca de 1 % a 3 % sobre la verificación y examina cada salid
 
 ## 14. Costo del movimiento por terreno (Parte II, §5.1)
 
-**Necesidad y elección.** Cada conexión entre salas tiene un costo y moverse por ella consume ese costo de tiempo, igual para el jugador y para los enemigos. Las razones completas (D1 a D3) están en [research.md](../specs/003-terreno-cazador/research.md); aquí se resumen con las mediciones de [mediciones.txt](../specs/003-terreno-cazador/mediciones.txt) (`--bench --semilla 42`, H1 a H8).
+**Necesidad y elección.** Cada conexión entre salas tiene un costo y moverse por ella consume ese costo de tiempo, igual para el jugador y para los enemigos. Las razones completas (D1 a D3) están en [research.md](specs/003-terreno-cazador/research.md); aquí se resumen con las mediciones de [mediciones.txt](specs/003-terreno-cazador/mediciones.txt) (`--bench --semilla 42`, H1 a H8).
 
 **Jugador (D1).** `ExploracionControlador.mover` ya tiene la `SalidaSimple` antes de mover y pasa su `costo` por `Aplicacion._accion_jugador` y `CicloAccionesControlador.ejecutar` hasta `consumir_tiempo`. Esa función usa el costo recibido en lugar del costo base de la acción y calcula `intervalo = max(1, costo × 100 // velocidad)` con la fórmula de siempre (`calcular_intervalo`). Las demás acciones (esperar, atacar, usar, abrir) no pasan costo y valen lo mismo que en la Parte I.
 
@@ -408,11 +408,11 @@ Los contadores nunca bajan, ni siquiera cuando el historial revierte, para que d
 
 El mayor esqueleto del paquete tiene 50 salas, por eso se mide también con 2 000. Con decenas de cazadores el ciclo queda muy por debajo de 20 ms.
 
-**Conclusión.** El heap propio sigue siendo la elección: gana a la lista con la carga de la Parte II, ninguna regla de decisión pide cambiarlo y el ciclo con 50 y 100 cazadores cumple el límite. Los tiempos dependen del equipo (se midieron con Python 3.10 en una VM de trabajo y se repitieron en el equipo de entrega con Python 3.13, con las mismas conclusiones: H5 máximo 3,2 ms con 100 cazadores y el heap 12 veces más rápido en H6; ver [mediciones_equipo_entrega.txt](../specs/003-terreno-cazador/mediciones_equipo_entrega.txt)); lo reproducible es el orden de magnitud, las razones y los conteos deterministas.
+**Conclusión.** El heap propio sigue siendo la elección: gana a la lista con la carga de la Parte II, ninguna regla de decisión pide cambiarlo y el ciclo con 50 y 100 cazadores cumple el límite. Los tiempos dependen del equipo (se midieron con Python 3.10 en una VM de trabajo y se repitieron en el equipo de entrega con Python 3.13, con las mismas conclusiones: H5 máximo 3,2 ms con 100 cazadores y el heap 12 veces más rápido en H6; ver [mediciones_equipo_entrega.txt](specs/003-terreno-cazador/mediciones_equipo_entrega.txt)); lo reproducible es el orden de magnitud, las razones y los conteos deterministas.
 
 ## 17. Línea de tiempo y puntos de control (Parte II, §3.6 y §5.5)
 
-**Spec y plan.** [spec.md](../specs/004-linea-tiempo/spec.md), [plan.md](../specs/004-linea-tiempo/plan.md) y [research.md](../specs/004-linea-tiempo/research.md) (D1 a D12). Mediciones en [mediciones.txt](../specs/004-linea-tiempo/mediciones.txt) (`--bench --semilla 42`, L1 a L5). La decisión final **coincide con el plan.md original**: todas las mediciones confirmaron D1 a D12 y el K provisional de 50.
+**Spec y plan.** [spec.md](specs/004-linea-tiempo/spec.md), [plan.md](specs/004-linea-tiempo/plan.md) y [research.md](specs/004-linea-tiempo/research.md) (D1 a D12). Mediciones en [mediciones.txt](specs/004-linea-tiempo/mediciones.txt) (`--bench --semilla 42`, L1 a L5). La decisión final **coincide con el plan.md original**: todas las mediciones confirmaron D1 a D12 y el K provisional de 50.
 
 **Problema.** Consultar el estado de cualquier instante pasado (`historia <t>`, `historia #k`, `--replay --hasta`) sin copiar el estado en cada acción: como máximo un punto de control cada K acciones, ninguna consulta aplica o deshace más de K acciones, la memoria crece con los cambios y no con «acciones por tamaño del estado», ubicar el punto de control debe ser barato y el pergamino debe recortar la línea sin recorrerla entera.
 
@@ -459,7 +459,7 @@ Con K = 50 la memoria queda a 0,8 MiB del mínimo posible y la consulta peor est
 
 ## 18. Historial de retroceso con la carga nueva (Parte II, §5.6)
 
-**Spec.** [spec.md](../specs/004-linea-tiempo/spec.md) (FR-032) y [research.md](../specs/004-linea-tiempo/research.md) (D4, D12). La decisión **coincide con el plan**: el historial se conserva.
+**Spec.** [spec.md](specs/004-linea-tiempo/spec.md) (FR-032) y [research.md](specs/004-linea-tiempo/research.md) (D4, D12). La decisión **coincide con el plan**: el historial se conserva.
 
 **Pregunta.** ¿Siguen siendo adecuados los intervalos acotados de deltas de la sección 6 ahora que hay cazadores, costos variables y una línea de tiempo que observa el historial?
 
@@ -471,7 +471,7 @@ Con K = 50 la memoria queda a 0,8 MiB del mínimo posible y la consulta peor est
 
 ## 19. Diagnóstico HTTP y paquete actual para la entrega
 
-**Problema y requisitos.** La observación del primer proyecto pidió mejorar el logging. El resumen final de red y el replay no permitían reconstruir qué solicitudes fallaron o esperaron por 429. El paquete histórico tampoco incluía llaves ni la referencia publicada actual. Esta ampliación está especificada antes del código en [spec 001](../specs/001-resolubilidad/spec.md) (FR-030 y FR-031), con el [plan](../specs/001-resolubilidad/plan.md) y T090/T091. La decisión final coincide con ese plan.
+**Problema y requisitos.** La observación del primer proyecto pidió mejorar el logging. El resumen final de red y el replay no permitían reconstruir qué solicitudes fallaron o esperaron por 429. El paquete histórico tampoco incluía llaves ni la referencia publicada actual. Esta ampliación está especificada antes del código en [spec 001](specs/001-resolubilidad/spec.md) (FR-030 y FR-031), con el [plan](specs/001-resolubilidad/plan.md) y T090/T091. La decisión final coincide con ese plan.
 
 **Alternativas y decisión.** Agregar mensajes al replay mezclaría acciones deterministas con tiempos reales y diagnósticos. Imprimir únicamente en consola perdería la evidencia al cerrar la ventana. Se usa un logger de diagnóstico independiente, con un archivo rotativo de 1 MiB y tres respaldos; cada intento HTTP deja fecha, recurso, parámetros, resultado o clase de error, duración y solicitudes/presupuesto. La espera por 429 y el rechazo sin envío tienen entradas propias. No se guardan respuestas completas ni cabeceras. El costo es una escritura por intento y no pertenece al ciclo de simulación.
 
@@ -483,13 +483,13 @@ Con K = 50 la memoria queda a 0,8 MiB del mínimo posible y la consulta peor est
 
 ## 20. Medición del esqueleto publicado de referencia
 
-**Problema y trazabilidad.** El paquete histórico llegaba a 50 salas, pero el servicio publica una referencia de 300. Mantener solo pruebas sintéticas no daba evidencia directa sobre sus puertas y costos reales. [Spec 003](../specs/003-terreno-cazador/spec.md), FR-029, [plan](../specs/003-terreno-cazador/plan.md) y T104 fijan esta medición; también atiende FR-023 de la spec 001 y FR-038 de la spec 002. La decisión coincide con el plan.
+**Problema y trazabilidad.** El paquete histórico llegaba a 50 salas, pero el servicio publica una referencia de 300. Mantener solo pruebas sintéticas no daba evidencia directa sobre sus puertas y costos reales. [Spec 003](specs/003-terreno-cazador/spec.md), FR-029, [plan](specs/003-terreno-cazador/plan.md) y T104 fijan esta medición; también atiende FR-023 de la spec 001 y FR-038 de la spec 002. La decisión coincide con el plan.
 
 **Decisión.** Se conserva el benchmark anterior y se agrega una sección que elige el mayor esqueleto de datos_entrega, con empate por id de cripta. Se carga y ensambla fuera del cronómetro, preservando ids de sala, costos y puertas. Se miden el verificador puro, 20 pasos de ir a sobre conocimiento completo y 200 ciclos con 50 cazadores activos de prueba. El rango de prueba cubre todo el mapa alcanzable; estos actores son una carga añadida, no el contenido enemigo publicado. No cambia el juego ni sus estructuras.
 
 **Alternativas y límites.** Descargar al medir mezclaría latencia de HTTP con procesamiento y haría depender --bench de la API. Medir solo un mapa sintético del mismo tamaño no probaría la distribución real de costos y puertas. La captura separada permite repetir sin red; si falta, el programa indica NO MEDIDA. Los tiempos dependen del equipo y no garantizan 20 ms para cargas de estrés de mil enemigos.
 
-**Evidencia.** La sección «Referencia publicada» de `uv run cripta --bench --semilla 42` identifica cripta, versión y tamaño. La prueba `test_bench_publicada_determinista_sin_io_en_medicion` verifica que no hay lecturas de disco dentro del cronómetro, bloquea la red y compara decisiones entre dos corridas de la misma semilla. También se prueba un mapa con ids no consecutivos. La salida completa de la ejecución final se conserva en [mediciones_cierre.txt](../specs/003-terreno-cazador/mediciones_cierre.txt).
+**Evidencia.** La sección «Referencia publicada» de `uv run cripta --bench --semilla 42` identifica cripta, versión y tamaño. La prueba `test_bench_publicada_determinista_sin_io_en_medicion` verifica que no hay lecturas de disco dentro del cronómetro, bloquea la red y compara decisiones entre dos corridas de la misma semilla. También se prueba un mapa con ids no consecutivos. La salida completa de la ejecución final se conserva en [mediciones_cierre.txt](specs/003-terreno-cazador/mediciones_cierre.txt).
 
 
 En el equipo de entrega (Windows 11, Python 3.13, semilla 42), el mapa publicado de 300 salas, versión f9ed9afa683d, dio estos máximos:

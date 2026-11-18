@@ -1,6 +1,6 @@
 # Estructuras de datos
 
-Operaciones del código actual; las alternativas y mediciones están en [decisiones.md](decisiones.md). `list` se utiliza como almacenamiento de bajo nivel, no se emplea `dict` como índice propio.
+Operaciones del código actual; las alternativas y mediciones están en [decisiones.md](../DECISIONES.md). `list` se utiliza como almacenamiento de bajo nivel, no se emplea `dict` como índice propio.
 
 Notación: $n$ objetos, $k$ deltas, $c$ capacidad de caché, $p$ puntajes, $a$ acciones y $s$ salas del archivo.
 
@@ -75,7 +75,7 @@ Código: [Cache_Fichas.py](../src/cripta/estructuras/Cache_Fichas.py), [Agenda_E
 
 ## 7. Resolubilidad: cola con índice de cabeza e índice de llaves (§3.5, §5.4)
 
-Notación: $n$ elementos de la cola, $K$ llaves distintas, $m$ ids que se indexan (salidas cerradas y ubicaciones). Las razones de elegirlas y su comparación medida están en la [sección 12 de decisiones.md](decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
+Notación: $n$ elementos de la cola, $K$ llaves distintas, $m$ ids que se indexan (salidas cerradas y ubicaciones). Las razones de elegirlas y su comparación medida están en la [sección 12 de decisiones.md](../DECISIONES.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
 
 ### `ColaLista`: cola FIFO
 
@@ -106,7 +106,7 @@ Código: [Cola_Lista.py](../src/cripta/estructuras/Cola_Lista.py) e [Indice_Llav
 
 ## 8. Niebla de guerra e ir a: montículo, conocimiento y rutas (§3.3, §3.4)
 
-Notación: $S$ salas, $E$ salidas, $V$ salas alcanzadas por una búsqueda, $c$ cambios, $e$ salidas que llegan a una sala. Las razones y las mediciones están en la [sección 13 de decisiones.md](decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
+Notación: $S$ salas, $E$ salidas, $V$ salas alcanzadas por una búsqueda, $c$ cambios, $e$ salidas que llegan a una sala. Las razones y las mediciones están en la [sección 13 de decisiones.md](../DECISIONES.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
 
 ### `MonticuloMinimo`: montículo binario con eliminación perezosa
 

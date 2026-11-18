@@ -14,6 +14,8 @@ Los LLM se utilizaron como apoyo para comprender conceptos, explorar alternativa
 
 Las entradas #79 y #84 a #86 contienen paráfrasis de los prompts para expresar con claridad su propósito técnico; no son transcripciones literales. Se conservan las herramientas utilizadas y el uso de sus respuestas.
 
+Numeración: los números #61, #62 y #87 no se asignaron a ninguna entrada; no falta ningún prompt. Se conservan los números existentes porque otras entradas y archivos de specs/ los citan (por ejemplo #76 y #79).
+
 ## Registro cronológico de prompts
 
 ### Entrada #1
@@ -739,122 +741,6 @@ Respuestas enviadas, en orden: `B` · `Todos, ordenados por menor id` · `A; ina
 
 Uso de la respuesta: Registrar 5 aclaraciones en la spec y ajustar FR-002, FR-007, FR-012, FR-013 y FR-022, y agregar FR-018a.
 
-
-### Entrada #38
-
-Fecha: 15/11/2026
-
-Integrante: Kyara Anyelina Rojas
-
-Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
-
-Objetivo: Crear la constitución del proyecto con /speckit-constitution.
-
-Prompt enviado:
-
-```text
-/speckit-constitution Constitución del proyecto "Cripta" (EIF207 Estructuras de Datos, II Ciclo 2026, Parte II). Redacta todo en español, sin guiones largos. No explores el repositorio: usa solo esta información. Muestra el Sync Impact Report solo en tu respuesta, no lo dejes en el archivo.
-
-Principios:
-
-I. Estructuras de datos propias (NO NEGOCIABLE). Las estructuras de los problemas evaluados se implementan a mano. Prohibido usar dict o set como índice, caché o tabla de búsqueda, y prohibidos heapq, bisect, collections (deque, OrderedDict, defaultdict, Counter), networkx y cualquier biblioteca de grafos o de búsqueda de rutas. Permitido: list como almacenamiento contiguo, dict solo para leer el JSON de las respuestas, y struct, json, requests y arcade. Un plan que proponga una dependencia prohibida se corrige antes de generar tareas.
-
-II. Determinismo. La misma versión de cripta, la misma semilla y las mismas acciones producen la misma partida. Toda aleatoriedad usa la instancia propia random.Random(semilla) del modelo; nunca el generador global, la hora del sistema ni el orden de llegada de respuestas HTTP. Todo empate se resuelve con una regla explícita (número de secuencia, menor id).
-
-III. Separación MVC. El modelo no conoce HTTP, archivos ni la interfaz. La red y el disco se acceden mediante adaptadores. Los modos --replay, --bench y --verificar no instancian la vista.
-
-IV. Ningún dato de una cripta en el código. No se escriben en el código ids de salas o entidades, cantidades de páginas, presupuestos ni estadísticas de una cripta concreta; todo proviene del servicio web o de los datos offline.
-
-V. Presupuesto de red. Se respeta presupuesto_solicitudes de cada cripta. Toda solicitud HTTP cuenta, incluidos reintentos y la consulta de llaves. Lo persistido se reutiliza validando su versión.
-
-VI. Rendimiento con evidencia. Toda afirmación de rendimiento se respalda con mediciones de --bench, deterministas por semilla. Cada decisión de estructura de datos compara al menos una alternativa medida.
-
-VII. La especificación precede a la implementación (NO NEGOCIABLE). Cada capacidad tiene su spec.md confirmada en Git antes que el código que la implementa. Si la spec resulta incorrecta, se corrige primero la spec y luego el código, en commits separados. Cada requisito funcional tiene un id estable (FR-001); cada escenario de aceptación tiene una prueba automatizada o un partida.log que cita su FR; cada tarea cita los FR que atiende. spec.md no nombra estructuras de datos, clases ni módulos.
-
-Sección "Restricciones técnicas": Python 3.13 o superior con uv; vista con Arcade; pruebas con unittest en la carpeta pruebas/; agente Claude Code con spec-kit v1.3.3 y scripts sh; el equipo trabaja en Windows con CMD.
-
-Sección "Flujo de trabajo": por capacidad se ejecuta constitution (una vez), specify, clarify, plan, tasks, analyze e implement; clarify y analyze son obligatorios. Cada integrante trabaja en su propia rama y se integra a master mediante pull request con merge commit, nunca squash. Cada prompt a un LLM, incluidos los comandos de spec-kit con texto propio, se registra en la bitácora PROMPTS_LLM.md con fecha, integrante, herramienta, prompt textual y uso.
-
-Gobernanza: esta constitución prevalece sobre cualquier plan o tarea; se enmienda por pull request con versión semántica; /speckit-analyze verifica su cumplimiento. Versión 1.0.0, ratificada el 2026-11-15.
-```
-
-Uso de la respuesta: Generar .specify/memory/constitution.md v1.0.0 con los 7 principios del §2.3.
-
-### Entrada #39
-
-Fecha: 15/11/2026
-
-Integrante: Kyara Anyelina Rojas
-
-Herramienta: Claude Code (Sonnet 5.5).
-
-Objetivo: Ajustar la redacción de la constitución al español.
-
-Prompt enviado:
-
-> En .specify/memory/constitution.md reemplaza MUST, MUST NOT y SHOULD por DEBE, NO DEBE y DEBERÍA, ajustando la redacción para que se lea natural en español. No cambies nada más del contenido.
-
-Uso de la respuesta: Reemplazar los términos en inglés por DEBE / NO DEBE en la constitución.
-
-### Entrada #40
-
-Fecha: 15/11/2026
-
-Integrante: Kyara Anyelina Rojas
-
-Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
-
-Objetivo: Escribir la spec de resolubilidad con /speckit-specify.
-
-Prompt enviado:
-
-```text
-/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/001-resolubilidad. Redacta en español, sin guiones largos, usando DEBE / NO DEBE (no MUST). No explores el código del repositorio. Respeta la constitución: la spec no nombra estructuras de datos, clases, módulos ni algoritmos.
-
-Capacidad: verificación de resolubilidad de la cripta (Cripta Parte II, §3.5 y §5.4).
-
-Contexto del juego: una cripta tiene salas conectadas por salidas; algunas salidas son puertas cerradas que requieren una llave. La cripta declara sala_inicial, sala_salida y llave_salida. Se gana entrando a sala_salida a través de una puerta que requiere llave_salida.
-
-Qué debe hacer: antes de iniciar una partida, el programa determina si la cripta puede ganarse usando solo el esqueleto (salas, salidas, puertas cerradas y la llave que requiere cada una) y la ubicación de las llaves que publica el servicio para esa cripta (cada llave con su sala y, si la suelta un enemigo, el id de esa instancia de enemigo).
-
-Supuestos de la verificación: el jugador puede atravesar cualquier salida abierta y cualquier salida cerrada cuya llave ya obtuvo; las llaves no se consumen; todo enemigo puede ser derrotado; una llave que suelta un enemigo se considera obtenible en la sala donde ese enemigo inicia; las trampas y los cierres automáticos no bloquean, porque la puerta puede volver a abrirse con la misma llave.
-
-Resoluble: partiendo de la sala inicial y bajo esos supuestos, el jugador puede obtener llave_salida y llegar a sala_salida a través de una puerta que la requiere.
-
-Resultado si es resoluble: un orden de obtención de llaves en el que cada llave aparece después de todas las llaves necesarias para alcanzarla. Si hay varios órdenes válidos cualquiera sirve, pero debe ser determinista: la misma cripta produce siempre el mismo orden.
-
-Resultado si no es resoluble, un reporte con: las llaves que no pueden obtenerse; las puertas de la frontera bloqueada (puertas cerradas adyacentes a la región alcanzable) con la llave que requiere cada una; dónde se encuentra cada una de esas llaves (sala y, si aplica, enemigo que la suelta); y, si una llave está detrás de puertas que solo ella abre, directamente o mediante una cadena de llaves, el ciclo concreto, reportado de forma determinista.
-
-Comportamiento en el programa: al iniciar una partida la interfaz muestra el resultado de la verificación. Si la cripta no es resoluble, la partida no inicia, salvo que el programa se haya ejecutado con la bandera --forzar. La bandera --verificar <cripta> ejecuta únicamente la verificación e imprime el resultado en consola sin abrir la interfaz, también junto con --offline. La consulta de la ubicación de llaves cuenta dentro de presupuesto_solicitudes y su respuesta puede persistirse y reutilizarse mientras coincida la versión de la cripta.
-
-Rendimiento: la verificación de la cripta publicada más grande DEBE tardar menos de 200 ms en el equipo local, sin contar red. Obtener una llave puede volver alcanzable una región entera; repetir la exploración completa de la cripta cada vez que se obtiene una llave no es aceptable: el costo total DEBE crecer aproximadamente de forma lineal con la cantidad de salas, salidas y llaves. La frontera bloqueada y las dependencias entre llaves DEBEN salir de la misma exploración, no de exploraciones adicionales por cada llave. El modo --bench DEBE medir la verificación contra la alternativa ingenua de repetir la exploración por cada llave, con criptas sintéticas de muchas llaves encadenadas, deterministas por semilla.
-
-Escenarios de aceptación obligatorios (Apéndice B): (1) llave_salida está detrás de la única puerta que ella misma abre: no resoluble y el reporte señala el ciclo; (2) una llave está en el campo suelta de un enemigo errante: la verificación la ubica en la sala inicial del enemigo; (3) existen varios órdenes válidos de obtención de llaves: dos ejecuciones producen el mismo orden; (4) cripta no resoluble sin --forzar: la partida no inicia y se muestra el reporte. Casos adicionales: cripta resoluble donde la única llave necesaria es llave_salida; ciclo de dos llaves (A está detrás de una puerta que requiere B, y B detrás de una puerta que requiere A); --verificar no abre la interfaz; con la misma versión de cripta, la ubicación de llaves se reutiliza sin nueva solicitud de red.
-
-Fuera de alcance: la verificación no simula combate, tiempo, trampas ni movimiento de enemigos, no modifica el estado del juego y no reporta la ruta concreta del jugador, solo el orden de llaves.
-```
-
-Uso de la respuesta: Generar specs/001-resolubilidad/spec.md con 6 historias de usuario y los requisitos FR-001 a FR-029.
-
-### Entrada #41
-
-Fecha: 15/11/2026
-
-Integrante: Kyara Anyelina Rojas
-
-Herramienta: Claude Code (Sonnet 5.5) con spec-kit v1.3.3.
-
-Objetivo: Resolver ambigüedades de la spec de resolubilidad con /speckit-clarify.
-
-Prompt enviado:
-
-```text
-/speckit-clarify Prioriza estas ambigüedades: (1) si el orden de llaves incluye todas las llaves obtenibles o solo las necesarias para ganar; (2) qué se reporta cuando hay varios ciclos; (3) qué pasa si una misma llave aparece en varias ubicaciones; (4) si la partida inicia cuando la ubicación de llaves no está disponible; (5) qué código de salida devuelve --verificar. Ajusta el escenario US1-1 y el caso borde "llave_salida en la sala inicial" para que sean consistentes con la respuesta (1). Redacta en español, sin guiones largos, usando DEBE / NO DEBE.
-```
-
-Respuestas enviadas, en orden: `B` · `Todos, ordenados por menor id` · `A; inalcanzable: listar todas ubicaciones` · `A` · `A`
-
-Uso de la respuesta: Registrar 5 aclaraciones en la spec y ajustar FR-002, FR-007, FR-012, FR-013 y FR-022, y agregar FR-018a.
 
 ### Entrada #42
 
@@ -1844,3 +1730,25 @@ Sobre conservar la redacción de las entradas anteriores:
 > mantener los que ya hicimos y listo, es decir los que arreglamos
 
 Uso de la respuesta: Se revisaron los dos enunciados, el código, el historial de especificaciones, las pruebas y el servicio actual. Se especificaron primero los requisitos de diagnóstico de red y de captura completa (spec 001, FR-030/031), y la medición sobre la referencia publicada (spec 003, FR-029). Se implementó un diagnóstico HTTP rotativo separado del replay, se corrigió la aplicación del presupuesto en --verificar y se descargó un paquete actual completo en datos_entrega sin sobrescribir datos_offline. Se añadió al benchmark la medición del esqueleto publicado con 50 cazadores de prueba, se actualizaron el README y las decisiones y se conservó la identificación de las paráfrasis previas. La constitución 1.1.0 admite esas paráfrasis identificadas por decisión del equipo. La evidencia de validación final se conserva en specs/003-terreno-cazador/mediciones_cierre.txt y validacion_cierre.txt.
+
+### Entrada #89
+
+Fecha: 18/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5).
+
+Objetivo: Revisar master contra los dos enunciados antes de entregar y corregir los pendientes encontrados.
+
+Prompts enviados (en orden):
+
+> "E:\De_David\EIF207\Primer Proyecto - Estructuras de Datos II 2026.pdf"
+>
+> "E:\De_David\EIF207\Segundo Proyecto - Estructuras de Datos II 2026.pdf"
+>
+> Revisemos contra enunciado si nuestro master ya está listo para entregar
+
+> Sí, corrígelos
+
+Uso de la respuesta: Se ejecutaron la suite completa (389 pruebas), --bench, --verificar, --replay y --replay --hasta, y se revisaron las restricciones de P1 §7 y P2 §6.2 y el orden de spec y código en Git. Se movieron DECISIONES.md y PROMPTS_LLM.md a la raíz según P2 §7.2, se eliminó la copia duplicada de las entradas #38 a #41 de esta bitácora, se aclararon los números no asignados y se quitó un valor de respaldo con estadísticas de jugador escritas en el código (P1 §9) que ninguna fuente de datos alcanzaba.
