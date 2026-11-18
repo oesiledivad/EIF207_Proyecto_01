@@ -125,6 +125,7 @@ class InicioPartidaControlador:
             return ResultadoInicio(ok=False, motivo=f"No se pudo preparar la sala inicial: {error}")
         app._gestor.refrescar_sala_actual()
         app._sincronizar_estado()
+        app._linea.iniciar()   # spec 004: la línea de tiempo empieza en el instante 0
 
         if app._partida.registro is not None:
             try:

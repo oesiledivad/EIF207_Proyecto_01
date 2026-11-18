@@ -10,6 +10,7 @@ from cripta.controlador.CheatsControlador import CheatsControlador
 from cripta.controlador.InicioPartidaControlador import InicioPartidaControlador
 from cripta.controlador.CicloAccionesControlador import CicloAccionesControlador
 from cripta.controlador.ViajeControlador import ViajeControlador
+from cripta.controlador.LineaTiempoControlador import LineaTiempoControlador
 
 from cripta.adaptadores.Crypt_Data_Source import CryptDataSource
 from cripta.adaptadores.Almacen_Disco import AlmacenDisco
@@ -20,6 +21,7 @@ from cripta.controlador.CombateControlador import CombateControlador
 from cripta.controlador.EfectosControlador import EfectosControlador
 
 from cripta.dto.Conocimiento_dto import MapaConocido, ResultadoViaje
+from cripta.dto.Historia_dto import ResultadoHistoria
 from cripta.dto.Partida_dto import (
     CriptaResumen,
     DetallesCripta,
@@ -47,7 +49,7 @@ class Aplicacion:
 
     def __init__(self, data_source: CryptDataSource, capacidad_cache: int = 25,
                 almacen: AlmacenDisco | None = None, carpeta_logs=None, ruta_puntajes=None, ruta_guardado=None,
-                offline_dir=None, forzar: bool = False) -> None:
+                offline_dir=None, forzar: bool = False, checkpoint_cada: int | None = None) -> None:
         self._forzar = forzar   # --forzar: la vista no lo conoce (FR-016)
         self._cripta_service = CriptaService(
             data_source, Cache_Fichas(capacidad=capacidad_cache), almacen
@@ -69,6 +71,7 @@ class Aplicacion:
         self._inicio = InicioPartidaControlador(self)
         self._ciclo = CicloAccionesControlador(self)
         self._viaje = ViajeControlador(self)   # estado del viaje: NO es estado del juego
+        self._linea = LineaTiempoControlador(self, checkpoint_cada)   # spec 004
 
     #  Selección
 
@@ -106,6 +109,12 @@ class Aplicacion:
     def mapa_conocido(self) -> MapaConocido:
         """Mapa que conoce el jugador; no consume tiempo ni escribe en partida.log (FR-018)."""
         return self._exploracion.mapa_conocido()
+
+    #  Línea de tiempo (delegado a LineaTiempoControlador, spec 004)
+
+    def historia(self, texto) -> ResultadoHistoria:
+        """`historia <t>` o `historia #k`: no consume tiempo ni se registra (FR-002 a FR-007)."""
+        return self._linea.historia(texto)
 
     #  Viaje automático «ir a» (delegado a ViajeControlador)
 
@@ -274,6 +283,7 @@ class Aplicacion:
         resultado = self._partida.retroceder()
         if resultado.ok:
             self._viaje.cancelar()   # FR-034: el viaje no continúa tras revertir su último paso
+            self._linea.tras_pergamino()   # spec 004, FR-010 y FR-011
             self._avisar(self._cripta_service.reproteger(anteriores, self._tipos_activos()))
             self._despues_del_ciclo()
             self._bitacora.append(Mensaje("efecto", "Usaste un pergamino de retroceso."))

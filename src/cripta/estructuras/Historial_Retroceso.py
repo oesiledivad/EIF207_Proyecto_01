@@ -57,6 +57,9 @@ class Historial_Retroceso:
         # Monótono: cuenta las reversiones (de un intervalo abierto o con pergamino). `limpiar` no
         # lo reinicia. La persecución del cazador lo usa como parte de su clave (FR-017, FR-024).
         self.reversiones = 0
+        # Observador opcional de cada cambio registrado: la línea de tiempo (spec 004, D4) lo usa
+        # para saber qué enemigos cambiaron. Recibe (etiqueta, datos) antes de aplicar el cambio.
+        self.observador: Callable[[str, Any], None] | None = None
 
     def abrir_intervalo(self) -> None:
         """Inicia un nuevo intervalo de cambios."""
@@ -74,6 +77,8 @@ class Historial_Retroceso:
         if self._abierto is None:
             raise RuntimeError("No hay intervalo abierto.")
         self._abierto.cambios.append(Cambio(etiqueta, datos))
+        if self.observador is not None:
+            self.observador(etiqueta, datos)
 
     def registrar_si_abierto(self, etiqueta: str, datos: Any) -> None:
         if self._abierto is not None:

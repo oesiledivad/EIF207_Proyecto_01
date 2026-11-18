@@ -375,6 +375,11 @@ class VentanaCripta(arcade.Window):
             self.show_view(Panel(self, "MAPA CONOCIDO · CLIC PARA IR", opciones,
                                  texto="Nada conocido todavía." if not opciones else ""))
             return
+        if accion == "historia":
+            # Spec 004, FR-028: consulta de la línea de tiempo; no consume tiempo del juego.
+            from .historia import EntradaHistoria
+            self.show_view(EntradaHistoria(self))
+            return
         if accion == "ayuda":
             texto = ("Clic en una puerta: abrir o moverse · Flechas: moverse\n"
                      "Clic en un enemigo: seleccionar · Doble clic o A: atacar\n"
@@ -384,6 +389,7 @@ class VentanaCripta(arcade.Window):
                      "Alt+P/V/N/R: ordenar el inventario por peso/valor/nombre/real\n"
                      "Alt+D: alternar ascendente/descendente\n"
                      "C: mapa conocido; clic en una sala explorada para ir a ella (cualquier acción cancela el viaje)\n"
+                     "H: historia de la partida (historia <t> o historia #k)\n"
                      "I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido · F3: música\n"
                      "Minimapa: dorado = salida, rojo = cerrada.")
             self.show_view(Panel(self, "AYUDA", texto=texto))
@@ -409,6 +415,7 @@ class VentanaCripta(arcade.Window):
                 ["Continuar", lambda: None],
                 ["Información de la sala (I)", lambda: self.abrir_panel("informacion")],
                 ["Mapa conocido (C)", lambda: self.abrir_panel("mapa")],
+                ["Historia de la partida (H)", lambda: self.abrir_panel("historia")],
                 ["Guardar partida", self.guardar_partida],                 # <- NUEVA
                 ["Cargar partida guardada", self.elegir_guardado],
                 ["Cheats (sin puntajes, guardado ni replay)", lambda: self.abrir_panel("cheats")],
@@ -607,6 +614,8 @@ class VentanaCripta(arcade.Window):
             self.ejecutar("informacion")
         elif symbol == arcade.key.C:
             self.ejecutar("mapa")
+        elif symbol == arcade.key.H:
+            self.abrir_panel("historia")
         elif symbol == arcade.key.A:
             self.ejecutar("atacar")
         elif symbol == arcade.key.PERIOD:
