@@ -39,6 +39,14 @@ BARRA_X, BARRA_Y, BARRA_ANCHO, BARRA_ALTO = [8, 8, 784, 70]
 # Compatibilidad con pantallas que usan estos nombres
 FONDO = FONDO
 
+# Oscuridad de la sala (spec 002, FR-042 a FR-045): radio de visibilidad alrededor del jugador, en
+# píxeles virtuales. La antorcha encendida lo amplía al menos al triple (FR-043).
+RADIO_SIN_ANTORCHA = 70
+RADIO_CON_ANTORCHA = 230
+OPACIDAD_OSCURIDAD = 200      # niebla en penumbra: se adivinan las formas, no los detalles (FR-042)
+COLOR_NIEBLA = (14, 16, 24)   # gris azulado muy oscuro, no negro puro
+ESCALA_MASCARA = 2            # la máscara se genera a la mitad de resolución (estilo pixel art)
+
 # Marca propia del cazador bajo sus pies (distinta del rojo de la selección; FR-021)
 COLOR_CAZADOR = [150, 90, 230]
 
@@ -67,6 +75,9 @@ class Escena:
         self._clave_trampas = None
         self._disparadas: list[str] = []
         self._dardos: list[list] = []
+        # Máscaras de oscuridad ya generadas: [clave, textura]; pocas, se buscan en orden.
+        self._mascaras: list[list] = []
+        self.radio_actual = 0
 
     # Atajos usados por otras pantallas
     @property
@@ -120,6 +131,7 @@ class Escena:
         self.sala(vista, p, cuadro)
         self.entidades(vista, p, cuadro)
         self.dardos_en_vuelo(vista)
+        self.oscuridad(vista, p)        # después de la sala y antes de los paneles (FR-045)
         self.minimapa(vista, p)
         self.mensaje_estado(vista)
         self.inventario(vista, inventario)
@@ -396,6 +408,59 @@ class Escena:
             self.burbujas_veneno(vista, px, py, detras=False)
         if vista.pausa_visual and vista.cambio_vida:
             self.numero(vista.cambio_vida, px, py + alto + 4, vista.pausa_visual, vista.duracion_visual)
+
+    @staticmethod
+    def radio_visible(antorcha: bool, parpadeo: int = 0) -> int:
+        """Radio de visibilidad en píxeles virtuales (FR-042, FR-043); la antorcha oscila un poco."""
+        if antorcha:
+            return RADIO_CON_ANTORCHA + (0, 6, -4)[parpadeo % 3]
+        return RADIO_SIN_ANTORCHA
+
+    @staticmethod
+    def mascara_oscuridad(radio: int, cx: float, cy: float):
+        """Imagen RGBA del tamaño de la sala: transparente dentro del radio y oscura fuera.
+
+        `cx`, `cy` son el centro de la luz relativo a la esquina inferior izquierda de la sala.
+        El borde se difumina con anillos concéntricos para que no sea un corte seco.
+        """
+        ancho, alto = SALA_ANCHO // ESCALA_MASCARA, SALA_ALTO // ESCALA_MASCARA
+        imagen = Image.new("RGBA", (ancho, alto), (*COLOR_NIEBLA, OPACIDAD_OSCURIDAD))
+        dibujo = ImageDraw.Draw(imagen)
+        x = cx / ESCALA_MASCARA
+        y = alto - cy / ESCALA_MASCARA            # PIL cuenta las filas desde arriba
+        r = radio / ESCALA_MASCARA
+        anillos = 14
+        for i in range(anillos, -1, -1):          # de afuera hacia adentro, cada vez más claro
+            fraccion = i / anillos
+            radio_anillo = r * (0.55 + 0.45 * fraccion)
+            opacidad = int(OPACIDAD_OSCURIDAD * fraccion ** 1.6)
+            dibujo.ellipse([x - radio_anillo, y - radio_anillo, x + radio_anillo, y + radio_anillo],
+                           fill=(*COLOR_NIEBLA, opacidad))
+        return imagen
+
+    def oscuridad(self, vista, p):
+        """Oscurece la sala salvo el radio de visibilidad del jugador (FR-042 a FR-045). Solo dibuja."""
+        if not p.activa and not p.terminada:
+            return
+        antorcha = self.equipo_jugador(p)[2]
+        parpadeo = int(vista.animacion * 3) if antorcha else 0
+        radio = self.radio_visible(antorcha, parpadeo)
+        self.radio_actual = radio   # lo consultan las pruebas de la vista
+        px, py = self.posicion_jugador(vista)
+        cx = int(px - SALA_X) // 4 * 4             # se agrupa para reutilizar máscaras al animar
+        cy = int(py + 28 - SALA_Y)                 # centro del cuerpo, no los pies
+        clave = [radio, cx, cy]
+        textura = None
+        for guardada, tex in self._mascaras:
+            if guardada == clave:
+                textura = tex
+                break
+        if textura is None:
+            textura = arcade_textura(self.mascara_oscuridad(radio, cx, cy))
+            self._mascaras.append([clave, textura])
+            if len(self._mascaras) > 48:
+                self._mascaras.pop(0)
+        self.lienzo.imagen(textura, SALA_X, SALA_Y, SALA_ANCHO, SALA_ALTO)
 
     def equipo_jugador(self, p):
         """[arma, armadura, antorcha] visibles: lo equipado en el inventario y la antorcha encendida."""
