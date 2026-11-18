@@ -96,7 +96,7 @@ uv run python -m unittest discover -s pruebas
 - Ningún `heapq`, `bisect`, `collections`, `sorted(` ni `.sort(` en archivos nuevos o modificados, y
   ningún `dict` ni `set` como índice (principio I).
 - Ningún id de sala, enemigo o cripta escrito en el código (principio IV).
-- Cada tarea cita sus FR y cada prompt quedó en `docs/PROMPTS_LLM.md`.
+- Cada tarea cita sus FR y cada prompt quedó en `PROMPTS_LLM.md`.
 
 ## Resultado de la validación
 

@@ -259,7 +259,7 @@ La sala se ve cubierta por una niebla salvo un radio pequeño alrededor del juga
 - **Ir a:** en el mapa, haz clic sobre una sala explorada. El viaje avanza un paso por vez por la ruta de menor costo, cada paso es un movimiento ordinario y la ruta se recalcula antes de cada paso. Se detiene al llegar, al ver enemigos vivos en una sala, al recibir daño, si ya no hay ruta conocida, si un paso se rechaza o si termina la partida, y siempre muestra el motivo en la bitácora. Cualquier otra acción (incluido el pergamino con **P**) lo cancela. El viaje no abre puertas ni usa salas que no exploraste.
 - **Registro:** al aceptar la orden, `partida.log` recibe una línea de comentario `# ir_a <sala>` antes del primer paso y después un `["mover", "<dirección>"]` por paso. El reproductor ignora las líneas que empiezan por `#`, así que `--replay` llega al mismo estado final.
 
-Las decisiones, la complejidad y las mediciones están en la [sección 13 de decisiones.md](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
+Las decisiones, la complejidad y las mediciones están en la [sección 13 de decisiones.md](DECISIONES.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
 
 ### Terreno y cazador
 
@@ -267,7 +267,7 @@ Cada salida tiene un costo (1 a 300; vale 100 si no lo declara) y moverse por el
 
 El **cazador** es un enemigo que conoce todo el mapa y persigue al jugador por la ruta de menor costo, pero solo si está dentro de su `rango` (en costo de movimiento); fuera de él espera. En la interfaz lleva un contorno morado bajo los pies y su texto emergente dice «cazador · rango N». Su ficha debe traer el campo `rango` (entero ≥ 0). No usa azar, se guarda y se reproduce igual que los demás enemigos.
 
-Las decisiones, la complejidad y las mediciones (H1 a H8) están en las secciones [14](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51), [15](docs/decisiones.md#15-enemigo-cazador-y-búsqueda-compartida-parte-ii-52) y [16](docs/decisiones.md#16-agenda-de-eventos-con-cazadores-parte-ii-56) de decisiones.md.
+Las decisiones, la complejidad y las mediciones (H1 a H8) están en las secciones [14](DECISIONES.md#14-costo-del-movimiento-por-terreno-parte-ii-51), [15](DECISIONES.md#15-enemigo-cazador-y-búsqueda-compartida-parte-ii-52) y [16](DECISIONES.md#16-agenda-de-eventos-con-cazadores-parte-ii-56) de decisiones.md.
 
 ### Línea de tiempo: historia de la partida
 
@@ -279,7 +279,7 @@ Sin interfaz, `--hasta` imprime el mismo resumen al reproducir un registro; si e
 uv run cripta --offline --replay partidas/<archivo>.log --hasta 500
 ```
 
-`--checkpoint-cada K` fija cada cuántas acciones se guarda una copia completa del estado (por defecto 50, entero ≥ 1). Una partida guardada conserva la línea de tiempo y su K; un guardado de la Parte I se rechaza por formato incompatible. Decisiones y mediciones en las secciones [17](docs/decisiones.md#17-línea-de-tiempo-y-puntos-de-control-parte-ii-36-y-55) y [18](docs/decisiones.md#18-historial-de-retroceso-con-la-carga-nueva-parte-ii-56) de decisiones.md.
+`--checkpoint-cada K` fija cada cuántas acciones se guarda una copia completa del estado (por defecto 50, entero ≥ 1). Una partida guardada conserva la línea de tiempo y su K; un guardado de la Parte I se rechaza por formato incompatible. Decisiones y mediciones en las secciones [17](DECISIONES.md#17-línea-de-tiempo-y-puntos-de-control-parte-ii-36-y-55) y [18](DECISIONES.md#18-historial-de-retroceso-con-la-carga-nueva-parte-ii-56) de decisiones.md.
 
 ### Medir rendimiento
 
@@ -306,7 +306,7 @@ uv run python herramientas/descargar_paquete_offline.py --destino datos_entrega_
 La herramienta exige un destino nuevo, respeta el presupuesto y los lotes de diez, descarga todas las páginas, contenido, fichas, botín y llaves, y comprueba las versiones antes de publicar la captura.
 
 
-Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54). Las de la niebla de guerra y «ir a» están en la [sección 13](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53) y las de terreno y cazador en las secciones [14 a 16](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51); la salida de referencia está en [mediciones.txt](specs/003-terreno-cazador/mediciones.txt).
+Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](DECISIONES.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54). Las de la niebla de guerra y «ir a» están en la [sección 13](DECISIONES.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53) y las de terreno y cazador en las secciones [14 a 16](DECISIONES.md#14-costo-del-movimiento-por-terreno-parte-ii-51); la salida de referencia está en [mediciones.txt](specs/003-terreno-cazador/mediciones.txt).
 
 ### Verificar la resolubilidad de una cripta
 
@@ -325,7 +325,7 @@ Al iniciar una partida la cripta también se verifica. Si no es resoluble, la pa
 uv run cripta --forzar --cripta cripta-05
 ```
 
-El algoritmo, la complejidad y las mediciones están en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
+El algoritmo, la complejidad y las mediciones están en la [sección 12 de decisiones.md](DECISIONES.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
 
 ### Consultar la ayuda
 
@@ -407,7 +407,7 @@ Cada capacidad tiene su carpeta con `spec.md`, `plan.md`, `tasks.md`, investigac
 | [003-terreno-cazador](specs/003-terreno-cazador/spec.md) | Terreno con costo y cazador (§3.1, §3.2, §5.1, §5.2, §5.6 agenda) |
 | [004-linea-tiempo](specs/004-linea-tiempo/spec.md) | Línea de tiempo y puntos de control (§3.6, §5.5, §5.6 retroceso) |
 
-Entregables de §7.2: el Documento de Decisiones está en [docs/decisiones.md](docs/decisiones.md) (secciones 12 a 18 para la Parte II) y la bitácora de prompts, incluidos los comandos de spec-kit, en [docs/PROMPTS_LLM.md](docs/PROMPTS_LLM.md). Los dos siguen en `docs/`, donde estaban desde la Parte I.
+Entregables de §7.2: el Documento de Decisiones está en [DECISIONES.md](DECISIONES.md) (secciones 12 a 18 para la Parte II) y la bitácora de prompts, incluidos los comandos de spec-kit, en [PROMPTS_LLM.md](PROMPTS_LLM.md). Ambos están en la raíz del repositorio, como pide §7.2.
 
 Dos dudas del enunciado no recibieron respuesta antes de la entrega y se resolvieron por inferencia. (1) El enunciado anuncia los ajustes de límites como enmienda «(§2.7)», pero esa sección no existe y no se publicó ninguna, así que se usan los límites de §6.1 tal como están: 20 ms, 200 ms, 50 ms y 5 ms. (2) La muerte de otros actores no cambia la decisión del cazador (FR-018 de la spec 003, con su razonamiento en los Supuestos).
 
@@ -471,10 +471,10 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 | `src/cripta/replay/`                         | Registro y reproducción de acciones                                  |
 | `datos_offline/`, `datos_entrega/`, `pruebas/`, `herramientas/` | Datos históricos y actuales, pruebas y utilidades        |
 
-- [Decisiones de diseño y análisis de estructuras](docs/decisiones.md).
+- [Decisiones de diseño y análisis de estructuras](DECISIONES.md).
 - [Estructuras de datos: operaciones y complejidades](docs/estructuras.md).
 - [Contrato de la API](docs/api.md).
-- [Bitácora de uso de LLM](docs/PROMPTS_LLM.md).
+- [Bitácora de uso de LLM](PROMPTS_LLM.md).
 - [Procedencia de los packs gráficos](src/cripta/vista/recursos/PACKS.md) y [términos de las antorchas de Szadi art](src/cripta/vista/recursos/catacombs/PROCEDENCIA.md).
 - [Fuente Cripta Pixel](src/cripta/vista/recursos/fuente/PROCEDENCIA.md), [música](src/cripta/vista/recursos/musica/PROCEDENCIA.md) y [efectos de sonido propios](src/cripta/vista/recursos/sonidos/PROCEDENCIA.md). El arte propio del juego se distribuye exportado a PNG en `src/cripta/vista/recursos/propios/`; los recursos externos conservan sus respectivos términos de uso.
 

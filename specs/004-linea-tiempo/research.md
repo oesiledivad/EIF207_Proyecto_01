@@ -4,7 +4,7 @@
 
 Cada decisión indica qué requisitos atiende, las alternativas consideradas y por qué se eligió. Las
 mediciones previstas (L1 a L5) se ejecutan con `--bench` y sus resultados finales van a
-`docs/decisiones.md`, secciones 17 (§5.5) y 18 (§5.6, retroceso).
+`DECISIONES.md`, secciones 17 (§5.5) y 18 (§5.6, retroceso).
 
 ## D1. Qué guarda la línea: el estado observable (FR-005, FR-006, FR-014)
 

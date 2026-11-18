@@ -229,14 +229,14 @@
 
 ## Fase 9: Cierre y transversales
 
-- [x] T092 Redactar en `docs/decisiones.md` la sección «14. Costo del movimiento por terreno (Parte II, §5.1)», tras la sección 13 de la spec 002 y con el mismo estilo: dónde se fija el costo del jugador y de los enemigos (D1, D2), preservación del azar, reescalado existente (D3), complejidad y la medición H6. Comprobar el título contra el enunciado antes de confirmarla. Cita FR-001 a FR-007.
-- [x] T093 Redactar en `docs/decisiones.md` la sección «15. Enemigo cazador y búsqueda compartida (Parte II, §5.2)»: búsqueda compartida frente a individual (D5), corte por rango y su invariante (D6), límite (D7), clave de invalidación con contadores monótonos y tabla de eventos (D8), ficha y guardado (D9, D10), con los números de H1 a H5, H7 y H8 de `specs/003-terreno-cazador/mediciones.txt`. Depende de T091. Cita FR-011 a FR-018 y FR-025.
-- [x] T094 Redactar en `docs/decisiones.md` la sección «16. Agenda de eventos con cazadores (Parte II, §5.6)»: repetir el análisis de la sección 1 con la carga nueva (H6) y el ciclo de H5, y concluir si el heap propio sigue siendo la elección. Depende de T091. Cita FR-025.
+- [x] T092 Redactar en `DECISIONES.md` la sección «14. Costo del movimiento por terreno (Parte II, §5.1)», tras la sección 13 de la spec 002 y con el mismo estilo: dónde se fija el costo del jugador y de los enemigos (D1, D2), preservación del azar, reescalado existente (D3), complejidad y la medición H6. Comprobar el título contra el enunciado antes de confirmarla. Cita FR-001 a FR-007.
+- [x] T093 Redactar en `DECISIONES.md` la sección «15. Enemigo cazador y búsqueda compartida (Parte II, §5.2)»: búsqueda compartida frente a individual (D5), corte por rango y su invariante (D6), límite (D7), clave de invalidación con contadores monótonos y tabla de eventos (D8), ficha y guardado (D9, D10), con los números de H1 a H5, H7 y H8 de `specs/003-terreno-cazador/mediciones.txt`. Depende de T091. Cita FR-011 a FR-018 y FR-025.
+- [x] T094 Redactar en `DECISIONES.md` la sección «16. Agenda de eventos con cazadores (Parte II, §5.6)»: repetir el análisis de la sección 1 con la carga nueva (H6) y el ciclo de H5, y concluir si el heap propio sigue siendo la elección. Depende de T091. Cita FR-025.
 - [x] T095 [P] Actualizar `docs/estructuras.md` con `Persecucion`, el parámetro `limite` de `BuscadorRutas` y los contadores `cambios_puertas` y `reversiones` (operaciones y costo según data-model.md). Cita FR-017 y FR-025.
 - [x] T096 [P] Actualizar `docs/api.md`: `cazador` en la lista de comportamientos de `Enemy` y el campo `rango` (`integer`, ≥ 0, obligatorio con `cazador`). Cita FR-008 y FR-009.
 - [x] T097 [P] Actualizar `README.md`: costo de las salidas en el tiempo, el cazador y cómo se ve en la interfaz, y las mediciones H1 a H8 de `--bench`, con enlace a las secciones 14 a 16. Cita FR-003, FR-020, FR-021 y FR-026.
-- [x] T098 Registrar en `docs/PROMPTS_LLM.md`, con el formato de las entradas existentes (fecha, integrante, herramienta, objetivo, prompt textual y uso de la respuesta), las entradas de `/speckit-specify`, `/speckit-clarify`, `/speckit-plan` y `/speckit-tasks` de esta spec, a continuación de la última entrada. Protege la trazabilidad de FR-001 a FR-028 (flujo de trabajo de la constitución).
-- [x] T099 Registrar en `docs/PROMPTS_LLM.md` cada prompt de `/speckit-analyze` y de `/speckit-implement` de esta spec en el momento en que se use, con el mismo formato. Protege la trazabilidad de FR-001 a FR-028.
+- [x] T098 Registrar en `PROMPTS_LLM.md`, con el formato de las entradas existentes (fecha, integrante, herramienta, objetivo, prompt textual y uso de la respuesta), las entradas de `/speckit-specify`, `/speckit-clarify`, `/speckit-plan` y `/speckit-tasks` de esta spec, a continuación de la última entrada. Protege la trazabilidad de FR-001 a FR-028 (flujo de trabajo de la constitución).
+- [x] T099 Registrar en `PROMPTS_LLM.md` cada prompt de `/speckit-analyze` y de `/speckit-implement` de esta spec en el momento en que se use, con el mismo formato. Protege la trazabilidad de FR-001 a FR-028.
 - [x] T100 Revisar los archivos nuevos y modificados contra los principios I y IV: ninguna búsqueda de `heapq`, `bisect`, `collections`, `sorted(` ni `.sort(`, ningún `dict` ni `set` como índice, ninguna cola de prioridad nueva, ningún id de sala, enemigo o cripta en el código. Corregir lo que aparezca. Cita FR-015 y FR-028.
 - [X] T101 Ejecutar `specs/003-terreno-cazador/quickstart.md` completo (secciones 1 a 4, incluida la verificación con la interfaz) y anotar el resultado de cada punto al final de ese archivo bajo «Resultado de la validación». Cita FR-001 a FR-028 y SC-001 a SC-007.
 - [x] T102 Regresión: repetir los comandos de `specs/003-terreno-cazador/linea_base.txt`; la selección del README DEBE pasar y la suite completa NO DEBE tener fallas nuevas, comparando nombre por nombre; registrar el resultado en `specs/003-terreno-cazador/regresion.txt`. Última tarea. Protege FR-005, FR-022 y FR-028.
@@ -263,7 +263,7 @@
 - US4 puede avanzar en paralelo con US3 y US5 (archivos distintos: `escena.py`, `test_grafica.py`), salvo T064, que toca `CicloAccionesControlador.py`.
 - US5: T072 en paralelo con T068 a T071.
 - Fase 9: T095, T096 y T097 en paralelo.
-- NO son paralelas las tareas que editan el mismo archivo: `bench.py` (T080 a T090), `Simulacion.py` (T029, T052), `Enemigo.py` (T025, T051), `CicloAccionesControlador.py` (T022, T064), `docs/decisiones.md` (T092 a T094).
+- NO son paralelas las tareas que editan el mismo archivo: `bench.py` (T080 a T090), `Simulacion.py` (T029, T052), `Enemigo.py` (T025, T051), `CicloAccionesControlador.py` (T022, T064), `DECISIONES.md` (T092 a T094).
 
 ## Estrategia de implementación
 
