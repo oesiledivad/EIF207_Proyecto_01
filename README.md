@@ -4,6 +4,8 @@
 
 ### EIF 207 · Estructuras de Datos · II Ciclo 2026
 
+**Entregas 01 y 02 · Cripta**
+
 Juego de exploración de mazmorras **online**, con pixel art, simulación por eventos y estructuras de datos propias.
 Explora salas, administra tu inventario y encuentra las llaves para escapar con vida.
 
@@ -14,7 +16,7 @@ Explora salas, administra tu inventario y encuentra las llaves para escapar con 
   <img src="https://img.shields.io/badge/Modo-online%20%7C%20offline-667744" alt="Modos online y offline">
 </p>
 
-[Instalación](#instalación) · [Cómo jugar](#primera-partida) · [Controles](#controles) · [Comandos](#comandos) · [Documentación](#arquitectura-y-documentación)
+[Entregas](#entregas-01-y-02) · [Instalación](#instalación) · [Cómo jugar](#primera-partida) · [Controles](#controles) · [Comandos](#comandos) · [Documentación](#arquitectura-y-documentación)
 
 </div>
 
@@ -25,10 +27,25 @@ Explora salas, administra tu inventario y encuentra las llaves para escapar con 
 - Inventario con equipo visible, vistas ordenadas y retroceso de las últimas cinco acciones mediante pergaminos.
 - Minimapa clickeable, animaciones, música, efectos de sonido y configuración de volumen y pantalla.
 - Guardado binario, puntajes, reproducción determinista de partidas y mediciones de rendimiento.
+- Rutas con costos de terreno, cazadores, mapa conocido con niebla de guerra y viaje automático «ir a».
+- Verificación de resolubilidad con reporte de llaves y consultas a la línea de tiempo de la partida.
 
 La simulación avanza por **eventos y reloj virtual**, con tiempos según la acción y la velocidad de cada actor. Las animaciones y el tiempo que tardas en decidir no adelantan ese reloj.
 
 ![Partida online: enemigos, inventario, bitácora, rastro y minimapa](docs/imagenes/partida.png)
+
+## Entregas 01 y 02
+
+Este repositorio reúne las dos entregas del proyecto. La **entrega 02 continúa sobre la 01** y conserva el juego, las estructuras propias, la persistencia y la reproducción de partidas.
+
+| Entrega | Alcance |
+|---------|---------|
+| **01 · Juego y estructuras base** | Cliente HTTP con presupuesto, caché y precarga; simulación por eventos, combate, inventario, efectos, rastro, retroceso, guardado binario, replay y mediciones. |
+| **02 · Rutas, conocimiento e historia** | Terreno con costos, cazadores y rutas ponderadas, niebla de guerra y mapa conocido, viaje «ir a», verificación de resolubilidad y línea de tiempo con puntos de control. Desarrollo con spec-kit y trazabilidad entre requisitos, tareas y pruebas. |
+
+Para revisar la entrega completa usa la rama **`master4`**. Incluye el paquete actual `datos_entrega/` para ejecutar y verificar las criptas publicadas sin conexión, junto al paquete histórico `datos_offline/` que conserva Stormlight y el replay de ejemplo.
+
+Las especificaciones de la entrega 02 están en [resolubilidad](specs/001-resolubilidad/spec.md), [niebla e «ir a»](specs/002-niebla-ir-a/spec.md), [terreno y cazador](specs/003-terreno-cazador/spec.md) y [línea de tiempo](specs/004-linea-tiempo/spec.md). La [validación de entrega](specs/003-terreno-cazador/validacion_cierre.txt) registra las **389 pruebas sin fallas** y las mediciones sobre la referencia publicada de 300 salas.
 
 ## Instalación
 
@@ -80,7 +97,7 @@ Vuelve a abrir la terminal y comprueba la instalación con `uv --version`. Hay o
 ### 3. Descargar y preparar el proyecto
 
 ```sh
-git clone https://github.com/oesiledivad/EIF207_Proyecto_01.git
+git clone --branch master4 https://github.com/oesiledivad/EIF207_Proyecto_01.git
 cd EIF207_Proyecto_01
 uv python install 3.13
 uv sync --locked
@@ -96,7 +113,30 @@ uv run cripta
 
 Ejecuta los comandos desde la raíz del repositorio. El modo online es el predeterminado: consulta la API del curso y muestra las criptas disponibles. Necesitas conexión a Internet para instalar las dependencias y para jugar en este modo.
 
-Si quieres jugar sin conexión, utiliza la alternativa `uv run cripta --offline`, con los datos incluidos o descargados previamente.
+Si quieres jugar sin conexión con los datos de la entrega 02:
+
+```sh
+uv run cripta --offline --offline-dir datos_entrega
+```
+
+### 5. Comprobar la entrega sin abrir el juego
+
+Verifica la cripta de referencia incluida, de 300 salas, sin consultar la red:
+
+```sh
+uv run cripta --offline --offline-dir datos_entrega --verificar cripta-06
+```
+
+El resultado esperado es **RESOLUBLE**, con un orden de cuatro llaves y cero solicitudes de red. Para ver un caso no resoluble, cambia `cripta-06` por `cripta-05`: muestra las puertas bloqueadas y el ciclo entre llaves, y termina con código `1`.
+
+Para repetir las pruebas y las mediciones de las dos entregas:
+
+```sh
+uv run python -m unittest discover -s pruebas -t .
+uv run cripta --bench --semilla 42
+```
+
+La suite incluye pruebas gráficas que requieren pantalla y soporte OpenGL. El benchmark funciona sin abrir la interfaz ni consultar la red; al final identifica la versión de la referencia publicada y sus resultados frente a los límites de 200, 5 y 20 ms.
 
 ### Entorno virtual (opcional)
 
@@ -444,6 +484,6 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 
 **Eliseo Zuñiga Obando · Fiorella Porras Mora · Kyara Rojas Gonzalez**
 
-Proyecto académico · Universidad Nacional de Costa Rica
+Entregas 01 y 02 · Proyecto académico · Universidad Nacional de Costa Rica
 
 </div>
