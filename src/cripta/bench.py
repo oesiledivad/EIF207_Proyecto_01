@@ -1867,6 +1867,8 @@ def main(semilla: int = SEMILLA_PREDETERMINADA):
     _bench_resolubilidad(semilla)
     _bench_conocimiento(semilla)
     _bench_cazador(semilla)
+    from cripta.bench_linea import bench_linea   # spec 004: L1 a L5
+    bench_linea(semilla)
 
 
 if __name__ == "__main__":
