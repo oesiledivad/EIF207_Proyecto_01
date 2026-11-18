@@ -54,6 +54,11 @@ def _parsear_args(argv: list[str]) -> argparse.Namespace:
     modos.add_argument("--verificar", metavar="CRIPTA",
                        help="Verifica la resolubilidad de la cripta sin abrir la vista. "
                             "Código de salida: 0 resoluble, 1 no resoluble, 2 no verificada o error de uso.")
+    parser.add_argument("--hasta", metavar="T",
+                        help="Con --replay: imprime el estado de la partida en el instante T (spec 004).")
+    parser.add_argument("--checkpoint-cada", metavar="K", dest="checkpoint_cada",
+                        help="Puntos de control de la línea de tiempo: como máximo uno cada K acciones "
+                             "del jugador (entero >= 1). Por defecto, el valor de K_POR_DEFECTO.")
     parser.add_argument("--forzar", action="store_true",
                         help="Permite iniciar una cripta no resoluble (se ignora con --verificar, --bench y --replay).")
     parser.add_argument("--puntajes", help="Archivo de puntajes (por defecto, dentro de --log-dir).")
@@ -125,6 +130,24 @@ def main(argv: list[str] | None = None) -> int:
     if args.cache_size <= 0:
         print("--cache-size debe ser un entero positivo.", file=sys.stderr)
         return 2
+    # Spec 004: K y --hasta se validan antes de iniciar nada (FR-017, FR-023).
+    from cripta.controlador.LineaTiempoControlador import validar_k
+    checkpoint_cada = None
+    if args.checkpoint_cada is not None:
+        try:
+            checkpoint_cada = validar_k(args.checkpoint_cada)
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+    hasta = None
+    if args.hasta is not None:
+        if not args.replay:
+            print("--hasta solo se usa junto con --replay.", file=sys.stderr)
+            return 2
+        if not str(args.hasta).strip().isdigit():
+            print("--hasta debe ser un entero mayor o igual que 0.", file=sys.stderr)
+            return 2
+        hasta = int(str(args.hasta).strip())
     if args.bench:
         from cripta.bench import main as medir, semilla_efectiva
         if not str(args.semilla).strip():
@@ -146,10 +169,20 @@ def main(argv: list[str] | None = None) -> int:
         # El paquete se valida por separado: una caché incompleta no lo oculta.
         fuentes = [data_source, AdaptadorOffline(args.offline_dir)]
         try:
-            controlador = reproducir(args.replay, fuentes, mostrar_progreso=True)
+            controlador = reproducir(args.replay, fuentes, mostrar_progreso=hasta is None,
+                                     checkpoint_cada=checkpoint_cada)
         except (OSError, RuntimeError, ValueError) as error:
             print(str(error), file=sys.stderr)
             return 2
+        if hasta is not None:
+            # FR-021: el mismo resumen que `historia <t>`, sin vista.
+            from cripta.controlador.LineaTiempoControlador import formatear_resumen
+            resultado = controlador._linea.resumen_hasta(hasta)
+            if not resultado.ok:
+                print(resultado.motivo, file=sys.stderr)
+                return 2
+            print(formatear_resumen(resultado.resumen))
+            return 0
         estado = controlador.estado_partida()
         print(f"Replay completado: sala={estado.sala_actual_id} "
               f"vida={estado.jugador_vida} tiempo={estado.reloj_virtual}")
@@ -160,7 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     almacen = None if args.offline else AlmacenDisco(args.cache_dir)
     controlador = Aplicacion(data_source, capacidad_cache=args.cache_size, almacen=almacen,
                              carpeta_logs=args.log_dir, ruta_puntajes=args.puntajes, offline_dir=args.offline_dir,
-                             forzar=args.forzar)
+                             forzar=args.forzar, checkpoint_cada=checkpoint_cada)
     # Ventana interactiva: la precarga va en un hilo para que cruzar puertas no se trabe.
     controlador.activar_precarga_en_segundo_plano()
 

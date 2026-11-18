@@ -35,6 +35,9 @@ class Simulacion:
         # Búsqueda compartida de los cazadores (spec 003). No es estado del juego: se crea vacía
         # con cada simulación y se configura al ensamblar las salas.
         self.persecucion = Persecucion(self.agenda)
+        # Aviso opcional al terminar cada evento, con el reloj actual. No es estado del juego: la
+        # línea de tiempo lo usa para registrar cambios por evento (spec 004, D3).
+        self.al_terminar_evento = None
 
     def _ejecutar_turno_enemigo(self, enemigo, jugador, salas: IndiceSalas) -> list[str]:
         if not esta_vivo(enemigo):
@@ -100,6 +103,8 @@ class Simulacion:
             evento = self.agenda.extraer_siguiente()
             self.reloj.avanzar_hasta(evento.tiempo_siguiente)
             mensajes.extend(self.ejecutar_evento(evento, jugador, salas))
+            if self.al_terminar_evento is not None:
+                self.al_terminar_evento(self.reloj.tiempo_actual)
             if not esta_vivo(jugador):
                 return mensajes
 

@@ -108,9 +108,17 @@ class GuardadoControlador:
         except (ValueError, KeyError, RuntimeError) as error:
             app._gestor.estado.activa = False
             return ResultadoAccion.fallo(f"El guardado no coincide con la cripta: {error}")
-        # FR-015: el formato binario aún no trae conocimiento (spec 004). Mientras tanto, el conocimiento
-        # queda como en el instante 0 pero desde la sala actual, con las puertas ya restauradas.
-        app._exploracion.iniciar_conocimiento(datos.sala_actual_id)
+        # Spec 004 (FR-025, cierra FR-015 de la spec 002): el conocimiento y la línea vienen del archivo.
+        # El historial de retroceso ya quedó vacío al restaurar (FR-034).
+        try:
+            app._exploracion.iniciar_conocimiento(datos.sala_actual_id)
+            app._exploracion.conocimiento.restaurar(datos.conocimiento)
+            aviso_k = app._linea.restaurar(datos.linea)
+        except (ValueError, IndexError, TypeError) as error:
+            app._gestor.estado.activa = False
+            return ResultadoAccion.fallo(f"El guardado no coincide con la cripta: {error}")
+        if aviso_k is not None:
+            app._bitacora.append(Mensaje("sistema", aviso_k))
         self.actual = origen
         app._bitacora.append(Mensaje("sistema", f"Partida cargada de {origen}."))
         return ResultadoAccion.exito()
@@ -132,7 +140,7 @@ class GuardadoControlador:
                               almacen=self.almacen if datos.modo == "red" else None,
                               carpeta_logs=self.carpeta_logs, ruta_puntajes=self.ruta_puntajes,
                               ruta_guardado=self.ruta if self.ruta_fija else None,
-                              offline_dir=self.offline_dir)
+                              offline_dir=self.offline_dir, checkpoint_cada=app._linea.k_solicitado)
             if app._cripta_service.precarga_en_segundo_plano:
                 nuevo.activar_precarga_en_segundo_plano()
             return [nuevo.cargar(origen), nuevo]

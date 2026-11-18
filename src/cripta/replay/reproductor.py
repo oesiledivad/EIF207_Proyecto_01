@@ -106,7 +106,7 @@ def leer_partida(ruta):
     return [cabecera, acciones]
 
 
-def reproducir(ruta, fuentes, mostrar_progreso=False):
+def reproducir(ruta, fuentes, mostrar_progreso=False, checkpoint_cada=None):
     from cripta.controlador.Aplicacion import Aplicacion
 
     cabecera, acciones = leer_partida(ruta)
@@ -116,7 +116,8 @@ def reproducir(ruta, fuentes, mostrar_progreso=False):
     app = None
     errores = []
     for fuente in fuentes:
-        candidato = Aplicacion(fuente, capacidad_cache=cabecera.capacidad_cache)
+        candidato = Aplicacion(fuente, capacidad_cache=cabecera.capacidad_cache,
+                               checkpoint_cada=checkpoint_cada)
         try:
             detalles = candidato.previsualizar_cripta(cabecera.cripta_id)
             candidato._cripta_service.fijar_presupuesto(detalles.presupuesto_solicitudes)

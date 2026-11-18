@@ -124,9 +124,12 @@ class CazadorGuardadoPruebas(unittest.TestCase):
                          None if esperada is None else esperada.clave)
 
     def test_guardado_sin_cazadores_no_cambia(self):
-        """FR-023: un enemigo que no es cazador se escribe y se lee igual y el formato sigue en 2."""
+        """FR-023: un enemigo que no es cazador se escribe y se lee igual.
+
+        La spec 004 (FR-026) sube el formato a 3 por la línea de tiempo; el cuerpo del enemigo no cambia.
+        """
         from cripta.modelo.enemigos.Errante import Errante
-        self.assertEqual(VERSION_CUERPO, 2)
+        self.assertEqual(VERSION_CUERPO, 3)
         errante = Errante("e-1", 5, 5, 1, 0, 100, 1, None)
         errante.nombre, errante.tipo, errante.suelta = "Errante", "t", ["x"]
         errante.regeneracion_objetivo = None

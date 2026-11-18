@@ -87,4 +87,6 @@ class DatosGuardado:
     items: list[ItemInventario] = field(default_factory=list)
     item_actual: str | None = None
     eventos: list[EventoG] = field(default_factory=list)
+    conocimiento: list[int] = field(default_factory=list)   # instantánea (spec 002, FR-015)
+    linea: list | None = None                                # línea de tiempo (spec 004, FR-024)
     salas: list[SalaG] = field(default_factory=list)
