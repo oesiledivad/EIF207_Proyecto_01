@@ -377,7 +377,7 @@ Los contadores nunca bajan, ni siquiera cuando el historial revierte, para que d
 
 **Predicado frente a banderas (H7).** Un arreglo de banderas por clave de salida (alternativa de D9 de la spec 002) da 37,6 ms frente a 39,5 ms del predicado: equivalentes, se conserva el predicado.
 
-**Guardado y reproducción (D10, H4, H8).** El rango se guarda solo para cazadores, como un entero al final de la ficha del enemigo, sin cambiar `VERSION_CUERPO`; un guardado sin cazadores es idéntico al de antes. La búsqueda no se guarda: al cargar se vuelve a configurar con las salidas entrantes y se registra el rango de cada cazador con turno pendiente. Como la decisión no usa azar y es determinista, el reproductor llega al mismo estado final (`pruebas/test_cazador_guardado.py`). H4: 10 000 de 10 000 turnos coinciden con una búsqueda completa desde cero; H8: dos corridas con la misma semilla dan `identico=si`.
+**Guardado y reproducción (D10, H4, H8).** El rango se guarda solo para cazadores, como un entero al final de la ficha del enemigo, sin cambiar `VERSION_CUERPO` (la spec 004 lo sube después a 3 por la línea de tiempo, sección 17; la ficha del enemigo no cambia); un guardado sin cazadores es idéntico al de antes. La búsqueda no se guarda: al cargar se vuelve a configurar con las salidas entrantes y se registra el rango de cada cazador con turno pendiente. Como la decisión no usa azar y es determinista, el reproductor llega al mismo estado final (`pruebas/test_cazador_guardado.py`). H4: 10 000 de 10 000 turnos coinciden con una búsqueda completa desde cero; H8: dos corridas con la misma semilla dan `identico=si`.
 
 **Complejidad.**
 
@@ -408,7 +408,7 @@ Los contadores nunca bajan, ni siquiera cuando el historial revierte, para que d
 
 El mayor esqueleto del paquete tiene 50 salas, por eso se mide también con 2 000. Con decenas de cazadores el ciclo queda muy por debajo de 20 ms.
 
-**Conclusión.** El heap propio sigue siendo la elección: gana a la lista con la carga de la Parte II, ninguna regla de decisión pide cambiarlo y el ciclo con 50 y 100 cazadores cumple el límite. Los tiempos dependen del equipo (se midieron con Python 3.10 en una VM de trabajo); lo reproducible es el orden de magnitud, las razones y los conteos deterministas.
+**Conclusión.** El heap propio sigue siendo la elección: gana a la lista con la carga de la Parte II, ninguna regla de decisión pide cambiarlo y el ciclo con 50 y 100 cazadores cumple el límite. Los tiempos dependen del equipo (se midieron con Python 3.10 en una VM de trabajo y se repitieron en el equipo de entrega con Python 3.13, con las mismas conclusiones: H5 máximo 3,2 ms con 100 cazadores y el heap 12 veces más rápido en H6; ver [mediciones_equipo_entrega.txt](../specs/003-terreno-cazador/mediciones_equipo_entrega.txt)); lo reproducible es el orden de magnitud, las razones y los conteos deterministas.
 
 ## 17. Línea de tiempo y puntos de control (Parte II, §3.6 y §5.5)
 

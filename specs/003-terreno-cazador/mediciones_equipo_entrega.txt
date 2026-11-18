@@ -1,0 +1,31 @@
+Mediciones de la spec 003 repetidas en el equipo de entrega (pendiente anotado en la entrada #76 de PROMPTS_LLM.md)
+Comando: uv run python -m cripta --bench --semilla 42 (sección «Terreno y cazador»)
+Equipo: Windows-11-10.0.26200-SP0 Python 3.13.17
+Fecha: 2026-11-17
+Resultado: mismas conclusiones que mediciones.txt (VM, Python 3.10): H2 y H4 CUMPLE, H5 maximo 3,2 ms con 100 cazadores (limite 20 ms), H6 el heap gana unas 12 veces, H8 identico=si.
+
+=== Terreno y cazador (spec 003), semilla 42 ===
+H1 salas=2000: cazadores=1 rango=300 compartida_ms=0.050 individual_ms=0.048 razon=1.0 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=300 compartida_ms=0.058 individual_ms=0.463 razon=8.0 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=300 compartida_ms=0.073 individual_ms=2.298 razon=31.4 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=300 compartida_ms=0.102 individual_ms=4.586 razon=44.9 [INFORMATIVA]
+H1 salas=2000: cazadores=1 rango=sin_limite compartida_ms=9.318 individual_ms=9.366 razon=1.0 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=sin_limite compartida_ms=9.231 individual_ms=100.042 razon=10.8 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=sin_limite compartida_ms=9.475 individual_ms=490.038 razon=51.7 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=sin_limite compartida_ms=9.753 individual_ms=999.321 razon=102.5 [INFORMATIVA]
+H2 salas=200: con_corte_fijadas=34 con_corte_ms=0.062 sin_corte_fijadas=200 sin_corte_ms=0.682 [INFORMATIVA]
+H2 salas=2000: con_corte_fijadas=32 con_corte_ms=0.110 sin_corte_fijadas=2000 sin_corte_ms=10.207 [INFORMATIVA]
+H2 salas=20000: con_corte_fijadas=33 con_corte_ms=0.064 sin_corte_fijadas=20000 sin_corte_ms=202.469 [INFORMATIVA]
+H2 criterio D6: con corte crece 0.58 veces entre 2000 y 20000 salas (limite 1.5) [CUMPLE]
+H3 salas=2000: puertas=estables clave_ms=6.966 por_turno_ms=274.415 por_ciclo_ms=15.477 recalculos=1 [INFORMATIVA]
+H3 salas=2000: puertas=inestables clave_ms=11.291 por_turno_ms=205.497 por_ciclo_ms=11.290 recalculos=200 [INFORMATIVA]
+H4 salas=300: turnos=10000 coinciden=10000 [CUMPLE]
+H5 salas=50: cazadores=10 ciclos=200 media_ms=0.160 maximo_ms=0.497 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=50 ciclos=200 media_ms=0.779 maximo_ms=2.344 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=100 ciclos=200 media_ms=1.173 maximo_ms=3.215 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=10 ciclos=200 media_ms=0.151 maximo_ms=0.406 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=50 ciclos=200 media_ms=0.470 maximo_ms=1.483 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=100 ciclos=200 media_ms=0.927 maximo_ms=2.223 limite=20ms [CUMPLE]
+H6 eventos=2200: heap_ms=9.315 lista_ms=110.865 [INFORMATIVA]
+H7 salas=2000: predicado_ms=12.003 banderas_ms=11.817 [INFORMATIVA]
+H8 semilla=42: identico=si [CUMPLE]

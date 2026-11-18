@@ -26,7 +26,11 @@ try:
     assert isinstance(entrada, EntradaHistoria)
     entrada.on_draw()
     entrada.on_key_press(arcade.key.TAB, 0)
-    entrada.on_key_press(arcade.key.KEY_1, 0)
+    entrada.on_text('1')
+    assert entrada.texto == '#1'
+    entrada.on_text('#')
+    assert entrada.texto == '1'
+    entrada.on_text('#x')
     assert entrada.texto == '#1'
     entrada.on_key_press(arcade.key.ENTER, 0)
     assert isinstance(vista.current_view, Panel)
@@ -35,8 +39,7 @@ try:
     vista.hide_view()
     vista.on_key_press(arcade.key.H, 0)
     entrada = vista.current_view
-    for tecla in [arcade.key.KEY_9, arcade.key.KEY_9, arcade.key.KEY_9, arcade.key.KEY_9, arcade.key.KEY_9]:
-        entrada.on_key_press(tecla, 0)
+    entrada.on_text('99999')
     entrada.on_key_press(arcade.key.ENTER, 0)
     assert vista.current_view is entrada
     assert 'posterior al reloj actual' in entrada.error

@@ -28,7 +28,7 @@
 
 **Propósito**: fijar la línea base antes de tocar código.
 
-- [ ] T001 Registrar la línea base de la suite existente en `specs/001-resolubilidad/linea_base.txt`. Con el código sin modificar, ejecutar (a) `uv run python -m unittest pruebas.test_partida pruebas.test_inventario pruebas.test_retroceso pruebas.test_guardado pruebas.test_replay pruebas.test_bench pruebas.test_grafica` (la selección del README) y (b) `uv run python -m unittest discover -s pruebas -p "test*.py"` (la suite completa). Anotar fecha, hash de `git rev-parse --short HEAD`, comando, cantidad de pruebas y la lista exacta de pruebas que fallan o dan error (nombre completo `modulo.Clase.metodo`), sin corregir ninguna. Protege FR-027 y FR-029 (no modificar estado ni datos).
+- [X] T001 Registrar la línea base de la suite existente en `specs/001-resolubilidad/linea_base.txt`. Con el código sin modificar, ejecutar (a) `uv run python -m unittest pruebas.test_partida pruebas.test_inventario pruebas.test_retroceso pruebas.test_guardado pruebas.test_replay pruebas.test_bench pruebas.test_grafica` (la selección del README) y (b) `uv run python -m unittest discover -s pruebas -p "test*.py"` (la suite completa). Anotar fecha, hash de `git rev-parse --short HEAD`, comando, cantidad de pruebas y la lista exacta de pruebas que fallan o dan error (nombre completo `modulo.Clase.metodo`), sin corregir ninguna. Protege FR-027 y FR-029 (no modificar estado ni datos).
 
 **Punto de control**: `linea_base.txt` existe y está confirmado en Git antes de la tarea T002.
 
@@ -230,7 +230,7 @@
 - [X] T083 [P] Actualizar `README.md`: banderas `--verificar`, `--forzar` y `--semilla` con un ejemplo cada una, códigos de salida 0, 1 y 2, y el enlace a la nueva sección de `docs/decisiones.md`. Cita FR-016, FR-017, FR-018a.
 - [X] T084 [P] Actualizar `docs/estructuras.md` con `ColaLista` e `IndiceLlaves` (operaciones y costo). Cita FR-024.
 - [X] T085 Ejecutar los siete escenarios de `specs/001-resolubilidad/quickstart.md` en orden y anotar el resultado de cada uno al final de ese archivo bajo "Resultado de la validación". Cita FR-006, FR-007, FR-009 a FR-013, FR-014 a FR-018, FR-018a, FR-019 a FR-024, FR-026, FR-028 y SC-001 a SC-007.
-- [ ] T086 Regresión contra la línea base: ejecutar de nuevo los comandos (a) y (b) de T001. La selección de pruebas del README DEBE seguir pasando y la suite completa de `pruebas/` NO DEBE tener fallas nuevas respecto de `specs/001-resolubilidad/linea_base.txt`; comparar nombre por nombre las pruebas que fallan y registrar el resultado en `specs/001-resolubilidad/regresion.txt`. Una falla de la línea base que persiste no cuenta como nueva. Protege FR-022, FR-027 y FR-029.
+- [X] T086 Regresión contra la línea base: ejecutar de nuevo los comandos (a) y (b) de T001. La selección de pruebas del README DEBE seguir pasando y la suite completa de `pruebas/` NO DEBE tener fallas nuevas respecto de `specs/001-resolubilidad/linea_base.txt`; comparar nombre por nombre las pruebas que fallan y registrar el resultado en `specs/001-resolubilidad/regresion.txt`. Una falla de la línea base que persiste no cuenta como nueva. Protege FR-022, FR-027 y FR-029.
 
 ---
 

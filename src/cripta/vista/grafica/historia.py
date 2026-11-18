@@ -3,14 +3,6 @@ import arcade
 
 from .lienzo import ALTO, ANCHO, ORO, TEXTO
 
-_DIGITOS = [[arcade.key.KEY_0, "0"], [arcade.key.KEY_1, "1"], [arcade.key.KEY_2, "2"],
-            [arcade.key.KEY_3, "3"], [arcade.key.KEY_4, "4"], [arcade.key.KEY_5, "5"],
-            [arcade.key.KEY_6, "6"], [arcade.key.KEY_7, "7"], [arcade.key.KEY_8, "8"],
-            [arcade.key.KEY_9, "9"], [arcade.key.NUM_0, "0"], [arcade.key.NUM_1, "1"],
-            [arcade.key.NUM_2, "2"], [arcade.key.NUM_3, "3"], [arcade.key.NUM_4, "4"],
-            [arcade.key.NUM_5, "5"], [arcade.key.NUM_6, "6"], [arcade.key.NUM_7, "7"],
-            [arcade.key.NUM_8, "8"], [arcade.key.NUM_9, "9"]]
-
 
 class EntradaHistoria(arcade.View):
     """Caja de texto mínima: dígitos, `#` (o Tab), retroceso, Enter para consultar y Esc para salir."""
@@ -57,15 +49,21 @@ class EntradaHistoria(arcade.View):
         if symbol == arcade.key.BACKSPACE:
             self.texto = self.texto[:-1]
             return True
-        if symbol == arcade.key.TAB or (symbol == arcade.key.KEY_3 and modifiers & arcade.key.MOD_SHIFT) \
-                or symbol == getattr(arcade.key, "POUND", -1):
-            self.texto = self.texto[1:] if self.texto.startswith("#") else "#" + self.texto
-            return True
-        for tecla, digito in _DIGITOS:
-            if symbol == tecla and len(self.texto) < 12:
-                self.texto += digito
-                return True
+        if symbol == arcade.key.TAB:
+            self._alternar_modo()
         return True
+
+    def on_text(self, texto):
+        """Dígitos y `#` llegan como texto: así funciona con cualquier distribución de teclado."""
+        for caracter in texto:
+            if caracter == "#":
+                self._alternar_modo()
+            elif caracter.isdigit() and len(self.texto) < 12:
+                self.texto += caracter
+        return True
+
+    def _alternar_modo(self):
+        self.texto = self.texto[1:] if self.texto.startswith("#") else "#" + self.texto
 
     def _consultar(self):
         from .panel import Panel
