@@ -415,7 +415,6 @@ class VentanaCripta(arcade.Window):
                 ["Continuar", lambda: None],
                 ["Información de la sala (I)", lambda: self.abrir_panel("informacion")],
                 ["Mapa conocido (C)", lambda: self.abrir_panel("mapa")],
-                ["Historia de la partida (H)", lambda: self.abrir_panel("historia")],
                 ["Guardar partida", self.guardar_partida],                 # <- NUEVA
                 ["Cargar partida guardada", self.elegir_guardado],
                 ["Cheats (sin puntajes, guardado ni replay)", lambda: self.abrir_panel("cheats")],
