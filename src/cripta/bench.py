@@ -1740,6 +1740,7 @@ def _ciclo_cazadores(cripta, semilla, ciclos):
     azar = random.Random(semilla)
     medidas = []
     for _ in range(ciclos):
+        inicio = time.perf_counter()
         abiertas = [s for s in cripta.salas.obtener(jugador.sala).salidas if not s.cerrada]
         if abiertas:
             salida = abiertas[azar.randrange(len(abiertas))]
@@ -1747,12 +1748,12 @@ def _ciclo_cazadores(cripta, semilla, ciclos):
             costo = salida.costo
         else:
             costo = 100
-        inicio = time.perf_counter()
         sim.agenda.reprogramar(jugador, sim.reloj.tiempo_actual + calcular_intervalo(costo, 100), "accion_actor")
         sim.avanzar_hasta_turno_jugador(jugador, cripta.salas)
         medidas.append((time.perf_counter() - inicio) * 1000)
     estado = [jugador.sala, sim.reloj.tiempo_actual, sim.persecucion.recalculos,
-              sum(c.sala for i in range(cripta.n_salas) for c in cripta.salas.obtener(i).enemigos)]
+              sum(c.sala for i in getattr(cripta, "ids", range(cripta.n_salas))
+                  for c in cripta.salas.obtener(i).enemigos)]
     return medidas, estado
 
 
@@ -1869,6 +1870,8 @@ def main(semilla: int = SEMILLA_PREDETERMINADA):
     _bench_cazador(semilla)
     from cripta.bench_linea import bench_linea   # spec 004: L1 a L5
     bench_linea(semilla)
+    from cripta.bench_publicada import medir_referencia_publicada
+    medir_referencia_publicada(semilla)
 
 
 if __name__ == "__main__":

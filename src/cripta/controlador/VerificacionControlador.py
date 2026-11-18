@@ -35,6 +35,7 @@ class VerificacionControlador:
         try:
             detalles = servicio.obtener_detalles(cripta_id)
             self._presupuesto = detalles.presupuesto_solicitudes
+            servicio.fijar_presupuesto(self._presupuesto)
             servicio.validar_cripta_en_disco(detalles)
             salas = servicio.cargar_esqueleto_salas(cripta_id, detalles.sala_salida)
         except (PresupuestoAgotado, RuntimeError, OSError, ValueError) as error:

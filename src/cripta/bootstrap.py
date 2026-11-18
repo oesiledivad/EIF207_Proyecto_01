@@ -127,6 +127,14 @@ def main(argv: list[str] | None = None) -> int:
     """
     args = _parsear_args(argv if argv is not None else sys.argv[1:])
 
+    if not args.offline and not args.bench:
+        from cripta.adaptadores.Diagnostico_Red import configurar_registro_red
+        try:
+            configurar_registro_red(args.log_dir)
+        except OSError as error:
+            print(f"No se pudo abrir el diagnóstico de red: {error}", file=sys.stderr)
+            return 2
+
     if args.cache_size <= 0:
         print("--cache-size debe ser un entero positivo.", file=sys.stderr)
         return 2
