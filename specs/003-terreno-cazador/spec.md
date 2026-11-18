@@ -12,7 +12,7 @@
 
 ### Session 2026-11-16
 
-- Q: ¿La muerte de otros actores invalida las distancias que calcula el cazador? → A: No. Los actores no bloquean salas; solo cambian la decisión del cazador el movimiento del jugador y la apertura o cierre de puertas (pendiente de confirmar con el profesor).
+- Q: ¿La muerte de otros actores invalida las distancias que calcula el cazador? → A: No. Los actores no bloquean salas; solo cambian la decisión del cazador el movimiento del jugador y la apertura o cierre de puertas. Resuelto por inferencia el 2026-11-17, porque el profesor no respondió antes de la entrega (ver Supuestos).
 - Q: Si dos salidas distintas de la sala del cazador llevan a la misma vecina, ¿cuál usa? → A: La de menor costo; si empatan en costo, la primera en el orden N, S, E, O.
 - Q: ¿Cómo actúa un cazador dormido? → A: Sigue las reglas de la Parte I §2.4: no actúa hasta que el jugador entra a su sala, y su primera acción es una acción base de costo 100 contada desde el instante de la activación.
 - Q: Si el costo mínimo d es igual al rango, ¿el cazador se mueve o espera? → A: Se mueve; solo espera si d es estrictamente mayor que el rango.
@@ -221,7 +221,7 @@ Quien evalúa el proyecto quiere evidencia medida de que, con decenas de cazador
 - El empate entre eventos del reloj en un mismo instante se sigue resolviendo como en la Parte I.
 - Los ids de sala son comparables, de modo que «menor id» está bien definido; es la misma regla de desempate de «ir a» (spec 002, FR-024).
 - «Decenas de cazadores activos» se fija en al menos 50 para la medición, y la cripta de referencia es la cripta publicada más grande; su tamaño proviene del servicio o de los datos sin conexión.
-- Que la muerte de otros actores no afecte la decisión del cazador (FR-018) está pendiente de confirmar con el profesor; si cambia, se corrige primero esta spec.
+- FR-018 se resolvió por inferencia, porque el profesor no respondió antes de la entrega. El enunciado (§3.2) dice que la muerte de otros actores «puede» cambiar la respuesta, pero también que el cálculo depende «únicamente» del esqueleto y del estado de las puertas, y en la Parte I los actores no bloquean salas. La única muerte que cambia la decisión es la del jugador (la partida termina y no hay más turnos) o la del propio cazador (deja de actuar), y las dos ya están cubiertas. La muerte de cualquier otro actor no cambia el grafo ni el destino, así que no cambia la decisión. Si el criterio de revisión fuera otro, se corrige primero esta spec.
 - El rango es obligatorio para el cazador, en coherencia con el rechazo de campos obligatorios ausentes que ya hace la lectura de enemigos.
 - El diseño visual de cómo se muestran los costos y cómo se distingue al cazador queda fuera de alcance; esta spec solo exige qué información se muestra.
 
