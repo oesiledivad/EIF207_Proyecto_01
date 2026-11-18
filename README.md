@@ -43,7 +43,7 @@ Este repositorio reúne las dos entregas del proyecto. La **entrega 02 continúa
 | **01 · Juego y estructuras base** | Cliente HTTP con presupuesto, caché y precarga; simulación por eventos, combate, inventario, efectos, rastro, retroceso, guardado binario, replay y mediciones. |
 | **02 · Rutas, conocimiento e historia** | Terreno con costos, cazadores y rutas ponderadas, niebla de guerra y mapa conocido, viaje «ir a», verificación de resolubilidad y línea de tiempo con puntos de control. Desarrollo con spec-kit y trazabilidad entre requisitos, tareas y pruebas. |
 
-Para revisar la entrega completa usa la rama **`master4`**. Incluye el paquete actual `datos_entrega/` para ejecutar y verificar las criptas publicadas sin conexión, junto al paquete histórico `datos_offline/` que conserva Stormlight y el replay de ejemplo.
+La rama principal **`master`** contiene la última entrega completa del proyecto. Incluye el paquete actual `datos_entrega/` para ejecutar y verificar las criptas publicadas sin conexión, junto al paquete histórico `datos_offline/` que conserva Stormlight y el replay de ejemplo.
 
 Las especificaciones de la entrega 02 están en [resolubilidad](specs/001-resolubilidad/spec.md), [niebla e «ir a»](specs/002-niebla-ir-a/spec.md), [terreno y cazador](specs/003-terreno-cazador/spec.md) y [línea de tiempo](specs/004-linea-tiempo/spec.md). La [validación de entrega](specs/003-terreno-cazador/validacion_cierre.txt) registra las **389 pruebas sin fallas** y las mediciones sobre la referencia publicada de 300 salas.
 
@@ -97,7 +97,7 @@ Vuelve a abrir la terminal y comprueba la instalación con `uv --version`. Hay o
 ### 3. Descargar y preparar el proyecto
 
 ```sh
-git clone --branch master4 https://github.com/oesiledivad/EIF207_Proyecto_01.git
+git clone --branch master https://github.com/oesiledivad/EIF207_Proyecto_01.git
 cd EIF207_Proyecto_01
 uv python install 3.13
 uv sync --locked
@@ -400,12 +400,12 @@ Los archivos de ejecución están excluidos de Git. Los `.log` y los `.bin` cump
 
 Cada capacidad tiene su carpeta con `spec.md`, `plan.md`, `tasks.md`, investigación, modelo de datos, guía de validación y mediciones. En Git, cada `spec.md` se confirmó antes que el código que la implementa.
 
-| Spec | Capacidad | Responsable |
-|------|-----------|-------------|
-| [001-resolubilidad](specs/001-resolubilidad/spec.md) | Verificación de resolubilidad (§3.5, §5.4) | Persona A |
-| [002-niebla-ir-a](specs/002-niebla-ir-a/spec.md) | Niebla de guerra e «ir a» (§3.3, §3.4, §5.3) | Persona A |
-| [003-terreno-cazador](specs/003-terreno-cazador/spec.md) | Terreno con costo y cazador (§3.1, §3.2, §5.1, §5.2, §5.6 agenda) | Persona B |
-| [004-linea-tiempo](specs/004-linea-tiempo/spec.md) | Línea de tiempo y puntos de control (§3.6, §5.5, §5.6 retroceso) | Persona C |
+| Spec | Capacidad |
+|------|-----------|
+| [001-resolubilidad](specs/001-resolubilidad/spec.md) | Verificación de resolubilidad (§3.5, §5.4) |
+| [002-niebla-ir-a](specs/002-niebla-ir-a/spec.md) | Niebla de guerra e «ir a» (§3.3, §3.4, §5.3) |
+| [003-terreno-cazador](specs/003-terreno-cazador/spec.md) | Terreno con costo y cazador (§3.1, §3.2, §5.1, §5.2, §5.6 agenda) |
+| [004-linea-tiempo](specs/004-linea-tiempo/spec.md) | Línea de tiempo y puntos de control (§3.6, §5.5, §5.6 retroceso) |
 
 Entregables de §7.2: el Documento de Decisiones está en [docs/decisiones.md](docs/decisiones.md) (secciones 12 a 18 para la Parte II) y la bitácora de prompts, incluidos los comandos de spec-kit, en [docs/PROMPTS_LLM.md](docs/PROMPTS_LLM.md). Los dos siguen en `docs/`, donde estaban desde la Parte I.
 
