@@ -268,18 +268,11 @@ class CriptaService:
     def obtener_detalles(self, cripta_id: str) -> DetallesCripta:
         if self._detalles is not None and self._detalles.id == cripta_id:
             return self._detalles  # ya pedidos (p.ej. al previsualizar): no gastar otra solicitud
-        try:
-            detalles = self._data_source.crypta_details(cripta_id)
-            self._detalles = parsear_detalles(detalles, cripta_id)
-            if self._almacen is not None:
-                self._almacen.guardar_detalles(cripta_id, detalles)   # para --offline
-            return self._detalles
-        except NotImplementedError:
-            return DetallesCripta(
-                id=cripta_id, version="offline", salas_total=0, sala_inicial=1, sala_salida=1,
-                llave_salida="—", inventario_max=10, presupuesto_solicitudes=0,
-                jugador_vida_max=30, jugador_ataque=6, jugador_defensa=2, jugador_velocidad=100
-            )
+        detalles = self._data_source.crypta_details(cripta_id)
+        self._detalles = parsear_detalles(detalles, cripta_id)
+        if self._almacen is not None:
+            self._almacen.guardar_detalles(cripta_id, detalles)   # para --offline
+        return self._detalles
 
     def cargar_esqueleto_salas(self, cripta_id: str, sala_salida_id: int,
                                avisos: list | None = None) -> list[SalaModelo]:
