@@ -1758,3 +1758,34 @@ Testeemos el juego con control del escritorio; PyCharm está abierto.
 Uso de la respuesta: Se fusionó el PR #28 (spec 004) en master2 con merge commit. La revisión contra el enunciado encontró que el README no indicaba la versión de spec-kit, el agente ni cómo correr las pruebas de aceptación de cada spec; se agregó. La auditoría del código no encontró heapq, bisect, collections, sorted, sort ni set, y dict solo aparece para leer o armar JSON y encabezados HTTP. La suite tenía 7 fallas previas: test_guardar_llamadas descargaba de la API y sobrescribía datos_offline al importarse (se movió a herramientas/descargar_paquete_offline.py), lo que hacía fallar test_offline_cache, test_stormlight y test_trampas_estado; test_datos y test_ensamblador eran scripts con red que usaban una función renombrada (se reemplazaron por una prueba sin red). La suite quedó en 377 pruebas sin fallas. Se repitió el bench de la spec 003 en el equipo de entrega con las mismas conclusiones, se corrigió una frase desactualizada de decisiones.md y se probó la consulta de historia en la ventana real del juego; eso mostró que los dígitos escritos no llegaban a la entrada (y que # es AltGr+3 en teclado español), y se cambió a eventos de texto.
 
 
+### Entrada #85
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5), con control del escritorio para jugar en la ventana real.
+
+Objetivo: Revisar las ambigüedades del enunciado y cerrar las validaciones manuales pendientes (T103 de la spec 002 y T101 de la spec 003).
+
+Prompts enviados (en orden):
+
+```text
+Sí, fusiónalo
+```
+
+```text
+¿Cómo resolver las ambigüedades pendientes a partir del enunciado? Documentemos los supuestos y su justificación.
+```
+
+```text
+Testeemos los escenarios de validación manual pendientes.
+```
+
+```text
+¿Cómo agregar oscuridad visual a la niebla de guerra para que la antorcha amplíe la visibilidad?
+```
+
+Uso de la respuesta: Se fusionó el PR #29. FR-018 de la spec 003 (la muerte de otros actores no cambia la decisión del cazador) se resolvió por inferencia con el razonamiento en los Supuestos de la spec, y el README explica que, sin enmienda «(§2.7)», rigen los límites de §6.1 (PR #30). Se jugó en la ventana real con una cripta de prueba local con costos y un cazador: los cinco escenarios de la sección 2 del quickstart de la spec 003 quedaron verificados. Sobre la niebla, el agente explicó que el enunciado (§3.3) la define como conocimiento del jugador y no como oscurecer la pantalla, y que la antorcha ya tiene efecto: se verificó en el juego que, al entrar con ella encendida, las salas vecinas pasan a exploradas. Oscurecer la vista sería una regla nueva que exigiría modificar primero la spec, así que no se implementó. T101 y T103 quedaron cerradas con los resultados anotados en sus quickstart.
+
+
