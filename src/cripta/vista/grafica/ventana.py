@@ -170,6 +170,8 @@ class VentanaCripta(arcade.Window):
             """Aplica el resultado del inicio y cambia la pantalla desde la ventana."""
             if resultado.ok:
                 self.preparar_partida()
+                if resultado.aviso:
+                    self.mensaje = resultado.aviso
                 self.hide_view()
             else:
                 retorno.error = resultado.motivo
@@ -209,7 +211,7 @@ class VentanaCripta(arcade.Window):
             criterios = ["real", "peso", "valor", "nombre"]
             self.criterio = criterios[(criterios.index(self.criterio) + 1) % 4]
             return
-        if accion in ["ayuda", "terminar", "informacion", "menu", "cheats"]:
+        if accion in ["ayuda", "terminar", "informacion", "menu", "cheats", "mapa"]:
             self.abrir_panel(accion)
             return
         if accion == "seleccionar_item":
@@ -355,6 +357,29 @@ class VentanaCripta(arcade.Window):
                               f"{'equipado' if item.equipado else 'sin equipar'}")
             self.show_view(Panel(self, f"SALA {p.sala_actual_id}", texto="\n".join(lineas)))
             return
+        if accion == "mapa":
+            # FR-019: un clic en una sala explorada lanza «ir a»; el panel es gráfico y no tiene consola.
+            mapa = self.controlador.mapa_conocido()
+            actual = p.sala_actual_id
+            opciones = []
+            for conocida in mapa.exploradas:
+                detalle = " · ".join(f"{s.direccion}>{s.destino} c{s.costo} {s.puerta.replace('_', ' ')}"
+                                     for s in conocida.salidas)
+                if conocida.id == actual:
+                    opciones.append([f"Estás en la sala {conocida.id}: {conocida.nombre} · {detalle}", lambda: None])
+                else:
+                    opciones.append([f"Ir a sala {conocida.id}: {conocida.nombre} · {detalle}",
+                                     lambda destino=conocida.id: self.ir_a(destino)])
+            if mapa.avistadas:
+                opciones.append(["Avistadas: " + ", ".join(str(i) for i in mapa.avistadas), lambda: None])
+            self.show_view(Panel(self, "MAPA CONOCIDO · CLIC PARA IR", opciones,
+                                 texto="Nada conocido todavía." if not opciones else ""))
+            return
+        if accion == "historia":
+            # Spec 004, FR-028: consulta de la línea de tiempo; no consume tiempo del juego.
+            from .historia import EntradaHistoria
+            self.show_view(EntradaHistoria(self))
+            return
         if accion == "ayuda":
             texto = ("Clic en una puerta: abrir o moverse · Flechas: moverse\n"
                      "Clic en un enemigo: seleccionar · Doble clic o A: atacar\n"
@@ -363,6 +388,8 @@ class VentanaCripta(arcade.Window):
                      "Tab: siguiente objeto · U: usar · E: equipar · S/D: soltar\n"
                      "Alt+P/V/N/R: ordenar el inventario por peso/valor/nombre/real\n"
                      "Alt+D: alternar ascendente/descendente\n"
+                     "C: mapa conocido; clic en una sala explorada para ir a ella (cualquier acción cancela el viaje)\n"
+                     "H: historia de la partida (historia <t> o historia #k)\n"
                      "I: información de la sala · Q: terminar · Esc: menú · F11: pantalla completa · F2: sonido · F3: música\n"
                      "Minimapa: dorado = salida, rojo = cerrada.")
             self.show_view(Panel(self, "AYUDA", texto=texto))
@@ -387,6 +414,7 @@ class VentanaCripta(arcade.Window):
             self.show_view(Panel(self, "MENÚ", [
                 ["Continuar", lambda: None],
                 ["Información de la sala (I)", lambda: self.abrir_panel("informacion")],
+                ["Mapa conocido (C)", lambda: self.abrir_panel("mapa")],
                 ["Guardar partida", self.guardar_partida],                 # <- NUEVA
                 ["Cargar partida guardada", self.elegir_guardado],
                 ["Cheats (sin puntajes, guardado ni replay)", lambda: self.abrir_panel("cheats")],
@@ -395,6 +423,32 @@ class VentanaCripta(arcade.Window):
                 ["Terminar la partida", lambda: self.abrir_panel("terminar")],
                 ["Volver al menú principal", self.volver_menu],
             ]))
+
+    def ir_a(self, sala_id):
+        """Pide el viaje «ir a»; la orden no consume tiempo y el mensaje sale de la bitácora (FR-019, FR-031)."""
+        resultado = self.controlador.ir_a(sala_id)
+        self.mensaje = f"Viajando a la sala {sala_id}." if resultado.ok else resultado.mensaje
+        if not resultado.ok:
+            self.sonidos.tocar("error")
+
+    def avanzar_viaje(self):
+        """Da un paso del viaje activo y deja ver el resultado antes del siguiente (FR-019, FR-031)."""
+        try:
+            resultado = self.controlador.avanzar_viaje()
+        except (OSError, RuntimeError, ValueError) as error:
+            self.controlador.cancelar_viaje()
+            self.mensaje = str(error)
+            return
+        if resultado.ok:
+            self.accion_visual = "mover"
+            self.cambio_vida = 0
+            self.cambios_enemigos = self.enemigos_muertos = self.atacantes = []
+            self.pausa_visual = 0.18
+            self._accion_sin_dibujar = True
+            self.bitacora_desplazamiento = 0
+            self.sonidos.tocar("portal")
+        if not resultado.activo:
+            self.mensaje = resultado.mensaje
 
     def abrir_configuracion(self, retorno=None):
         """Abre los ajustes de vista sin modificar la partida."""
@@ -478,6 +532,8 @@ class VentanaCripta(arcade.Window):
                 and self.controlador.presupuesto_agotado and not self._aviso_presupuesto):
             self._aviso_presupuesto = True
             self.mensaje = "Red agotada: usa datos cargados. Esc: guardar o volver al menú."
+        if self.current_view is None and self.controlador.viaje_activo and not self.pausa_visual:
+            self.avanzar_viaje()
         if self.current_view is None and self.controlador.estado_partida().terminada and not self.pausa_visual:
             from .fin import PantallaFin
             self.show_view(PantallaFin(self))
@@ -555,6 +611,10 @@ class VentanaCripta(arcade.Window):
             self.item = actual.instancia_id if actual else ""
         elif symbol == arcade.key.I:
             self.ejecutar("informacion")
+        elif symbol == arcade.key.C:
+            self.ejecutar("mapa")
+        elif symbol == arcade.key.H:
+            self.abrir_panel("historia")
         elif symbol == arcade.key.A:
             self.ejecutar("atacar")
         elif symbol == arcade.key.PERIOD:

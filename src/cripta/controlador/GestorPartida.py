@@ -118,10 +118,16 @@ class GestorPartida:
             agenda._agregar(evento)
         elif etiqueta == "lista_agregada":
             lista, objeto = datos
-            for posicion, actual in enumerate(lista):
-                if actual is objeto:
-                    lista.pop(posicion)
-                    break
+            if lista and lista[-1] is objeto:
+                lista.pop()  # caso normal: se invierte en orden, O(1)
+            else:
+                for posicion in range(len(lista) - 1, -1, -1):
+                    if lista[posicion] is objeto:
+                        lista.pop(posicion)
+                        break
+        elif etiqueta == "lista_asignada":
+            lista, posicion, anterior = datos
+            lista[posicion] = anterior
         elif etiqueta == "lista_quitada":
             lista, posicion, objeto = datos
             lista.insert(posicion, objeto)

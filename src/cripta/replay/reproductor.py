@@ -67,6 +67,16 @@ class RegistroPartida:
         with self.ruta.open("a", encoding="utf-8") as archivo:
             archivo.write(json.dumps([nombre, argumento], ensure_ascii=False) + "\n")
 
+    def comentar(self, texto):
+        """Anexa una línea de comentario que el lector ignora (FR-033)."""
+        if self.ruta is None:
+            raise RuntimeError("El registro no tiene encabezado.")
+        linea = str(texto)
+        for salto in ["\r\n", "\n", "\r"]:
+            linea = linea.replace(salto, " ")
+        with self.ruta.open("a", encoding="utf-8") as archivo:
+            archivo.write("# " + linea + "\n")
+
 
 def leer_partida(ruta):
     with Path(ruta).open(encoding="utf-8") as archivo:
@@ -83,6 +93,8 @@ def leer_partida(ruta):
             raise ValueError("Encabezado de replay incompatible o incompleto.")
         acciones = []
         for linea, texto in enumerate(archivo, 2):
+            if texto.lstrip().startswith("#"):
+                continue   # comentario (FR-033): no es una acción y no se valida
             try:
                 accion = json.loads(texto)
                 if not isinstance(accion, list) or len(accion) != 2:
@@ -94,7 +106,7 @@ def leer_partida(ruta):
     return [cabecera, acciones]
 
 
-def reproducir(ruta, fuentes, mostrar_progreso=False):
+def reproducir(ruta, fuentes, mostrar_progreso=False, checkpoint_cada=None):
     from cripta.controlador.Aplicacion import Aplicacion
 
     cabecera, acciones = leer_partida(ruta)
@@ -104,7 +116,8 @@ def reproducir(ruta, fuentes, mostrar_progreso=False):
     app = None
     errores = []
     for fuente in fuentes:
-        candidato = Aplicacion(fuente, capacidad_cache=cabecera.capacidad_cache)
+        candidato = Aplicacion(fuente, capacidad_cache=cabecera.capacidad_cache,
+                               checkpoint_cada=checkpoint_cada)
         try:
             detalles = candidato.previsualizar_cripta(cabecera.cripta_id)
             candidato._cripta_service.fijar_presupuesto(detalles.presupuesto_solicitudes)

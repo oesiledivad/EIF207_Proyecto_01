@@ -4,6 +4,7 @@ from cripta.dto.Partida_dto import (
     DetallesCripta, SalaModelo, SalidaVecina, EnemigoPartida,
     ObjetoSuelo, TrampaPartida, ContenidoSala,
 )
+from cripta.dto.Verificacion_dto import UbicacionLlave
 from cripta.estructuras.Catalogo_Lista import Catalogo_Lista
 
 
@@ -40,8 +41,12 @@ def parsear_detalles(detalles: dict, cripta_id: str) -> DetallesCripta:
     )
 
 
-def parsear_sala(item_sala: dict, sala_salida_id: int) -> SalaModelo:
-    """Convierte una sala del esqueleto y sus puertas."""
+def parsear_sala(item_sala: dict, sala_salida_id: int, avisos: list | None = None) -> SalaModelo:
+    """Convierte una sala del esqueleto y sus puertas.
+
+    El costo de una salida ausente o menor que 1 se normaliza a 100; en el segundo
+    caso se anexa un aviso a `avisos` (si se recibió) para la bitácora de arranque.
+    """
     s_id = int(item_sala.get("id", 0))
     s_nombre = str(item_sala.get("nombre", ""))
     s_desc = str(item_sala.get("descripcion", ""))
@@ -56,6 +61,16 @@ def parsear_sala(item_sala: dict, sala_salida_id: int) -> SalaModelo:
             llave = info_salida.get("llave")
             llave_str = str(llave) if llave is not None else ""
             cierre = info_salida.get("cierre_automatico")
+            costo = info_salida.get("costo")
+            if costo is None:
+                costo = 100
+            else:
+                costo = int(costo)
+                if costo < 1:
+                    if avisos is not None:
+                        avisos.append(f"Sala {s_id}: la salida {direccion} declara costo {costo} "
+                                      f"(menor que 1); se usa 100.")
+                    costo = 100
 
             lista_salidas.append(
                 SalidaVecina(
@@ -69,6 +84,7 @@ def parsear_sala(item_sala: dict, sala_salida_id: int) -> SalaModelo:
                     tiene_enemigos=False,
                     tiene_objetos=False,
                     cierre_automatico=int(cierre) if cierre is not None else None,
+                    costo=costo,
                 )
             )
 
@@ -93,6 +109,7 @@ def parsear_contenido(entrada: dict, catalogo: Catalogo_Lista) -> ContenidoSala:
             velocidad=ficha.velocidad if ficha else 100,
             comportamiento=ficha.comportamiento if ficha else "errante",
             regeneracion=getattr(ficha, "regeneracion", None),
+            rango=getattr(ficha, "rango", None),
             tipo=tipo,
             suelta=list(ficha.suelta or []) if ficha else [],
         ))
@@ -118,3 +135,36 @@ def parsear_contenido(entrada: dict, catalogo: Catalogo_Lista) -> ContenidoSala:
             efecto=getattr(ficha, "efecto", "daño"),
         ))
     return ContenidoSala(enemigos=enemigos, objetos=objetos, trampas=trampas)
+
+
+def parsear_llaves(respuesta) -> list[UbicacionLlave]:
+    """Convierte la respuesta de `/criptas/{id}/llaves` en ubicaciones de llave.
+
+    Se descartan las entradas sin `id`. Una lista `llaves` vacía y válida es un
+    dato legítimo (cripta sin llaves). El orden de la lista se conserva tal cual;
+    el modelo no depende de él.
+
+    Raises:
+        ValueError: si falta `llaves`, la estructura general es inválida o una
+            entrada con `id` no trae una `sala` entera.
+    """
+    if not isinstance(respuesta, dict) or not isinstance(respuesta.get("llaves"), list):
+        raise ValueError("Respuesta de llaves inválida: falta la lista 'llaves'.")
+    ubicaciones: list[UbicacionLlave] = []
+    for entrada in respuesta["llaves"]:
+        if not isinstance(entrada, dict):
+            raise ValueError("Respuesta de llaves inválida: entrada que no es objeto.")
+        id_llave = entrada.get("id")
+        if id_llave is None or str(id_llave) == "":
+            continue
+        try:
+            sala = int(entrada.get("sala"))
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Respuesta de llaves inválida: sala no entera en '{id_llave}'.") from e
+        enemigo = entrada.get("enemigo")
+        ubicaciones.append(UbicacionLlave(
+            llave=str(id_llave),
+            sala=sala,
+            enemigo=None if enemigo is None else str(enemigo),
+        ))
+    return ubicaciones

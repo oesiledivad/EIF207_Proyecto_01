@@ -128,6 +128,19 @@ class AdaptadorOffline(CryptDataSource):
             elegidas.append(ficha)
         return {"entidades": elegidas}
 
+    def key_locations(self, crypta_id: str) -> dict:
+        """Llaves de la caché si la cripta está en ella; si no, las del paquete.
+
+        Raises:
+            FileNotFoundError: si no hay ninguna de las dos. No cuenta solicitudes.
+        """
+        if self._en_cache(crypta_id):
+            datos = self.almacen.leer_llaves(crypta_id)
+            if datos is None:
+                raise FileNotFoundError(f"Las llaves de {crypta_id} no se descargaron.")
+            return datos
+        return self._leer(f"cripta_{crypta_id}_llaves.json")
+
     def get_crypta_version(self, crypta_id: str) -> dict:
         if self._en_cache(crypta_id):
             return {"version": self.almacen.leer_detalles(crypta_id).get("version")}

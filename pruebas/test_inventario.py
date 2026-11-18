@@ -21,6 +21,10 @@ class FuentePrueba(AdaptadorOffline):
     def __init__(self):
         super().__init__(Path(__file__).resolve().parents[1] / "datos_offline")
 
+    def key_locations(self, cid):
+        """Sin datos de llaves: la verificación no es parte de estas pruebas."""
+        raise FileNotFoundError("Sin datos de llaves en la fuente de prueba.")
+
     def crypta_details(self, cid):
         datos = super().crypta_details(cid)
         datos["salas_total"] = 2

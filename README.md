@@ -4,6 +4,8 @@
 
 ### EIF 207 · Estructuras de Datos · II Ciclo 2026
 
+**Entregas 01 y 02 · Cripta**
+
 Juego de exploración de mazmorras **online**, con pixel art, simulación por eventos y estructuras de datos propias.
 Explora salas, administra tu inventario y encuentra las llaves para escapar con vida.
 
@@ -14,7 +16,7 @@ Explora salas, administra tu inventario y encuentra las llaves para escapar con 
   <img src="https://img.shields.io/badge/Modo-online%20%7C%20offline-667744" alt="Modos online y offline">
 </p>
 
-[Instalación](#instalación) · [Cómo jugar](#primera-partida) · [Controles](#controles) · [Comandos](#comandos) · [Documentación](#arquitectura-y-documentación)
+[Entregas](#entregas-01-y-02) · [Instalación](#instalación) · [Cómo jugar](#primera-partida) · [Controles](#controles) · [Comandos](#comandos) · [Documentación](#arquitectura-y-documentación)
 
 </div>
 
@@ -25,10 +27,25 @@ Explora salas, administra tu inventario y encuentra las llaves para escapar con 
 - Inventario con equipo visible, vistas ordenadas y retroceso de las últimas cinco acciones mediante pergaminos.
 - Minimapa clickeable, animaciones, música, efectos de sonido y configuración de volumen y pantalla.
 - Guardado binario, puntajes, reproducción determinista de partidas y mediciones de rendimiento.
+- Rutas con costos de terreno, cazadores, mapa conocido con niebla de guerra y viaje automático «ir a».
+- Verificación de resolubilidad con reporte de llaves y consultas a la línea de tiempo de la partida.
 
 La simulación avanza por **eventos y reloj virtual**, con tiempos según la acción y la velocidad de cada actor. Las animaciones y el tiempo que tardas en decidir no adelantan ese reloj.
 
 ![Partida online: enemigos, inventario, bitácora, rastro y minimapa](docs/imagenes/partida.png)
+
+## Entregas 01 y 02
+
+Este repositorio reúne las dos entregas del proyecto. La **entrega 02 continúa sobre la 01** y conserva el juego, las estructuras propias, la persistencia y la reproducción de partidas.
+
+| Entrega | Alcance |
+|---------|---------|
+| **01 · Juego y estructuras base** | Cliente HTTP con presupuesto, caché y precarga; simulación por eventos, combate, inventario, efectos, rastro, retroceso, guardado binario, replay y mediciones. |
+| **02 · Rutas, conocimiento e historia** | Terreno con costos, cazadores y rutas ponderadas, niebla de guerra y mapa conocido, viaje «ir a», verificación de resolubilidad y línea de tiempo con puntos de control. Desarrollo con spec-kit y trazabilidad entre requisitos, tareas y pruebas. |
+
+Para revisar la entrega completa usa la rama **`master4`**. Incluye el paquete actual `datos_entrega/` para ejecutar y verificar las criptas publicadas sin conexión, junto al paquete histórico `datos_offline/` que conserva Stormlight y el replay de ejemplo.
+
+Las especificaciones de la entrega 02 están en [resolubilidad](specs/001-resolubilidad/spec.md), [niebla e «ir a»](specs/002-niebla-ir-a/spec.md), [terreno y cazador](specs/003-terreno-cazador/spec.md) y [línea de tiempo](specs/004-linea-tiempo/spec.md). La [validación de entrega](specs/003-terreno-cazador/validacion_cierre.txt) registra las **389 pruebas sin fallas** y las mediciones sobre la referencia publicada de 300 salas.
 
 ## Instalación
 
@@ -80,7 +97,7 @@ Vuelve a abrir la terminal y comprueba la instalación con `uv --version`. Hay o
 ### 3. Descargar y preparar el proyecto
 
 ```sh
-git clone https://github.com/oesiledivad/EIF207_Proyecto_01.git
+git clone --branch master4 https://github.com/oesiledivad/EIF207_Proyecto_01.git
 cd EIF207_Proyecto_01
 uv python install 3.13
 uv sync --locked
@@ -96,7 +113,30 @@ uv run cripta
 
 Ejecuta los comandos desde la raíz del repositorio. El modo online es el predeterminado: consulta la API del curso y muestra las criptas disponibles. Necesitas conexión a Internet para instalar las dependencias y para jugar en este modo.
 
-Si quieres jugar sin conexión, utiliza la alternativa `uv run cripta --offline`, con los datos incluidos o descargados previamente.
+Si quieres jugar sin conexión con los datos de la entrega 02:
+
+```sh
+uv run cripta --offline --offline-dir datos_entrega
+```
+
+### 5. Comprobar la entrega sin abrir el juego
+
+Verifica la cripta de referencia incluida, de 300 salas, sin consultar la red:
+
+```sh
+uv run cripta --offline --offline-dir datos_entrega --verificar cripta-06
+```
+
+El resultado esperado es **RESOLUBLE**, con un orden de cuatro llaves y cero solicitudes de red. Para ver un caso no resoluble, cambia `cripta-06` por `cripta-05`: muestra las puertas bloqueadas y el ciclo entre llaves, y termina con código `1`.
+
+Para repetir las pruebas y las mediciones de las dos entregas:
+
+```sh
+uv run python -m unittest discover -s pruebas -t .
+uv run cripta --bench --semilla 42
+```
+
+La suite incluye pruebas gráficas que requieren pantalla y soporte OpenGL. El benchmark funciona sin abrir la interfaz ni consultar la red; al final identifica la versión de la referencia publicada y sus resultados frente a los límites de 200, 5 y 20 ms.
 
 ### Entorno virtual (opcional)
 
@@ -126,7 +166,7 @@ Con el entorno activo puedes ejecutar `cripta` directamente; para salir del ento
 
 Al abrir `uv run cripta`, espera la pantalla de carga del catálogo online.
 
-1. Selecciona una cripta en el menú; para empezar, usa **Osario menor** (`cripta-01`).
+1. Selecciona una cripta en el menú; para empezar, usa **Catacumbas menores** (`cripta-02`).
 2. Escribe tu nombre. La semilla puede quedar vacía; un mismo número permite repetir el azar de una partida con los mismos datos.
 3. Pulsa **Iniciar partida**. Haz clic en los objetos del suelo para recogerlos y en las puertas para abrirlas o cruzarlas. Algunas requieren una llave.
 4. Selecciona un enemigo y pulsa **A**, o haz doble clic sobre él para atacar. Revisa la vida, los efectos y la bitácora después de actuar.
@@ -152,6 +192,8 @@ Al abrir `uv run cripta`, espera la pantalla de carga del catálogo online.
 | Orden visual del inventario: peso / valor / nombre / real | **Alt + P / V / N / R**                                      |
 | Ascendente / descendente del inventario | Clic en **ASC/DESC** o **Alt + D** |
 | Información de la sala y del rastro                       | **I**                                                        |
+| Encender la antorcha (amplía el radio visible en la niebla) | Seleccionarla y **U**                                      |
+| Historia de la partida (`historia <t>` o `historia #k`)    | **H**, escribir el instante o `#` y el número, **Enter**     |
 | Ayuda / menú / terminar con confirmación                  | **F1** o **/** / **Esc** / **Q**                             |
 | Pantalla completa / silenciar efectos / silenciar música  | **F11** / **F2** / **F3**                                    |
 
@@ -169,11 +211,13 @@ uv run cripta
 
 ### Jugar offline
 
-Utiliza primero lo descargado en `.cripta_cache/` y después el paquete `datos_offline/`, sin consultar la red.
+Utiliza primero lo descargado en `.cripta_cache/` y después el paquete seleccionado, sin consultar la red. `datos_entrega/` contiene una captura completa del servicio del 17/11/2026, con versiones, costos, cazadores y ubicaciones de llaves. Incluye `cripta-06` (referencia de 300 salas) y `cripta-05` (no resoluble).
 
 ```sh
-uv run cripta --offline
+uv run cripta --offline --offline-dir datos_entrega
 ```
+
+El paquete predeterminado `datos_offline/` conserva los datos históricos para Stormlight y el replay de ejemplo; sus criptas no incluyen ubicaciones de llaves. Para probar resolubilidad sin red usa `--offline-dir datos_entrega`. Para aislar la captura de una caché personal puedes añadir `--cache-dir <carpeta-vacía>`.
 
 Una cripta descargada se usa con su versión en caché; una sala que falte allí no se completa mezclando otra versión. Las fichas de catálogo también deben ser compatibles.
 
@@ -201,15 +245,87 @@ El ejemplo usa los datos de `datos_offline/` y muestra cada acción y el estado 
 
 Para reproducir una partida propia, sustituye la ruta por su archivo `.log` dentro de `partidas/`. Esos registros se generan al jugar y no se incluyen en Git.
 
+### Diagnóstico de red
+
+En modo online, `partidas/red.log` registra la fecha, el recurso y sus parámetros, cada intento HTTP, el estado o error de transporte, la duración y las solicitudes utilizadas frente al presupuesto. También distingue las esperas por 429 y los rechazos por presupuesto. Se conserva hasta 1 MiB por archivo y tres archivos anteriores (`red.log.1` a `.3`). `--log-dir` cambia su carpeta.
+
+Este diagnóstico es independiente de los archivos de replay: no registra acciones, cuerpos de respuestas ni cabeceras HTTP. Offline y `--bench` no crean este archivo ni consultan la red.
+
+### Mapa conocido y viaje «ir a»
+
+La sala se ve cubierta por una niebla salvo un radio pequeño alrededor del jugador; con la antorcha encendida el radio cubre casi toda la sala (spec 002, FR-042 a FR-045). Además, el jugador solo ve lo que conoce: una sala está desconocida, avistada (se sabe que existe) o explorada (entró o la iluminó la antorcha). Cada salida de una sala explorada muestra su costo y la última observación de su puerta (abierta, cerrada o sin observar).
+
+- **Mapa:** pulsa **C** (o elige «Mapa conocido (C)» en el menú de **Esc**) para ver las salas exploradas con sus salidas, costos y puertas, y los ids de las avistadas.
+- **Ir a:** en el mapa, haz clic sobre una sala explorada. El viaje avanza un paso por vez por la ruta de menor costo, cada paso es un movimiento ordinario y la ruta se recalcula antes de cada paso. Se detiene al llegar, al ver enemigos vivos en una sala, al recibir daño, si ya no hay ruta conocida, si un paso se rechaza o si termina la partida, y siempre muestra el motivo en la bitácora. Cualquier otra acción (incluido el pergamino con **P**) lo cancela. El viaje no abre puertas ni usa salas que no exploraste.
+- **Registro:** al aceptar la orden, `partida.log` recibe una línea de comentario `# ir_a <sala>` antes del primer paso y después un `["mover", "<dirección>"]` por paso. El reproductor ignora las líneas que empiezan por `#`, así que `--replay` llega al mismo estado final.
+
+Las decisiones, la complejidad y las mediciones están en la [sección 13 de decisiones.md](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53).
+
+### Terreno y cazador
+
+Cada salida tiene un costo (1 a 300; vale 100 si no lo declara) y moverse por ella consume ese tiempo, para el jugador y para los enemigos; las demás acciones cuestan lo mismo que antes. La interfaz escribe el costo junto a cada puerta y en su ayuda.
+
+El **cazador** es un enemigo que conoce todo el mapa y persigue al jugador por la ruta de menor costo, pero solo si está dentro de su `rango` (en costo de movimiento); fuera de él espera. En la interfaz lleva un contorno morado bajo los pies y su texto emergente dice «cazador · rango N». Su ficha debe traer el campo `rango` (entero ≥ 0). No usa azar, se guarda y se reproduce igual que los demás enemigos.
+
+Las decisiones, la complejidad y las mediciones (H1 a H8) están en las secciones [14](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51), [15](docs/decisiones.md#15-enemigo-cazador-y-búsqueda-compartida-parte-ii-52) y [16](docs/decisiones.md#16-agenda-de-eventos-con-cazadores-parte-ii-56) de decisiones.md.
+
+### Línea de tiempo: historia de la partida
+
+Puedes ver el estado de la partida en cualquier instante pasado sin modificarla: pulsa **H** (también figura en la ayuda, **F1**), escribe un instante virtual `t` o `#k` (Tab o `#` cambia de modo) y pulsa **Enter**. `#k` es el estado justo antes de tu acción número k; `#1` es el inicio. El resumen muestra reloj, sala, vida y estadísticas, inventario, efectos, enemigos de la sala y el mapa conocido. La consulta no consume tiempo, no queda en `partida.log` y no cambia el pergamino. Las acciones revertidas con un pergamino desaparecen de la historia, y un instante posterior al reloj actual se rechaza.
+
+Sin interfaz, `--hasta` imprime el mismo resumen al reproducir un registro; si el instante es posterior al final, imprime el estado final e indica en qué instante terminó:
+
+```sh
+uv run cripta --offline --replay partidas/<archivo>.log --hasta 500
+```
+
+`--checkpoint-cada K` fija cada cuántas acciones se guarda una copia completa del estado (por defecto 50, entero ≥ 1). Una partida guardada conserva la línea de tiempo y su K; un guardado de la Parte I se rechaza por formato incompatible. Decisiones y mediciones en las secciones [17](docs/decisiones.md#17-línea-de-tiempo-y-puntos-de-control-parte-ii-36-y-55) y [18](docs/decisiones.md#18-historial-de-retroceso-con-la-carga-nueva-parte-ii-56) de decisiones.md.
+
 ### Medir rendimiento
 
-Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia y cargas sintéticas. No consulta la red ni abre la interfaz.
+Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y las secciones «Resolubilidad» (M1 a M7), «Niebla de guerra e ir a» (K1 a K9) «Línea de tiempo» (L1 a L5: memoria y consulta por K y sin puntos de control, dirección de reconstrucción, costo por acción, recorte por pergamino y retroceso con la carga nueva) y «Terreno y cazador» (H1 a H8: búsqueda compartida frente a individual, corte por rango, reutilizar frente a recalcular, coincidencia con la búsqueda completa, ciclo con decenas de cazadores frente al límite de 20 ms, agenda, predicado y determinismo). No consulta la red ni abre la interfaz.
 
 ```sh
 uv run cripta --bench
 ```
 
-Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada.
+Con `--semilla N` las criptas sintéticas de las secciones «Resolubilidad» y «Niebla de guerra e ir a» (K1 a K9) se generan con esa semilla; vacía equivale a `42` y nunca es aleatoria. Con la misma semilla los resultados deterministas coinciden entre ejecuciones y los tiempos varían.
+
+```sh
+uv run cripta --bench --semilla 42
+```
+
+Al final aparece «Referencia publicada»: selecciona el mayor esqueleto de `datos_entrega/`, identifica su versión y mide verificación (200 ms), un paso de «ir a» con conocimiento completo (5 ms) y ciclos con 50 cazadores activos de prueba (20 ms). Conserva el mapa, las puertas y los costos publicados; esos 50 actores son una carga de medición, no una afirmación sobre cuántos enemigos trae la API. La lectura del paquete ocurre fuera del cronómetro. Las secciones anteriores mantienen sus cargas sintéticas e históricas para comparación.
+
+Para obtener otra captura sin sobrescribir la anterior:
+
+```sh
+uv run python herramientas/descargar_paquete_offline.py --destino datos_entrega_nueva
+```
+
+La herramienta exige un destino nuevo, respeta el presupuesto y los lotes de diez, descarga todas las páginas, contenido, fichas, botín y llaves, y comprueba las versiones antes de publicar la captura.
+
+
+Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54). Las de la niebla de guerra y «ir a» están en la [sección 13](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53) y las de terreno y cazador en las secciones [14 a 16](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51); la salida de referencia está en [mediciones.txt](specs/003-terreno-cazador/mediciones.txt).
+
+### Verificar la resolubilidad de una cripta
+
+Decide si la cripta se puede ganar y en qué orden se obtienen las llaves, o por qué no. No abre la interfaz. Con `--offline` no consulta la red.
+
+```sh
+uv run cripta --verificar cripta-06
+uv run cripta --offline --offline-dir datos_entrega --verificar cripta-06
+```
+
+Códigos de salida: `0` si es resoluble, `1` si no lo es y `2` si no se pudo emitir un veredicto (datos o llaves no disponibles) o hubo un error de uso. `--semilla` no tiene efecto con `--verificar`.
+
+Al iniciar una partida la cripta también se verifica. Si no es resoluble, la partida no inicia y se muestra el reporte. `--forzar` permite iniciarla de todos modos y se ignora con `--verificar`, `--bench` y `--replay`:
+
+```sh
+uv run cripta --forzar --cripta cripta-05
+```
+
+El algoritmo, la complejidad y las mediciones están en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
 
 ### Consultar la ayuda
 
@@ -225,18 +341,22 @@ Puedes añadir estas opciones al comando de arranque para ajustar la capacidad d
 
 | Opción                              | Función y valor predeterminado                                           |
 |-------------------------------------|--------------------------------------------------------------------------|
-| `--cripta`, `--nombre`, `--semilla` | Preselección del menú; nombre `Jugador`, semilla aleatoria si está vacía |
+| `--cripta`, `--nombre`, `--semilla` | Preselección del menú; nombre `Jugador`, semilla aleatoria si está vacía (con `--bench`, `42`) |
+| `--verificar CRIPTA`                | Verifica la resolubilidad sin abrir la interfaz; salida 0, 1 o 2          |
+| `--forzar`                          | Inicia una cripta no resoluble de todos modos                            |
+| `--checkpoint-cada 50`              | Acciones entre puntos de control de la línea de tiempo (entero ≥ 1)      |
+| `--hasta T`                         | Con `--replay`: imprime el estado en el instante T sin abrir la interfaz |
 | `--cache-size 25`                   | Capacidad de fichas de catálogo en memoria; debe ser positiva            |
 | `--cache-dir .cripta_cache`         | Carpeta de caché persistente                                             |
 | `--offline-dir datos_offline`        | Paquete local de respuestas de la API                                    |
-| `--log-dir partidas`                | Carpeta de registros de partida                                          |
+| `--log-dir partidas`                | Registros de partida y diagnóstico HTTP en `red.log`                                          |
 | `--puntajes RUTA`                   | Archivo de puntajes; por defecto, `puntajes.json` dentro de `--log-dir`  |
 
 Ejemplos de uso; puedes combinar varias opciones en una misma ejecución:
 
 ```sh
 # Preseleccionar una cripta online, el nombre y la semilla
-uv run cripta --cripta cripta-01 --nombre "Explorador" --semilla 42
+uv run cripta --cripta cripta-02 --nombre "Explorador" --semilla 42
 
 # Permitir hasta 50 fichas de catálogo en memoria
 uv run cripta --cache-size 50
@@ -262,11 +382,36 @@ Ejecuta solo el ejemplo que necesites. Las líneas que empiezan con `#` son come
 |----------------------------------------|-------------------------------------------------------------------------------------------|
 | `.venv/`                               | Entorno de Python y dependencias instaladas por uv                                        |
 | `.cripta_cache/`                       | Versiones, catálogo y datos de criptas descargados                                        |
-| `partidas/*.log` | Registros generados al jugar; el nombre incluye la cripta y un consecutivo |
+| `partidas/*_partida_*.log` | Replay de acciones; el nombre incluye la cripta y un consecutivo |
+| `partidas/red.log` y `.1` a `.3` | Diagnóstico HTTP rotativo, separado de las acciones |
 | `partidas/puntajes.json`               | Resultados, jugador, versión de cripta, acciones, enemigos derrotados y tiempo virtual    |
 | `partidas/guardadas/*.bin`             | Guardados por jugador y partida, en formato binario propio                                |
 
 Los archivos de ejecución están excluidos de Git. Los `.log` y los `.bin` cumplen funciones distintas; conserva ambos si quieres reproducir acciones y también continuar una partida.
+
+## Parte II: desarrollo dirigido por especificaciones
+
+| Aspecto | Valor |
+|---------|-------|
+| spec-kit | `specify-cli` **v1.3.3**, scripts `sh` (instalado con `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.3.3`) |
+| Agente de programación | **Claude Code** (integración `claude` de spec-kit; comandos en `.claude/skills/speckit-*`) |
+| Constitución | [.specify/memory/constitution.md](.specify/memory/constitution.md) |
+| Flujo por capacidad | constitution (una vez), specify, clarify, plan, tasks, analyze, implement |
+
+Cada capacidad tiene su carpeta con `spec.md`, `plan.md`, `tasks.md`, investigación, modelo de datos, guía de validación y mediciones. En Git, cada `spec.md` se confirmó antes que el código que la implementa.
+
+| Spec | Capacidad | Responsable |
+|------|-----------|-------------|
+| [001-resolubilidad](specs/001-resolubilidad/spec.md) | Verificación de resolubilidad (§3.5, §5.4) | Persona A |
+| [002-niebla-ir-a](specs/002-niebla-ir-a/spec.md) | Niebla de guerra e «ir a» (§3.3, §3.4, §5.3) | Persona A |
+| [003-terreno-cazador](specs/003-terreno-cazador/spec.md) | Terreno con costo y cazador (§3.1, §3.2, §5.1, §5.2, §5.6 agenda) | Persona B |
+| [004-linea-tiempo](specs/004-linea-tiempo/spec.md) | Línea de tiempo y puntos de control (§3.6, §5.5, §5.6 retroceso) | Persona C |
+
+Entregables de §7.2: el Documento de Decisiones está en [docs/decisiones.md](docs/decisiones.md) (secciones 12 a 18 para la Parte II) y la bitácora de prompts, incluidos los comandos de spec-kit, en [docs/PROMPTS_LLM.md](docs/PROMPTS_LLM.md). Los dos siguen en `docs/`, donde estaban desde la Parte I.
+
+Dos dudas del enunciado no recibieron respuesta antes de la entrega y se resolvieron por inferencia. (1) El enunciado anuncia los ajustes de límites como enmienda «(§2.7)», pero esa sección no existe y no se publicó ninguna, así que se usan los límites de §6.1 tal como están: 20 ms, 200 ms, 50 ms y 5 ms. (2) La muerte de otros actores no cambia la decisión del cazador (FR-018 de la spec 003, con su razonamiento en los Supuestos).
+
+Comandos nuevos de la Parte II: `--verificar CRIPTA`, `--forzar`, `--checkpoint-cada K` y `--replay PARTIDA.LOG --hasta T` (ver «Comandos»).
 
 ## Pruebas y límites conocidos
 
@@ -279,6 +424,31 @@ uv run python -m unittest pruebas.test_partida pruebas.test_inventario pruebas.t
 ```
 
 Las pruebas gráficas requieren un entorno con pantalla y soporte OpenGL, aunque sus ventanas estén ocultas.
+
+Pruebas de aceptación de la Parte II, una línea por especificación. Cada prueba cita en su docstring el requisito (FR) que verifica, y las de los casos del Apéndice B lo indican:
+
+```sh
+# 001 Resolubilidad
+uv run python -m unittest pruebas.test_resolubilidad pruebas.test_indice_llaves pruebas.test_llaves_adaptadores pruebas.test_verificar_cli pruebas.test_inicio_verificacion pruebas.test_cola_lista pruebas.test_bench_resolubilidad
+# 002 Niebla de guerra e «ir a»
+uv run python -m unittest pruebas.test_conocimiento pruebas.test_conocimiento_antorcha pruebas.test_conocimiento_retroceso pruebas.test_conocimiento_serializable pruebas.test_memoria_puertas pruebas.test_ir_a pruebas.test_registro_ir_a pruebas.test_rutas pruebas.test_monticulo_minimo pruebas.test_costo_salida pruebas.test_entrantes pruebas.test_historial_asignar pruebas.test_bench_conocimiento
+# 003 Terreno y cazador
+uv run python -m unittest pruebas.test_cazador pruebas.test_cazador_guardado pruebas.test_cazador_puertas pruebas.test_costo_movimiento pruebas.test_decision_enemigo pruebas.test_ficha_cazador pruebas.test_contadores pruebas.test_bench_cazador
+# 004 Línea de tiempo
+uv run python -m unittest pruebas.test_linea_tiempo pruebas.test_historia pruebas.test_historia_retroceso pruebas.test_historia_replay pruebas.test_historia_guardado pruebas.test_historia_vista pruebas.test_bench_linea
+```
+
+Suite completa:
+
+```sh
+uv run python -m unittest discover -s pruebas -t .
+```
+
+Las comprobaciones de diagnóstico HTTP, captura completa y medición sobre datos publicados se pueden ejecutar por separado:
+
+```sh
+uv run python -m unittest pruebas.test_diagnostico_red pruebas.test_datos_entrega
+```
 
 ### Límites conocidos
 
@@ -299,7 +469,7 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 | `src/cripta/servicio/` y `adaptadores/`      | Catálogo, precarga, red, caché persistente y fuente offline          |
 | `src/cripta/vista/`                          | Interfaz gráfica y recursos de imagen, fuente y audio                |
 | `src/cripta/replay/`                         | Registro y reproducción de acciones                                  |
-| `datos_offline/`, `pruebas/`, `herramientas/` | Datos offline, pruebas y utilidades de generación de recursos        |
+| `datos_offline/`, `datos_entrega/`, `pruebas/`, `herramientas/` | Datos históricos y actuales, pruebas y utilidades        |
 
 - [Decisiones de diseño y análisis de estructuras](docs/decisiones.md).
 - [Estructuras de datos: operaciones y complejidades](docs/estructuras.md).
@@ -314,6 +484,6 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 
 **Eliseo Zuñiga Obando · Fiorella Porras Mora · Kyara Rojas Gonzalez**
 
-Proyecto académico · Universidad Nacional de Costa Rica
+Entregas 01 y 02 · Proyecto académico · Universidad Nacional de Costa Rica
 
 </div>

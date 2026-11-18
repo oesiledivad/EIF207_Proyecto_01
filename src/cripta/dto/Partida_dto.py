@@ -1,11 +1,15 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 
+from cripta.dto.Verificacion_dto import ResultadoVerificacion
+
 @dataclass
 class ResultadoInicio:
     ok: bool
     motivo: str = ""
     semilla_efectiva: int = 0
+    verificacion: ResultadoVerificacion | None = None   # None si no se verificó (FR-014)
+    aviso: str = ""                                     # Veredicto o "resolubilidad no verificada" (FR-022)
 
 @dataclass
 class SalidaVecina:
@@ -19,6 +23,9 @@ class SalidaVecina:
     tiene_enemigos: bool
     tiene_objetos: bool
     cierre_automatico: int | None = None
+    costo: int = 100                          # FR-023
+    puerta_recordada: str = "sin_observar"    # abierta, cerrada o sin_observar (FR-005)
+    estado_vecina: str = "avistada"           # explorada o avistada (FR-002)
 
 @dataclass
 class EnemigoPartida:
@@ -34,6 +41,7 @@ class EnemigoPartida:
     regeneracion: int | None = None
     tipo: str = ""                                          # id de catálogo
     suelta: list[str] = field(default_factory=list)         # botín (2.6)
+    rango: int | None = None                                # solo cazador (FR-008, FR-021)
 
 @dataclass
 class ObjetoSuelo:

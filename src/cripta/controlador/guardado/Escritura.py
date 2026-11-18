@@ -11,6 +11,12 @@ from cripta.controlador.guardado.Formato import (
     ACTOR_SALIDA,
     ACTOR_TRAMPA,
     ID_GLOBAL,
+    ID_LINEA,
+    VALOR_BOOLEANO,
+    VALOR_ENTERO,
+    VALOR_NULO,
+    VALOR_TEXTO,
+    VALOR_TUPLA,
     VERSION_CUERPO,
 )
 from cripta.estructuras.Guardado_Binario import Guardado_Binario
@@ -45,6 +51,8 @@ def _escribir_enemigo(w: EscritorBinario, e) -> None:
     for objeto in e.suelta:
         w.texto(objeto)
     w.entero_opcional(e.regeneracion_objetivo)
+    if e.comportamiento == "cazador":
+        w.entero(e.rango)   # FR-023: el formato no cambia para los demás enemigos
 
 
 def _cuerpo_sala(sala) -> bytes:
@@ -161,6 +169,56 @@ def _cuerpo_global(app) -> bytes:
     return w.a_bytes()
 
 
+def _escribir_valor(w: EscritorBinario, valor) -> None:
+    """Valor de una ranura o marca: nulo, booleano, entero, texto o tupla de textos."""
+    if valor is None:
+        w.entero(VALOR_NULO)
+    elif type(valor) is bool:
+        w.entero(VALOR_BOOLEANO)
+        w.booleano(valor)
+    elif type(valor) is int:
+        w.entero(VALOR_ENTERO)
+        w.entero(valor)
+    elif type(valor) is str:
+        w.entero(VALOR_TEXTO)
+        w.texto(valor)
+    elif type(valor) is tuple:
+        w.entero(VALOR_TUPLA)
+        w.entero(len(valor))
+        for texto in valor:
+            w.texto(str(texto))
+    else:
+        raise ValueError(f"Valor de la línea de tiempo no admitido: {type(valor).__name__}.")
+
+
+def _escribir_valores(w: EscritorBinario, valores: list) -> None:
+    w.entero(len(valores))
+    for valor in valores:
+        _escribir_valor(w, valor)
+
+
+def _cuerpo_linea(app) -> bytes:
+    """Conocimiento del jugador y línea de tiempo completa (D9, FR-024, FR-025)."""
+    w = EscritorBinario()
+    w.entero(VERSION_CUERPO)
+    _escribir_valores(w, app._exploracion.conocimiento.instantanea())
+    n, ids, nombres, vidas_max, ranuras, linea = app._linea.a_datos()
+    w.entero(n)
+    for lista in [ids, nombres]:
+        w.entero(len(lista))
+        for texto in lista:
+            w.texto(texto)
+    _escribir_valores(w, vidas_max)
+    _escribir_valores(w, ranuras)
+    w.entero(linea[0])
+    for lista in linea[1:11]:
+        _escribir_valores(w, lista)
+    w.entero(len(linea[11]))
+    for estado in linea[11]:
+        _escribir_valores(w, estado)
+    return w.a_bytes()
+
+
 def escribir_partida(app, ruta) -> None:
     """Escribe la partida activa. El archivo se reemplaza de forma atómica."""
     estado = app._gestor.estado
@@ -170,6 +228,7 @@ def escribir_partida(app, ruta) -> None:
         if sala is not None:
             cuerpos.append(Cuerpo(sala.id, _cuerpo_sala(sala)))
     cuerpos.append(Cuerpo(ID_GLOBAL, _cuerpo_global(app)))
+    cuerpos.append(Cuerpo(ID_LINEA, _cuerpo_linea(app)))
     temporal = f"{ruta}.tmp"
     Guardado_Binario(temporal).guardar(estado.version_cripta, cuerpos)
     os.replace(temporal, ruta)

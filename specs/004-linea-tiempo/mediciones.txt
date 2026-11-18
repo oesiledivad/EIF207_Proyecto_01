@@ -1,0 +1,33 @@
+Mediciones de la spec 004 (T021), sección «Línea de tiempo» de --bench
+Comando: uv run python -m cripta --bench --semilla 42 (esta sección: cripta.bench_linea.bench_linea)
+Equipo: Windows-11-10.0.26200-SP0 Python 3.13.17
+Fecha: 2026-11-17
+
+=== Linea de tiempo y puntos de control (5.5) y retroceso (5.6), semilla 42 ===
+Partida larga: cripta cripta-04, 5000 acciones, reloj 499250
+L1 linea de tiempo: 5000 acciones, 5889 cambios, 306 ranuras, 200 consultas (limite 50 ms)
+                     K=1: puntos= 5000 celdas= 1568514 (control  1529958) memoria=  12910.6KiB consulta media=0.088ms peor=0.160ms acciones<=1 CUMPLE
+                    K=10: puntos=  500 celdas=  191514 (control   152958) memoria=   1712.7KiB consulta media=0.086ms peor=0.129ms acciones<=7 CUMPLE
+                    K=50: puntos=  100 celdas=   69114 (control    30558) memoria=    717.5KiB consulta media=0.088ms peor=0.261ms acciones<=34 CUMPLE
+                   K=200: puntos=   25 celdas=   46164 (control     7608) memoria=    530.9KiB consulta media=0.089ms peor=0.205ms acciones<=123 CUMPLE
+   sin puntos de control: puntos=    1 celdas=   38820 (control      264) memoria=    471.1KiB consulta media=0.165ms peor=0.484ms acciones<=2638 CUMPLE
+L2 direccion de reconstruccion con K=50
+   adelante: media=0.089ms peor=0.197ms cambios recorridos (media)=    27.3 acciones<=49
+      atras: media=0.093ms peor=0.265ms cambios recorridos (media)=    32.4 acciones<=50
+    cercano: media=0.089ms peor=0.248ms cambios recorridos (media)=    15.4 acciones<=31
+L3 accion completa (ciclo de eventos incluido), 5000 acciones
+  con linea: media=0.114ms peor=1.095ms limite 20 ms CUMPLE
+  sin linea: media=0.092ms peor=0.849ms
+  sobrecosto medio: 0.022ms por accion
+L1b carga pesada: 5000 acciones, 299999 cambios, 1000 ranuras, 200 consultas
+                     K=1: puntos= 5000 celdas=  6214996 memoria=   48.82MiB reconstruccion media=0.009ms peor=0.022ms acciones<=1 CUMPLE
+                    K=10: puntos=  500 celdas=  1714996 memoria=   14.06MiB reconstruccion media=0.020ms peor=0.051ms acciones<=5 CUMPLE
+                    K=50: puntos=  100 celdas=  1314996 memoria=   10.97MiB reconstruccion media=0.063ms peor=0.249ms acciones<=25 CUMPLE
+                   K=200: puntos=   25 celdas=  1239996 memoria=   10.39MiB reconstruccion media=0.199ms peor=0.642ms acciones<=100 CUMPLE
+   sin puntos de control: puntos=    1 celdas=  1215996 memoria=   10.20MiB reconstruccion media=4.723ms peor=13.028ms acciones<=2496 CUMPLE
+L4 recorte por pergamino (10 cambios por accion, 200 recortes)
+    1000 acciones: recorte medio=0.001ms
+   10000 acciones: recorte medio=0.001ms
+L5 historial de retroceso (5.6): 10000 intervalos de 10 atributos, mitad revertidos
+  sin observador=78.513ms con observador de la linea=85.355ms razon=1.09
+  cambios por intervalo en la partida larga: media=13.9 maximo=64 (5000 intervalos)

@@ -1,0 +1,12 @@
+Línea base de la spec 004 (T002)
+Commit: af93981 (código sin modificar; solo specs y PROMPTS_LLM.md después de 44bbb12)
+Comando: uv run python -m unittest discover -s pruebas -t .
+Resultado: Ran 340 tests, FAILED (failures=4, errors=3)
+Pruebas que ya fallaban:
+ERROR: pruebas.test_datos (unittest.loader._FailedTest.pruebas.test_datos)
+ERROR: pruebas.test_ensamblador (unittest.loader._FailedTest.pruebas.test_ensamblador)
+ERROR: test_sin_paquete_juega_lo_descargado (pruebas.test_offline_cache.PruebasOfflineDesdeCache.test_sin_paquete_juega_lo_descargado)
+FAIL: test_cripta_en_cache_no_mezcla_con_el_paquete (pruebas.test_offline_cache.PruebasOfflineDesdeCache.test_cripta_en_cache_no_mezcla_con_el_paquete)
+FAIL: test_sin_cache_usa_el_paquete_del_curso (pruebas.test_offline_cache.PruebasOfflineDesdeCache.test_sin_cache_usa_el_paquete_del_curso)
+FAIL: test_referencias_paginas_llaves_y_catalogo_completos (pruebas.test_stormlight.PruebasStormlight.test_referencias_paginas_llaves_y_catalogo_completos)
+FAIL: test_trampa_de_la_sala_actual_y_veneno (pruebas.test_trampas_estado.PruebasTrampasEnEstado.test_trampa_de_la_sala_actual_y_veneno)

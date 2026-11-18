@@ -16,6 +16,7 @@ from cripta.modelo.Efectos import (
     procesar_rearme_trampa,
 )
 from cripta.modelo.Puertas import procesar_cierre_puerta
+from cripta.modelo.Persecucion import Persecucion
 import random
 class Simulacion:
     """
@@ -31,13 +32,20 @@ class Simulacion:
         self.agenda = HeapAgendaEventos(historial)
         self.reloj = Reloj(historial)
         self.azar = random.Random(semilla)
+        # Búsqueda compartida de los cazadores (spec 003). No es estado del juego: se crea vacía
+        # con cada simulación y se configura al ensamblar las salas.
+        self.persecucion = Persecucion(self.agenda)
+        # Aviso opcional al terminar cada evento, con el reloj actual. No es estado del juego: la
+        # línea de tiempo lo usa para registrar cambios por evento (spec 004, D3).
+        self.al_terminar_evento = None
 
     def _ejecutar_turno_enemigo(self, enemigo, jugador, salas: IndiceSalas) -> list[str]:
         if not esta_vivo(enemigo):
             return []
 
         tiempo_actual = self.reloj.tiempo_actual
-        tipo_accion, destino = enemigo.decidir_accion(jugador.sala, salas, tiempo_actual, self.azar)
+        tipo_accion, destino, costo = enemigo.decidir_accion(
+            jugador.sala, salas, tiempo_actual, self.azar, self.persecucion)
         mensajes: list[str] = []
 
         if tipo_accion == "atacar":
@@ -51,7 +59,14 @@ class Simulacion:
             if enemigo.comportamiento == "rastreador" and enemigo.sala == jugador.sala:
                 mensajes.append(f"{enemigo.etiqueta} sigue tu rastro y entra en tu sala.")
 
-        intervalo = calcular_intervalo(costo_accion(tipo_accion), enemigo.velocidad)
+        # FR-003/FR-005: mover cuesta lo que la salida; las demás acciones, su costo base.
+        if tipo_accion == "mover":
+            if costo is None:
+                raise ValueError("decidir_accion devolvió mover sin el costo de la salida")
+            costo_efectivo = costo
+        else:
+            costo_efectivo = costo_accion(tipo_accion)
+        intervalo = calcular_intervalo(costo_efectivo, enemigo.velocidad)
         self.agenda.reprogramar(enemigo, tiempo_actual + intervalo, "accion_actor")
         return mensajes
 
@@ -88,6 +103,8 @@ class Simulacion:
             evento = self.agenda.extraer_siguiente()
             self.reloj.avanzar_hasta(evento.tiempo_siguiente)
             mensajes.extend(self.ejecutar_evento(evento, jugador, salas))
+            if self.al_terminar_evento is not None:
+                self.al_terminar_evento(self.reloj.tiempo_actual)
             if not esta_vivo(jugador):
                 return mensajes
 

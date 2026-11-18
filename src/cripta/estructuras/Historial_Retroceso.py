@@ -54,6 +54,12 @@ class Historial_Retroceso:
         self._max = max_intervalos
         self._intervalos: list[Intervalo] = []
         self._abierto: Intervalo | None = None
+        # Monótono: cuenta las reversiones (de un intervalo abierto o con pergamino). `limpiar` no
+        # lo reinicia. La persecución del cazador lo usa como parte de su clave (FR-017, FR-024).
+        self.reversiones = 0
+        # Observador opcional de cada cambio registrado: la línea de tiempo (spec 004, D4) lo usa
+        # para saber qué enemigos cambiaron. Recibe (etiqueta, datos) antes de aplicar el cambio.
+        self.observador: Callable[[str, Any], None] | None = None
 
     def abrir_intervalo(self) -> None:
         """Inicia un nuevo intervalo de cambios."""
@@ -71,6 +77,8 @@ class Historial_Retroceso:
         if self._abierto is None:
             raise RuntimeError("No hay intervalo abierto.")
         self._abierto.cambios.append(Cambio(etiqueta, datos))
+        if self.observador is not None:
+            self.observador(etiqueta, datos)
 
     def registrar_si_abierto(self, etiqueta: str, datos: Any) -> None:
         if self._abierto is not None:
@@ -86,6 +94,16 @@ class Historial_Retroceso:
         self.registrar_si_abierto("lista_agregada", [lista, objeto])
         lista.append(objeto)
 
+    def asignar(self, lista: list, posicion: int, valor) -> None:
+        """Asigna `lista[posicion]` y registra el valor anterior (O(1)).
+
+        Si el valor no cambia no registra nada.
+        """
+        anterior = lista[posicion]
+        if anterior != valor:
+            self.registrar_si_abierto("lista_asignada", [lista, posicion, anterior])
+            lista[posicion] = valor
+
     def quitar(self, lista: list, objeto) -> None:
         posicion = lista.index(objeto)
         self.registrar_si_abierto("lista_quitada", [lista, posicion, objeto])
@@ -93,6 +111,7 @@ class Historial_Retroceso:
 
     def revertir_abierto(self, aplicar) -> None:
         if self._abierto is not None:
+            self.reversiones += 1
             for i in range(len(self._abierto.cambios) - 1, -1, -1):
                 cambio = self._abierto.cambios[i]
                 aplicar(cambio.etiqueta, cambio.datos)
@@ -128,6 +147,7 @@ class Historial_Retroceso:
         """
         if not self._intervalos:
             return False
+        self.reversiones += 1
         intervalo = self._intervalos[-1]
         for i in range(len(intervalo.cambios) - 1, -1, -1):
             cambio = intervalo.cambios[i]

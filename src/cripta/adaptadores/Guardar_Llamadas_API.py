@@ -40,6 +40,8 @@ class Guardar_Llamadas_API(CryptDataSource):
         self._combinar(f"cripta_{crypta_id}_contenido.json", "contenido", "sala", datos)
     def catalog(self, ids, datos):
         self._combinar("catalogo.json", "entidades", "id", datos)
+    def key_locations(self, crypta_id, datos):
+        self.guardar_llamada(f"cripta_{crypta_id}_llaves.json", datos)
     def get_crypta_version(self, crypta_id, datos):
         self.guardar_llamada(f"cripta_{crypta_id}_version.json", datos)
     def get_catalog_version(self, datos):

@@ -1,0 +1,2366 @@
+{
+  "contenido": [
+    {
+      "sala": 1,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 2,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 3,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-14",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        },
+        {
+          "instancia": "e-cripta-06-15",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 4,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 5,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 6,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 7,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 8,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-19",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 9,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 10,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-23",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 11,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-41",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 12,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 13,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 14,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-51",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 15,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 16,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 17,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-66",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 18,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 19,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-67",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 20,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 21,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 22,
+      "enemigos": [],
+      "objetos": [
+        "itm_llave_bronce"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 23,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 24,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 25,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 26,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 27,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 28,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 29,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 30,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 31,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-43",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 32,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 33,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 34,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-38",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 35,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-46",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 36,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 37,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-75",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 38,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 39,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 40,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 41,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-7",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 42,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 43,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-11",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 44,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 45,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 46,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 47,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 48,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 49,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-36",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 50,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 51,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-59",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 52,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-58",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 53,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 54,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 55,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-54",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 56,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-80",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        },
+        {
+          "instancia": "e-cripta-06-81",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 57,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-71",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 58,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 59,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 60,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-60",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 61,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 62,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 63,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 64,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 65,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 66,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 67,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 68,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-26",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 69,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 70,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 71,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 72,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 73,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 74,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 75,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 76,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-76",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 77,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-83",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 78,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 79,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 80,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 81,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 82,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 83,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 84,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 85,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 86,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-31",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 87,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 88,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 89,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 90,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 91,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 92,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-2",
+          "tipo": "ent_guardian_oseo"
+        }
+      ],
+      "objetos": [
+        "itm_llave_plata"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 93,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-53",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 94,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 95,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 96,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 97,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 98,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-64",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 99,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 100,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 101,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 102,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 103,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 104,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 105,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-16",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 106,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 107,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 108,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-21",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 109,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 110,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 111,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-56",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        },
+        {
+          "instancia": "e-cripta-06-57",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 112,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-40",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 113,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 114,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 115,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 116,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 117,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-82",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 118,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 119,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 120,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-73",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 121,
+      "enemigos": [],
+      "objetos": [
+        "itm_pergamino_retroceso"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 122,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 123,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-6",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 124,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 125,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 126,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-28",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 127,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 128,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 129,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-30",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 130,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 131,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-48",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 132,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-49",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 133,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 134,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-45",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 135,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-52",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 136,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-3",
+          "tipo": "ent_guardian_oseo"
+        }
+      ],
+      "objetos": [
+        "itm_llave_negra"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 137,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-62",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 138,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 139,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 140,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 141,
+      "enemigos": [],
+      "objetos": [
+        "itm_antorcha",
+        "itm_daga_oxidada",
+        "itm_coraza_cuero",
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 142,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-12",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 143,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 144,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-13",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 145,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 146,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 147,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 148,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-27",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 149,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 150,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 151,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-39",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 152,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-42",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 153,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 154,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 155,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 156,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 157,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 158,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-74",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 159,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 160,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 161,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-17",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 162,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 163,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-5",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 164,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 165,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 166,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 167,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 168,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 169,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 170,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 171,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 172,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 173,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 174,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 175,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 176,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-63",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 177,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-65",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 178,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 179,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 180,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-77",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 181,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-10",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 182,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 183,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 184,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 185,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 186,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 187,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 188,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 189,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 190,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-22",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 191,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 192,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 193,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 194,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 195,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 196,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-68",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 197,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 198,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-72",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 199,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 200,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-70",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 201,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 202,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 203,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 204,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 205,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 206,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 207,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 208,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 209,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 210,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": [
+        {
+          "instancia": "t-cripta-06-37",
+          "tipo": "trp_dardos"
+        }
+      ]
+    },
+    {
+      "sala": 211,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 212,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 213,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-50",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 214,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 215,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 216,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-61",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 217,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 218,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 219,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 220,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 221,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 222,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 223,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 224,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 225,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 226,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-29",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 227,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 228,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 229,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 230,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-25",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 231,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 232,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 233,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 234,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 235,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-55",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 236,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 237,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 238,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 239,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 240,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 241,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-8",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 242,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 243,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 244,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 245,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 246,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 247,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-1",
+          "tipo": "ent_carcelero_errante"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 248,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 249,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-20",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 250,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 251,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-44",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 252,
+      "enemigos": [],
+      "objetos": [
+        "itm_pergamino_retroceso"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 253,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 254,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 255,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 256,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-69",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 257,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 258,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 259,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 260,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 261,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 262,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 263,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 264,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 265,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-9",
+          "tipo": "ent_espectro_acechador"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 266,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-32",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 267,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 268,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-18",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 269,
+      "enemigos": [],
+      "objetos": [
+        "itm_antidoto"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 270,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-33",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 271,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 272,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 273,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 274,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 275,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 276,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 277,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 278,
+      "enemigos": [],
+      "objetos": [
+        "itm_antidoto"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 279,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 280,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 281,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 282,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 283,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-4",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 284,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 285,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 286,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-34",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        },
+        {
+          "instancia": "e-cripta-06-35",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 287,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 288,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 289,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-24",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 290,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 291,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 292,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 293,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 294,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 295,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-47",
+          "tipo": "ent_sabueso_oseo"
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 296,
+      "enemigos": [],
+      "objetos": [
+        "itm_pocion_menor"
+      ],
+      "trampas": []
+    },
+    {
+      "sala": 297,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 298,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-79",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 299,
+      "enemigos": [],
+      "objetos": [],
+      "trampas": []
+    },
+    {
+      "sala": 300,
+      "enemigos": [
+        {
+          "instancia": "e-cripta-06-78",
+          "tipo": "ent_rata_gigante",
+          "vida": 8
+        }
+      ],
+      "objetos": [],
+      "trampas": []
+    }
+  ]
+}

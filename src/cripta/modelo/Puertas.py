@@ -25,6 +25,7 @@ def abrir_salida(salida, tiempo_actual: int, agenda):
     Usa agenda.cambiar para que el retroceso (P3) pueda deshacerlo solo.
     """
     agenda.cambiar(salida, "cerrada", False)
+    agenda.cambios_puertas += 1   # invalida las distancias del cazador (FR-017)
     agenda.cambiar(salida, "evento_cierre", None)
     if salida.cierre_automatico is not None and salida.cierre_automatico > 0:
         evento = agenda.insertar(
@@ -37,5 +38,6 @@ def abrir_salida(salida, tiempo_actual: int, agenda):
 def procesar_cierre_puerta(salida, agenda) -> str:
     """Ejecuta el evento de cierre. Un actor al otro lado se queda allí (Apéndice B)."""
     agenda.cambiar(salida, "cerrada", True)
+    agenda.cambios_puertas += 1   # invalida las distancias del cazador (FR-017)
     agenda.cambiar(salida, "evento_cierre", None)
     return f"La puerta {salida.direccion} hacia la sala {salida.sala_destino} se cierra."

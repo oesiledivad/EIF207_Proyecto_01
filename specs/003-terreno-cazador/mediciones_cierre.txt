@@ -1,0 +1,203 @@
+Ejecución de cierre: 17/11/2026, Windows 11, Python 3.13, semilla 42.
+Comando: uv run cripta --bench --semilla 42
+Etiquetas normalizadas a UTF-8; tiempos sin modificar.
+
+=== Agenda: heap propio vs. lista ordenada (4.1) ===
+n=  100  heap: insertar=0.12ms extraer=0.18ms   |   lista: insertar=0.18ms extraer=0.01ms
+n=  500  heap: insertar=0.71ms extraer=1.19ms   |   lista: insertar=4.11ms extraer=0.06ms
+n= 2000  heap: insertar=2.61ms extraer=6.15ms   |   lista: insertar=83.38ms extraer=0.35ms
+
+=== Rastreador.decidir_accion vs. tamaño de la cripta (4.7) ===
+cripta de    20 salas -> 10000 llamadas en 6.89ms (0.689us por llamada)
+cripta de   200 salas -> 10000 llamadas en 6.45ms (0.645us por llamada)
+cripta de  2000 salas -> 10000 llamadas en 6.58ms (0.658us por llamada)
+
+=== Cache_Fichas llena (25 fichas): acierto vs. fallo (4.4) ===
+50000 aciertos: 9.53ms   |   50000 fallos: 52.51ms
+referencia cripta-01: ciclos=61 media=0.177ms maximo=0.660ms limite=20ms CUMPLE
+
+=== Ciclo completo sintético (sin red, disco ni renderizado) ===
+ciclo completo: enemigos=20 n=100 media=0.258ms maximo=0.424ms limite=20ms CUMPLE
+ciclo completo: enemigos=200 n=100 media=2.660ms maximo=5.364ms limite=20ms CUMPLE
+ciclo completo: enemigos=500 n=100 media=7.261ms maximo=18.242ms limite=20ms CUMPLE
+ciclo completo: enemigos=1000 n=100 media=15.671ms maximo=29.696ms limite=20ms EXCEDE
+
+=== Inventario e historial ===
+inventario insertar + soltar: n=10000 total=4.454ms por_operacion=0.445us
+inventario recorrido bidireccional: n=10000 total=2.130ms por_operacion=0.213us
+inventario vista ordenada (100 objetos): n=100 total=14.640ms por_operacion=146.402us
+historial registrar + revertir 10 deltas: n=10000 total=60.553ms por_operacion=6.055us
+
+=== Ordenamientos: mismo conjunto para cada algoritmo ===
+insertion_sort n=16 aleatorio clave=simple: n=3 total=0.043ms por_operacion=14.333us
+insertion_sort n=16 aleatorio clave=costosa: n=3 total=0.195ms por_operacion=64.933us
+merge_sort n=16 aleatorio clave=simple: n=3 total=0.067ms por_operacion=22.433us
+merge_sort n=16 aleatorio clave=costosa: n=3 total=0.226ms por_operacion=75.300us
+ordenar n=16 aleatorio clave=simple: n=3 total=0.034ms por_operacion=11.333us
+ordenar n=16 aleatorio clave=costosa: n=3 total=0.194ms por_operacion=64.633us
+insertion_sort n=16 casi ordenado clave=simple: n=3 total=0.013ms por_operacion=4.333us
+insertion_sort n=16 casi ordenado clave=costosa: n=3 total=0.066ms por_operacion=22.167us
+merge_sort n=16 casi ordenado clave=simple: n=3 total=0.051ms por_operacion=16.900us
+merge_sort n=16 casi ordenado clave=costosa: n=3 total=0.162ms por_operacion=54.067us
+ordenar n=16 casi ordenado clave=simple: n=3 total=0.084ms por_operacion=27.867us
+ordenar n=16 casi ordenado clave=costosa: n=3 total=0.235ms por_operacion=78.167us
+insertion_sort n=128 aleatorio clave=simple: n=3 total=1.802ms por_operacion=600.533us
+insertion_sort n=128 aleatorio clave=costosa: n=3 total=9.049ms por_operacion=3016.233us
+merge_sort n=128 aleatorio clave=simple: n=3 total=0.702ms por_operacion=233.933us
+merge_sort n=128 aleatorio clave=costosa: n=3 total=3.338ms por_operacion=1112.633us
+ordenar n=128 aleatorio clave=simple: n=3 total=0.866ms por_operacion=288.533us
+ordenar n=128 aleatorio clave=costosa: n=3 total=4.251ms por_operacion=1416.833us
+insertion_sort n=128 casi ordenado clave=simple: n=3 total=0.083ms por_operacion=27.800us
+insertion_sort n=128 casi ordenado clave=costosa: n=3 total=0.525ms por_operacion=175.100us
+merge_sort n=128 casi ordenado clave=simple: n=3 total=0.510ms por_operacion=170.033us
+merge_sort n=128 casi ordenado clave=costosa: n=3 total=2.085ms por_operacion=695.000us
+ordenar n=128 casi ordenado clave=simple: n=3 total=0.109ms por_operacion=36.400us
+ordenar n=128 casi ordenado clave=costosa: n=3 total=0.775ms por_operacion=258.300us
+insertion_sort n=512 aleatorio clave=simple: n=3 total=20.462ms por_operacion=6820.567us
+insertion_sort n=512 aleatorio clave=costosa: n=3 total=173.537ms por_operacion=57845.700us
+merge_sort n=512 aleatorio clave=simple: n=3 total=4.226ms por_operacion=1408.500us
+merge_sort n=512 aleatorio clave=costosa: n=3 total=21.675ms por_operacion=7225.067us
+ordenar n=512 aleatorio clave=simple: n=3 total=3.485ms por_operacion=1161.633us
+ordenar n=512 aleatorio clave=costosa: n=3 total=26.883ms por_operacion=8961.000us
+insertion_sort n=512 casi ordenado clave=simple: n=3 total=0.365ms por_operacion=121.733us
+insertion_sort n=512 casi ordenado clave=costosa: n=3 total=2.557ms por_operacion=852.233us
+merge_sort n=512 casi ordenado clave=simple: n=3 total=2.339ms por_operacion=779.633us
+merge_sort n=512 casi ordenado clave=costosa: n=3 total=12.613ms por_operacion=4204.367us
+ordenar n=512 casi ordenado clave=simple: n=3 total=0.384ms por_operacion=128.133us
+ordenar n=512 casi ordenado clave=costosa: n=3 total=2.848ms por_operacion=949.300us
+
+=== Recuperacion de fichas desalojadas desde disco ===
+liberar + desalojar + recuperar ficha: n=100 total=15.981ms por_operacion=159.812us
+
+=== Guardado/carga: mismo estado binario y JSON ===
+guardar binario: n=10 total=5.714ms por_operacion=571.430us
+guardar JSON: n=10 total=8.626ms por_operacion=862.650us
+cargar binario: n=10 total=17.479ms por_operacion=1747.860us
+cargar JSON: n=10 total=8.482ms por_operacion=848.230us
+cargar sala especifica binario: n=10 total=1.915ms por_operacion=191.470us
+Tamano: binario=41917B JSON=40903B
+
+=== Resolubilidad de la cripta (semilla 42) ===
+M1 verificacion frente a la alternativa ingenua (la ingenua pierde y la brecha crece con K)
+  S=200 E=409 K=20 verificacion=0.946ms (429 ops) ingenua=1.277ms (8181 ops) ingenua/verificacion=1.3x PIERDE
+  S=2000 E=4121 K=200 verificacion=10.957ms (4321 ops) ingenua=147.375ms (824201 ops) ingenua/verificacion=13.5x PIERDE
+  S=20000 E=41237 K=2000 verificacion=148.843ms (43237 ops) ingenua=omitida (supera el tope)
+  la brecha crece con K: SI
+M2 escalado de la verificacion al multiplicar por 10 el tamano (limite 15)
+  S 200 -> 2000: tiempo x11.58 operaciones x10.07 menor que 15
+  S 2000 -> 20000: tiempo x13.58 operaciones x10.01 menor que 15
+M3 cripta de referencia del paquete (sin red, limite 200 ms)
+  sin llaves en el paquete
+M4 indice de llaves a 20000 salas (K=2000, 4092 consultas)
+  solo consultas: arreglo=5.733ms hash=5.848ms
+  construccion + consultas: arreglo=18.524ms hash=20.862ms arreglo/hash=0.89x
+  decision: se conserva el arreglo ordenado (el hash no gana por mas de 2 veces)
+M5 costo del reporte sobre la verificacion pura (variante con ciclo)
+  S=2000 E=4121 no_resoluble ciclos=1 pura=11.023ms con reporte=10.881ms salidas examinadas=4121 de 4121 (no repite exploraciones)
+  S=20000 E=41237 no_resoluble ciclos=1 pura=147.991ms con reporte=148.168ms salidas examinadas=41237 de 41237 (no repite exploraciones) tiempo con reporte x13.62 al multiplicar por 10
+M6 orden por ronda a 20000 salas (17 rondas)
+  con ordenar=50.307ms sin ordenar=0.062ms verificacion completa=144.656ms sobrecosto del orden=34.7% de la verificacion
+M7 cripta sintetica grande sin red (10 x 50 salas, limite 200 ms)
+  S=500 E=1027 K=50 resoluble en 2.516ms menor que 200 ms
+
+=== Niebla de guerra e ir a (semilla 42) ===
+K1 consulta de estado de sala y de puerta recordada: listas indexadas frente a busqueda lineal (razon a lo sumo 1,5 con 10 veces el tamano; la lineal crece)
+  S=200: estado de sala=81.6ns puerta recordada=97.7ns busqueda lineal=4416.5ns por consulta
+  S=2000: estado de sala=93.7ns puerta recordada=97.0ns busqueda lineal=42705.0ns por consulta
+  S=20000: estado de sala=92.8ns puerta recordada=95.0ns busqueda lineal=415205.5ns por consulta
+  S 200 -> 2000: estado x1.15 puerta x0.99 lineal x9.67
+  S 2000 -> 20000: estado x0.99 puerta x0.98 lineal x9.72
+K2 explorar por sala revelada, con y sin antorcha (razon a lo sumo 1,5 con 10 veces el tamano)
+  S=200: reveladas=197 sin antorcha: 2.005 cambios y 2.455us por sala, con antorcha: 2.010 cambios y 4.635us por sala; sin pausas del recolector: 2.057us (sin) 4.600us (con)
+  S=2000: reveladas=1997 sin antorcha: 1.999 cambios y 2.349us por sala, con antorcha: 2.001 cambios y 6.715us por sala; sin pausas del recolector: 2.058us (sin) 5.390us (con)
+  S=20000: reveladas=19997 sin antorcha: 1.999 cambios y 5.661us por sala, con antorcha: 2.000 cambios y 9.366us por sala; sin pausas del recolector: 2.427us (sin) 5.633us (con)
+  S 200 -> 2000: cambios por sala x1.00 (sin) x1.00 (con); tiempo por sala x0.96 (sin) x1.45 (con); sin recolector x1.00 (sin) x1.17 (con)
+  S 2000 -> 20000: cambios por sala x1.00 (sin) x1.00 (con); tiempo por sala x2.41 (sin) x1.39 (con); sin recolector x1.18 (sin) x1.05 (con)
+K3 registrar e invertir con lista_asignada frente a copiar el conocimiento completo en cada cambio (lineal en los cambios; la copia crece con el mapa)
+  S=200 cambios=10: registrar+invertir=0.035ms (10 cambios, revertido=SI) copia completa=0.072ms (10020 valores copiados)
+  S=200 cambios=1000: registrar+invertir=2.061ms (1000 cambios, revertido=SI) copia completa=4.370ms (1002000 valores copiados)
+  S=20000 cambios=10: registrar+invertir=0.026ms (10 cambios, revertido=SI) copia completa=4.231ms (1000020 valores copiados)
+  S=20000 cambios=1000: registrar+invertir=3.573ms (1000 cambios, revertido=SI) copia completa=201.878ms (100002000 valores copiados)
+K4 paso de ir a con el mapa conocido completo de la cripta de referencia (S=50, 20 pares por semilla, mejor de 3)
+  media=0.123ms maximo=0.205ms limite=5ms CUMPLE
+K5 paso de ir a con 2000 y 20000 salas exploradas (informativa, esperado O((V + E) log V))
+  S=2000 E=7550: media=7.024ms maximo=13.961ms
+  S=20000 E=77061: media=63.503ms maximo=152.721ms
+  S 2000 -> 20000: media x9.04 maximo x10.94 (el factor (V + E) log V de la cota es x13.24)
+K6 Dijkstra inverso con parada frente a alternativas (S=2000, 10 viajes completos, recalculando en cada paso salvo reutilizar)
+  inverso con parada: 776.574ms (inverso con parada / esta = 1.00x)
+  inverso completo: 3945.013ms (inverso con parada / esta = 0.20x)
+  desde el origen: 994.681ms (inverso con parada / esta = 0.78x)
+  reutilizar distancias: 142.264ms (inverso con parada / esta = 5.46x)
+  mismo costo de ruta en las cuatro: SI
+  inverso completo no gana por mas de 2 veces
+  desde el origen no gana por mas de 2 veces
+  reutilizar distancias gana por mas de 2 veces
+  nota: reutilizar solo es correcta si el conocimiento no cambia entre pasos; FR-026 exige recalcular porque la memoria de puertas cambia al observar
+K7 monticulo perezoso frente a decremento de clave con indice y a seleccion lineal (S=2000, busqueda completa)
+  perezoso=13.165ms indexado=7.449ms (perezoso/indexado=1.77x) seleccion lineal=137.408ms (lineal/perezoso=10.44x)
+  mismas distancias en las tres: SI; se conserva el perezoso (el indexado no gana por mas de 2 veces)
+K8 busqueda por costo frente a BFS con la cola de la spec 001 (S=2000, 50 pares, costos variados)
+  BFS devuelve rutas de mayor costo en 50 pares, de igual costo en 0 y de menor costo en 0; tiempo busqueda por costo=365.928ms BFS=143.764ms
+K9 determinismo: K4 y K6 dos veces con la misma semilla, sin ventana
+  resultados de K4 (20 pares) y de K6 (10 viajes) identicos: SI
+
+=== Terreno y cazador (spec 003), semilla 42 ===
+H1 salas=2000: cazadores=1 rango=300 compartida_ms=0.049 individual_ms=0.047 razon=1.0 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=300 compartida_ms=0.055 individual_ms=0.455 razon=8.3 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=300 compartida_ms=0.073 individual_ms=2.362 razon=32.1 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=300 compartida_ms=0.103 individual_ms=4.600 razon=44.7 [INFORMATIVA]
+H1 salas=2000: cazadores=1 rango=sin_limite compartida_ms=9.180 individual_ms=9.066 razon=1.0 [INFORMATIVA]
+H1 salas=2000: cazadores=10 rango=sin_limite compartida_ms=9.178 individual_ms=95.810 razon=10.4 [INFORMATIVA]
+H1 salas=2000: cazadores=50 rango=sin_limite compartida_ms=9.609 individual_ms=487.686 razon=50.8 [INFORMATIVA]
+H1 salas=2000: cazadores=100 rango=sin_limite compartida_ms=9.667 individual_ms=966.279 razon=100.0 [INFORMATIVA]
+H2 salas=200: con_corte_fijadas=34 con_corte_ms=0.061 sin_corte_fijadas=200 sin_corte_ms=0.719 [INFORMATIVA]
+H2 salas=2000: con_corte_fijadas=32 con_corte_ms=0.057 sin_corte_fijadas=2000 sin_corte_ms=9.691 [INFORMATIVA]
+H2 salas=20000: con_corte_fijadas=33 con_corte_ms=0.067 sin_corte_fijadas=20000 sin_corte_ms=130.948 [INFORMATIVA]
+H2 criterio D6: con corte crece 1.17 veces entre 2000 y 20000 salas (limite 1.5) [CUMPLE]
+H3 salas=2000: puertas=estables clave_ms=1.830 por_turno_ms=191.400 por_ciclo_ms=12.374 recalculos=1 [INFORMATIVA]
+H3 salas=2000: puertas=inestables clave_ms=11.815 por_turno_ms=192.871 por_ciclo_ms=11.988 recalculos=200 [INFORMATIVA]
+H4 salas=300: turnos=10000 coinciden=10000 [CUMPLE]
+H5 salas=50: cazadores=10 ciclos=200 media_ms=0.152 maximo_ms=0.480 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=50 ciclos=200 media_ms=0.569 maximo_ms=1.614 limite=20ms [CUMPLE]
+H5 salas=50: cazadores=100 ciclos=200 media_ms=1.154 maximo_ms=3.054 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=10 ciclos=200 media_ms=0.153 maximo_ms=0.403 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=50 ciclos=200 media_ms=0.498 maximo_ms=1.528 limite=20ms [CUMPLE]
+H5 salas=2000: cazadores=100 ciclos=200 media_ms=1.003 maximo_ms=3.892 limite=20ms [CUMPLE]
+H6 eventos=2200: heap_ms=9.296 lista_ms=104.683 [INFORMATIVA]
+H7 salas=2000: predicado_ms=9.423 banderas_ms=9.822 [INFORMATIVA]
+H8 semilla=42: identico=si [CUMPLE]
+
+=== Linea de tiempo y puntos de control (5.5) y retroceso (5.6), semilla 42 ===
+Partida larga: cripta cripta-04, 5000 acciones, reloj 499250
+L1 linea de tiempo: 5000 acciones, 5889 cambios, 306 ranuras, 200 consultas (limite 50 ms)
+                     K=1: puntos= 5000 celdas= 1568514 (control  1529958) memoria=  12910.5KiB consulta media=0.087ms peor=0.244ms acciones<=1 CUMPLE
+                    K=10: puntos=  500 celdas=  191514 (control   152958) memoria=   1712.6KiB consulta media=0.102ms peor=0.452ms acciones<=7 CUMPLE
+                    K=50: puntos=  100 celdas=   69114 (control    30558) memoria=    717.4KiB consulta media=0.087ms peor=0.179ms acciones<=34 CUMPLE
+                   K=200: puntos=   25 celdas=   46164 (control     7608) memoria=    530.8KiB consulta media=0.096ms peor=0.330ms acciones<=123 CUMPLE
+   sin puntos de control: puntos=    1 celdas=   38820 (control      264) memoria=    470.9KiB consulta media=0.163ms peor=0.478ms acciones<=2638 CUMPLE
+L2 direccion de reconstruccion con K=50
+   adelante: media=0.088ms peor=0.215ms cambios recorridos (media)=    27.3 acciones<=49
+      atras: media=0.090ms peor=0.248ms cambios recorridos (media)=    32.4 acciones<=50
+    cercano: media=0.090ms peor=0.226ms cambios recorridos (media)=    15.4 acciones<=31
+L3 accion completa (ciclo de eventos incluido), 5000 acciones
+  con linea: media=0.114ms peor=0.913ms limite 20 ms CUMPLE
+  sin linea: media=0.093ms peor=0.859ms
+  sobrecosto medio: 0.021ms por accion
+L1b carga pesada: 5000 acciones, 299999 cambios, 1000 ranuras, 200 consultas
+                     K=1: puntos= 5000 celdas=  6214996 memoria=   48.82MiB reconstruccion media=0.009ms peor=0.019ms acciones<=1 CUMPLE
+                    K=10: puntos=  500 celdas=  1714996 memoria=   14.06MiB reconstruccion media=0.026ms peor=0.114ms acciones<=5 CUMPLE
+                    K=50: puntos=  100 celdas=  1314996 memoria=   10.97MiB reconstruccion media=0.057ms peor=0.200ms acciones<=25 CUMPLE
+                   K=200: puntos=   25 celdas=  1239996 memoria=   10.39MiB reconstruccion media=0.211ms peor=0.758ms acciones<=100 CUMPLE
+   sin puntos de control: puntos=    1 celdas=  1215996 memoria=   10.20MiB reconstruccion media=5.453ms peor=31.236ms acciones<=2496 CUMPLE
+L4 recorte por pergamino (10 cambios por accion, 200 recortes)
+    1000 acciones: recorte medio=0.002ms
+   10000 acciones: recorte medio=0.001ms
+L5 historial de retroceso (5.6): 10000 intervalos de 10 atributos, mitad revertidos
+  sin observador=76.092ms con observador de la linea=82.674ms razon=1.09
+  cambios por intervalo en la partida larga: media=13.9 maximo=64 (5000 intervalos)
+
+=== Referencia publicada cripta-06 version=f9ed9afa683d salas=300 ===
+P1 verificacion=resoluble maximo_ms=2.168 limite=200ms CUMPLE
+P2 paso de ir a: pares=20 maximo_ms=0.263 limite=5ms CUMPLE
+P3 mapa real, 50 cazadores activos de prueba, rango=89600, ciclos=200 maximo_ms=1.972 limite=20ms CUMPLE

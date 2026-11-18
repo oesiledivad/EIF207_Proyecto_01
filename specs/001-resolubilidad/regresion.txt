@@ -1,0 +1,117 @@
+Fecha: Sun 11/15/2026 23:37:25.24 
+b4a41d3
+=== A: Seleccion del README === 
+...............................Cargando replay: Jugador | cripta-01 | semilla=42 | 1 acciones
+[1/1] esperar | sala=1 vida=30 tiempo=0 (antes de la accion)
+...........................
+----------------------------------------------------------------------
+Ran 58 tests in 14.973s
+
+OK
+Replay completado: sala=1 vida=30 tiempo=100
+Red: 0/9 solicitudes · caché: 4 aciertos, 6 fallos, 0 lecturas de disco
+=== B: Suite completa === 
+.......................................E.E.....................................................................F...FE.............OK: abrir con llave y cierre automatico
+Solicitudes: 5
+Fichas leídas: 8
+Solicitudes de red: 0
+OK: rastro (fresco, empate, caducidad, puertas cerradas, refresco por accion y por movimiento)
+OK: las puertas conservan llave y cierre automatico
+Cargando replay: Jugador | cripta-01 | semilla=42 | 1 acciones
+[1/1] esperar | sala=1 vida=30 tiempo=0 (antes de la accion)
+...................................................................F.......
+======================================================================
+ERROR: test_datos (unittest.loader._FailedTest.test_datos)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_datos
+Traceback (most recent call last):
+  File "C:\Users\Anyeli\anaconda3\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "C:\Users\Anyeli\anaconda3\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\pruebas\test_datos.py", line 6, in <module>
+    from src.cripta.dto.FactoryDto_Ficha import ficha_desde_dict
+ImportError: cannot import name 'ficha_desde_dict' from 'src.cripta.dto.FactoryDto_Ficha' (C:\Users\Anyeli\EIF207_Proyecto_01\src\cripta\dto\FactoryDto_Ficha.py)
+
+
+======================================================================
+ERROR: test_ensamblador (unittest.loader._FailedTest.test_ensamblador)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_ensamblador
+Traceback (most recent call last):
+  File "C:\Users\Anyeli\anaconda3\Lib\unittest\loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "C:\Users\Anyeli\anaconda3\Lib\unittest\loader.py", line 339, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\pruebas\test_ensamblador.py", line 5, in <module>
+    from src.cripta.dto.FactoryDto_Ficha import ficha_desde_dict
+ImportError: cannot import name 'ficha_desde_dict' from 'src.cripta.dto.FactoryDto_Ficha' (C:\Users\Anyeli\EIF207_Proyecto_01\src\cripta\dto\FactoryDto_Ficha.py)
+
+
+======================================================================
+ERROR: test_sin_paquete_juega_lo_descargado (test_offline_cache.PruebasOfflineDesdeCache.test_sin_paquete_juega_lo_descargado)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\src\cripta\servicio\CriptaService.py", line 249, in listar_criptas
+    respuesta = self._data_source.crypta_list()
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\src\cripta\adaptadores\AdaptadorOffline.py", line 71, in crypta_list
+    raise FileNotFoundError("No hay criptas descargadas. Juega primero en línea "
+                            "o indica el paquete con --offline-dir.")
+FileNotFoundError: No hay criptas descargadas. Juega primero en línea o indica el paquete con --offline-dir.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\pruebas\test_offline_cache.py", line 53, in test_sin_paquete_juega_lo_descargado
+    self.assertEqual([c.id for c in app.listar_criptas()], [CRIPTA])
+                                    ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\src\cripta\controlador\Aplicacion.py", line 73, in listar_criptas
+    return self._cripta_service.listar_criptas()
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\src\cripta\servicio\CriptaService.py", line 266, in listar_criptas
+    raise RuntimeError(f"No se pudo listar criptas: {e}") from e
+RuntimeError: No se pudo listar criptas: No hay criptas descargadas. Juega primero en línea o indica el paquete con --offline-dir.
+
+======================================================================
+FAIL: test_cripta_en_cache_no_mezcla_con_el_paquete (test_offline_cache.PruebasOfflineDesdeCache.test_cripta_en_cache_no_mezcla_con_el_paquete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\pruebas\test_offline_cache.py", line 91, in test_cripta_en_cache_no_mezcla_con_el_paquete
+    self.assertEqual(ids[0], CRIPTA)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+AssertionError: 'cripta-02' != 'cripta-stormlight'
+- cripta-02
++ cripta-stormlight
+
+
+======================================================================
+FAIL: test_sin_cache_usa_el_paquete_del_curso (test_offline_cache.PruebasOfflineDesdeCache.test_sin_cache_usa_el_paquete_del_curso)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\pruebas\test_offline_cache.py", line 81, in test_sin_cache_usa_el_paquete_del_curso
+    self.assertIn("cripta-01", ids)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: 'cripta-01' not found in ['cripta-02', 'cripta-03', 'cripta-04', 'cripta-05', 'cripta-06']
+
+======================================================================
+FAIL: test_referencias_paginas_llaves_y_catalogo_completos (test_stormlight.PruebasStormlight.test_referencias_paginas_llaves_y_catalogo_completos)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Anyeli\EIF207_Proyecto_01\pruebas\test_stormlight.py", line 85, in test_referencias_paginas_llaves_y_catalogo_completos
+    self.assertTrue(any(c["id"] == CRIPTA for c in fuente.crypta_list()["criptas"]))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 205 tests in 27.460s
+
+FAILED (failures=3, errors=3)
+Replay completado: sala=1 vida=30 tiempo=100
+Red: 0/9 solicitudes · caché: 4 aciertos, 6 fallos, 0 lecturas de disco
+
+
+Regresión final de la entrega (17/11/2026, master3 en 66902fb, equivalente al antiguo master2 5e0bbe5, Windows 11, Python 3.13):
+- Selección del README (comando a): Ran 61 tests, OK.
+- Suite completa (comando b): Ran 377 tests, OK. Cero fallas: las 7 de la línea base se resolvieron (test_datos y test_ensamblador eran scripts que usaban una función renombrada; test_guardar_llamadas sobrescribía datos_offline al importarse y hacía fallar test_offline_cache, test_stormlight y test_trampas_estado; se movió a herramientas/descargar_paquete_offline.py).

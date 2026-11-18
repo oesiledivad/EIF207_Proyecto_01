@@ -12,6 +12,10 @@ from pruebas.test_replay import FuenteReplay
 class AdaptadorOffline(FuenteReplay):
     """Fuente local sintética, reconocida por el servicio como modo offline."""
 
+    def key_locations(self, cid):
+        """Sin datos de llaves en esta fuente local sintética."""
+        raise FileNotFoundError("Sin datos de llaves en la fuente de prueba.")
+
     def crypta_details(self, cid):
         datos = super().crypta_details("cripta-01")
         datos["id"] = cid

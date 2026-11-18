@@ -34,6 +34,10 @@ class CryptDataSource(ABC):
     def get_catalog_version(self) -> dict:
         """GET /catalogo/version"""
 
+    @abstractmethod
+    def key_locations(self, crypta_id: str) -> dict:
+        """GET /criptas/{id}/llaves"""
+
     @property
     @abstractmethod
     def requests_made(self) -> int:

@@ -15,6 +15,7 @@ from cripta.estructuras.Bitacora import Bitacora, Mensaje
 from cripta.estructuras.Ordenamientos import ordenar
 from cripta.modelo.Combate import aplicar_danio, calcular_danio, esta_vivo, procesar_muerte
 from cripta.modelo.Sala import SalaJuego
+from cripta.modelo.enemigos.Cazador import Cazador
 from cripta.modelo.enemigos.Errante import Errante
 from cripta.modelo.enemigos.Guardian import Guardian
 from cripta.modelo.enemigos.Rastreador import Rastreador
@@ -42,6 +43,8 @@ class CombateControlador:
                 clase = Errante
             case "rastreador":
                 clase = Rastreador
+            case "cazador":
+                clase = Cazador
             case otro:
                 raise ValueError(f"Comportamiento desconocido: {otro}")
         enemigo = clase(
@@ -49,6 +52,10 @@ class CombateControlador:
             ataque=dto.ataque, defensa=dto.defensa, velocidad=dto.velocidad,
             sala=sala_id, tiempo_siguiente=None, comportamiento=dto.comportamiento,
         )
+        if clase is Cazador:
+            if dto.rango is None:
+                raise ValueError(f"El cazador {dto.id} no trae rango (FR-009)")
+            enemigo.rango = dto.rango
         enemigo.nombre = dto.nombre or dto.id
         enemigo.tipo = dto.tipo
         enemigo.suelta = list(dto.suelta)
@@ -69,6 +76,8 @@ class CombateControlador:
         evento = agenda.insertar(tiempo_actual + intervalo, enemigo, "accion_actor")
         agenda.cambiar(enemigo, "_proximo_evento", evento)
         agenda.cambiar(enemigo, "tiempo_siguiente", evento.tiempo_siguiente)
+        if enemigo.comportamiento == "cazador":
+            simulacion.persecucion.registrar_rango(enemigo.rango)   # FR-019, D7
         self._fijar([enemigo.tipo])  # enemigo activo: su ficha está en uso (4.4)
         self._efectos.iniciar_regeneracion(enemigo, simulacion)
 
