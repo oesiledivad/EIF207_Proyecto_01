@@ -16,6 +16,10 @@
 - Q: Cuando ir a entra a una sala, ¿debe detenerse solo si hay enemigos vivos o también si solo quedan derrotados? → A: Solo si hay al menos un enemigo vivo (activo o dormido); los derrotados no cuentan.
 - Q: Si el jugador enciende la antorcha estando dentro de una sala, ¿se exploran las vecinas de esa sala? → A: No; las vecinas solo se exploran al entrar a una sala con la antorcha ya encendida, es decir, a partir de la siguiente entrada.
 
+### Session 2026-11-17
+
+- Q: ¿La niebla de guerra también oscurece la vista de la sala actual? → A: Sí. El profesor lo explicó en clase: la sala se ve a oscuras salvo un radio de visibilidad alrededor del jugador, y la antorcha encendida amplía ese radio; así la antorcha tiene utilidad dentro de la sala, no solo al explorar vecinas. Es solo visual: no cambia reglas, tiempo ni conocimiento (FR-042 a FR-045).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Ver solo lo que el jugador conoce (Priority: P1)
@@ -159,6 +163,23 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 
 ---
 
+### User Story 9 - Oscuridad de la sala y radio de la antorcha (Priority: P2)
+
+La sala actual se ve a oscuras. Alrededor del jugador hay un radio pequeño de visibilidad; lo que queda fuera (enemigos, objetos, trampas, puertas lejanas) no se distingue. Con la antorcha encendida el radio crece y deja ver casi toda la sala; cuando la antorcha se apaga vuelve al radio mínimo.
+
+**Why this priority**: Es la parte visual de la niebla de guerra que el profesor explicó en clase y la que hace útil la antorcha dentro de la sala, pero no cambia ninguna regla del juego.
+
+**Independent Test**: Se entra a una sala con enemigos lejos del jugador, sin antorcha y con antorcha, y se compara lo que se ve; se comprueba además que una partida con las mismas acciones da el mismo estado y el mismo registro con y sin oscuridad.
+
+**Acceptance Scenarios**:
+
+1. **Given** la antorcha apagada, **When** el jugador está en una sala, **Then** solo se ve un radio pequeño a su alrededor y el resto de la sala está a oscuras.
+2. **Given** la antorcha encendida, **When** el jugador está en una sala, **Then** el radio visible es mayor y se distinguen los enemigos y objetos que antes quedaban a oscuras.
+3. **Given** la antorcha encendida que se apaga al terminar su duración, **When** se dibuja la sala, **Then** vuelve el radio mínimo.
+4. **Given** la oscuridad, **When** el jugador juega, **Then** el reloj, las acciones, el conocimiento, el registro, el guardado y la reproducción son idénticos a los de una partida sin oscuridad; el inventario, la bitácora, la barra inferior, el minimapa y el mapa conocido no se oscurecen.
+
+---
+
 ### Edge Cases
 
 - ir a hacia una sala avistada o desconocida: se rechaza sin consumir tiempo.
@@ -235,6 +256,10 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 - **FR-038**: El cálculo de un paso de ir a DEBE tardar menos de 5 ms con el mapa conocido completo de la cripta de referencia.
 - **FR-039**: El modo --bench DEBE medir las consultas al mapa conocido y el cálculo de ir a, con resultados deterministas por semilla.
 - **FR-040**: El modo --bench NO DEBE abrir la interfaz.
+- **FR-042**: La vista de la sala actual DEBE mostrarse a oscuras salvo un radio de visibilidad alrededor del jugador; lo que queda fuera del radio no debe distinguirse.
+- **FR-043**: Con la antorcha encendida el radio de visibilidad DEBE ser al menos el triple del radio sin antorcha; al apagarse la antorcha DEBE volver al radio mínimo.
+- **FR-044**: La oscuridad DEBE ser solo visual: NO DEBE cambiar el tiempo, las acciones disponibles, el conocimiento del jugador, las decisiones de los enemigos, el registro, el guardado ni la reproducción, y `--replay`, `--bench` y `--verificar` siguen sin vista.
+- **FR-045**: El inventario, la bitácora, la barra inferior, el minimapa y el panel del mapa conocido NO DEBEN oscurecerse.
 - **FR-041**: Esta capacidad NO DEBE contener datos de una cripta concreta; todo dato DEBE provenir del servicio o de los datos sin conexión.
 
 ### Key Entities
@@ -260,6 +285,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 - **SC-005**: Dos partidas con la misma cripta, la misma semilla y las mismas acciones producen el mismo mapa conocido y los mismos viajes en el 100% de los casos probados.
 - **SC-006**: Tras revertir con el pergamino, el mapa conocido es idéntico al anterior a la acción revertida en el 100% de los casos probados.
 - **SC-007**: En el 100% de los viajes detenidos, la interfaz muestra el motivo de la detención.
+- **SC-009**: Sin antorcha, el área visible de la sala es menor que la quinta parte de la sala; con la antorcha encendida, es al menos la mitad.
 - **SC-008**: Con --bench, el resultado de las consultas al mapa conocido y del cálculo de ir a aparece en consola y 0 ventanas de la interfaz se abren.
 
 ## Assumptions
@@ -268,7 +294,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 - La cripta de referencia es la cripta publicada más grande; su tamaño proviene del servicio o de los datos sin conexión, no del código.
 - El cazador (spec 003) conoce el mapa completo y no usa la niebla; su regla de desempate por menor id se reutiliza como criterio de ir a.
 - El formato binario del guardado y la línea de tiempo (spec 004) consumen el conocimiento del jugador, pero quedan fuera de alcance de esta spec.
-- El diseño visual de la interfaz queda fuera de alcance; esta spec solo exige qué información se muestra.
+- El diseño visual de la interfaz queda fuera de alcance; esta spec solo exige qué información se muestra y, desde la sesión de clarificación del 2026-11-17, la oscuridad de la sala con su radio de visibilidad (FR-042 a FR-045).
 
 ## Out of Scope
 
