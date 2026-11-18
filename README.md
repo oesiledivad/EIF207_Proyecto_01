@@ -328,6 +328,28 @@ Ejecuta solo el ejemplo que necesites. Las líneas que empiezan con `#` son come
 
 Los archivos de ejecución están excluidos de Git. Los `.log` y los `.bin` cumplen funciones distintas; conserva ambos si quieres reproducir acciones y también continuar una partida.
 
+## Parte II: desarrollo dirigido por especificaciones
+
+| Aspecto | Valor |
+|---------|-------|
+| spec-kit | `specify-cli` **v1.3.3**, scripts `sh` (instalado con `uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v1.3.3`) |
+| Agente de programación | **Claude Code** (integración `claude` de spec-kit; comandos en `.claude/skills/speckit-*`) |
+| Constitución | [.specify/memory/constitution.md](.specify/memory/constitution.md) |
+| Flujo por capacidad | constitution (una vez), specify, clarify, plan, tasks, analyze, implement |
+
+Cada capacidad tiene su carpeta con `spec.md`, `plan.md`, `tasks.md`, investigación, modelo de datos, guía de validación y mediciones. En Git, cada `spec.md` se confirmó antes que el código que la implementa.
+
+| Spec | Capacidad | Responsable |
+|------|-----------|-------------|
+| [001-resolubilidad](specs/001-resolubilidad/spec.md) | Verificación de resolubilidad (§3.5, §5.4) | Persona A |
+| [002-niebla-ir-a](specs/002-niebla-ir-a/spec.md) | Niebla de guerra e «ir a» (§3.3, §3.4, §5.3) | Persona A |
+| [003-terreno-cazador](specs/003-terreno-cazador/spec.md) | Terreno con costo y cazador (§3.1, §3.2, §5.1, §5.2, §5.6 agenda) | Persona B |
+| [004-linea-tiempo](specs/004-linea-tiempo/spec.md) | Línea de tiempo y puntos de control (§3.6, §5.5, §5.6 retroceso) | Persona C |
+
+Entregables de §7.2: el Documento de Decisiones está en [docs/decisiones.md](docs/decisiones.md) (secciones 12 a 18 para la Parte II) y la bitácora de prompts, incluidos los comandos de spec-kit, en [docs/PROMPTS_LLM.md](docs/PROMPTS_LLM.md). Los dos siguen en `docs/`, donde estaban desde la Parte I.
+
+Comandos nuevos de la Parte II: `--verificar CRIPTA`, `--forzar`, `--checkpoint-cada K` y `--replay PARTIDA.LOG --hasta T` (ver «Comandos»).
+
 ## Pruebas y límites conocidos
 
 ### Pruebas
@@ -340,10 +362,23 @@ uv run python -m unittest pruebas.test_partida pruebas.test_inventario pruebas.t
 
 Las pruebas gráficas requieren un entorno con pantalla y soporte OpenGL, aunque sus ventanas estén ocultas.
 
-Pruebas de aceptación de la línea de tiempo (spec 004; cada prueba cita su FR y las del Apéndice B lo indican):
+Pruebas de aceptación de la Parte II, una línea por especificación. Cada prueba cita en su docstring el requisito (FR) que verifica, y las de los casos del Apéndice B lo indican:
 
 ```sh
-uv run python -m unittest pruebas.test_linea_tiempo pruebas.test_historia pruebas.test_historia_retroceso pruebas.test_historia_replay pruebas.test_historia_guardado pruebas.test_bench_linea
+# 001 Resolubilidad
+uv run python -m unittest pruebas.test_resolubilidad pruebas.test_indice_llaves pruebas.test_llaves_adaptadores pruebas.test_verificar_cli pruebas.test_inicio_verificacion pruebas.test_cola_lista pruebas.test_bench_resolubilidad
+# 002 Niebla de guerra e «ir a»
+uv run python -m unittest pruebas.test_conocimiento pruebas.test_conocimiento_antorcha pruebas.test_conocimiento_retroceso pruebas.test_conocimiento_serializable pruebas.test_memoria_puertas pruebas.test_ir_a pruebas.test_registro_ir_a pruebas.test_rutas pruebas.test_monticulo_minimo pruebas.test_costo_salida pruebas.test_entrantes pruebas.test_historial_asignar pruebas.test_bench_conocimiento
+# 003 Terreno y cazador
+uv run python -m unittest pruebas.test_cazador pruebas.test_cazador_guardado pruebas.test_cazador_puertas pruebas.test_costo_movimiento pruebas.test_decision_enemigo pruebas.test_ficha_cazador pruebas.test_contadores pruebas.test_bench_cazador
+# 004 Línea de tiempo
+uv run python -m unittest pruebas.test_linea_tiempo pruebas.test_historia pruebas.test_historia_retroceso pruebas.test_historia_replay pruebas.test_historia_guardado pruebas.test_historia_vista pruebas.test_bench_linea
+```
+
+Suite completa:
+
+```sh
+uv run python -m unittest discover -s pruebas -t .
 ```
 
 ### Límites conocidos
