@@ -34,6 +34,7 @@ class CicloAccionesControlador:
         if app._gestor.historial.hay_intervalo_abierto():
             app._gestor.descartar_intervalo()
         app._gestor.abrir_intervalo()
+        app._linea.antes_de_accion()   # spec 004, D5: estado justo antes de la acción
         historial = app._gestor.historial
         historial.registrar("azar", [app._simulacion.azar, app._simulacion.azar.getstate()])
         for atributo in ["activa", "derrota", "victoria", "terminada"]:
@@ -45,9 +46,11 @@ class CicloAccionesControlador:
             resultado = ejecutar()
             if not resultado.ok:
                 historial.revertir_abierto(app._gestor._aplicar_reversion)
+                app._linea.cancelar_accion()   # FR-008: una acción rechazada no existe en la línea
                 return resultado
             historial.cambiar(app._gestor.estado, "acciones_ejecutadas",
                               app._gestor.estado.acciones_ejecutadas + 1)
+            app._linea.capturar()   # lo que cambió la propia acción, en el instante de la decisión
             if esta_vivo(app._jugador):
                 if costo is None:
                     self.consumir_tiempo(nombre_costo)
@@ -60,9 +63,11 @@ class CicloAccionesControlador:
             if nombre_costo == "mover":
                 app._partida.comprobar_victoria(sala_origen, argumento, app.resumen_red())
             app._partida.registrar_accion(nombre_costo, argumento)
+            app._linea.capturar()   # observación de puertas y resultado, antes de la próxima decisión
         except Exception as error:
             anteriores = app._tipos_activos()
             historial.revertir_abierto(app._gestor._aplicar_reversion)
+            app._linea.cancelar_accion()
             app._avisar(app._cripta_service.reproteger(anteriores, app._tipos_activos()))
             self.finalizar()
             if isinstance(error, ErrorRegistro):

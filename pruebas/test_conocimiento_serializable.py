@@ -120,9 +120,9 @@ class PruebasSerializable(unittest.TestCase):
         self.assertTrue(app.usar_pergamino().ok)
         self.assertEqual(c.longitud_registro(), 0)        # el retroceso recortó el registro
 
-    def test_fr015_carga_sin_conocimiento_parte_de_la_sala_actual(self):
-        """FR-015: un guardado sin conocimiento se carga como el instante 0 pero desde la sala actual:
-        sala actual explorada, destinos de sus salidas avistados, sus puertas observadas."""
+    def test_fr015_carga_restaura_el_conocimiento_guardado(self):
+        """FR-015 (con la spec 004, FR-025): el guardado incluye el conocimiento y al cargar el mapa conocido es
+        el del momento de guardar. Antes de la spec 004 el guardado no lo traía y se partía de la sala actual."""
         with tempfile.TemporaryDirectory(prefix="cripta-fr015-") as carpeta:
             ruta = Path(carpeta) / "partida.bin"
             origen = Aplicacion(FuenteNiebla(_esqueleto(), 1, 4), ruta_guardado=ruta)
@@ -132,19 +132,19 @@ class PruebasSerializable(unittest.TestCase):
                 self.assertTrue(origen.mover(direccion).ok)       # sala 3, lejos de la inicial
             self.assertTrue(origen.guardar().ok)
 
+            guardado = origen._exploracion.conocimiento.instantanea()
+            mapa = repr(origen.mapa_conocido())
+
             otra = Aplicacion(FuenteNiebla(_esqueleto(), 1, 4), ruta_guardado=ruta)
             resultado = otra.cargar()
             self.assertTrue(resultado.ok, resultado.motivo)
             c = otra._exploracion.conocimiento
             self.assertEqual(otra.estado_partida().sala_actual_id, 3)
-            self.assertEqual(c.estado(3), EXPLORADA)
-            for destino in [2, 4, 5]:
-                self.assertEqual(c.estado(destino), AVISTADA)
-            for desconocida in [0, 1]:
-                self.assertEqual(c.estado(desconocida), DESCONOCIDA)
-            esperado = {"S": ABIERTA, "N": ABIERTA, "E": CERRADA}
-            for salida in otra._salas.obtener(3).salidas:
-                self.assertEqual(c.memoria_puerta(salida.clave), esperado[salida.direccion])
+            self.assertEqual(c.instantanea(), guardado)
+            self.assertEqual(repr(otra.mapa_conocido()), mapa)
+            for explorada in [1, 2, 3]:                       # el camino recorrido sigue explorado
+                self.assertEqual(c.estado(explorada), EXPLORADA)
+            self.assertEqual(c.estado(0), DESCONOCIDA)
             self.assertEqual(c.longitud_registro(), 0)
             self.assertEqual(c.instantanea()[1], 6)
 

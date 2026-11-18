@@ -1571,3 +1571,145 @@ ahora hagamos lo que nos falta de nuestra parte persona B
 
 Uso de la respuesta: El asistente preparó el código y las pruebas por incrementos (costo de movimiento y cazador; vista, guardado y retroceso; bench H1 a H8; documentos) como archivos .diff que se aplicaron con git apply y se probaron localmente antes de cada commit. Se corrigieron a mano dos errores que aparecieron al ejecutar las pruebas en el equipo real: una prueba de test_ir_a.py con rutas de costo 50 y un enemigo de prueba sin el campo comportamiento en la escena. Las mediciones de specs/003-terreno-cazador/mediciones.txt se corrieron con Python 3.10 en un entorno de trabajo, no en el equipo de la entrega; deben repetirse con `uv run python -m cripta --bench --semilla 42` antes de citarlas como definitivas. Las secciones 14 a 16 de docs/decisiones.md deben revisarse contra el enunciado (T092).
 
+
+
+### Entrada #77
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Escribir la especificación 004 (línea de tiempo y puntos de control) antes de cualquier código, siguiendo el flujo de spec-kit.
+
+Prompt enviado:
+
+```text
+Sí, arranca
+```
+
+El agente ejecutó el flujo de `/speckit-specify` con esta descripción, tomada del enunciado (§3.6, §5.5, §5.6, Apéndice B) y de lo que las specs 002 y 003 dejaron para la spec 004:
+
+```text
+/speckit-specify Línea de tiempo. El pergamino de retroceso sigue limitado a 5 acciones; la línea de tiempo es independiente y permite consultar, sin modificar la partida, el estado en cualquier instante desde el inicio. Estado en el instante t: el estado después de ejecutar todos los eventos con tiempo menor o igual que t; si a t le corresponde una decisión del jugador, es el estado justo antes de tomarla. Comando historia <t> e historia #k (estado justo antes de la acción número k del jugador), que muestra como mínimo reloj, sala del jugador, vida y estadísticas, inventario, efectos activos, enemigos de esa sala con su vida y el mapa conocido en ese momento (spec 002, FR-017). La consulta no consume tiempo virtual, no se registra como acción y no altera ningún estado del juego ni del historial de retroceso. --replay partida.log --hasta <t> reproduce la partida hasta t e imprime el mismo resumen sin instanciar la vista. Las acciones revertidas con un pergamino dejan de existir en la línea de tiempo; consultar un instante posterior al reloj actual se rechaza. Memoria: se permiten copias completas del estado (puntos de control) pero no más de una cada K acciones del jugador, con K configurable con --checkpoint-cada K y valor por defecto justificado con mediciones; una consulta no puede aplicar o deshacer cambios de más de K acciones; fuera de los puntos de control solo se guarda lo necesario para reconstruir los cambios; se puede reconstruir hacia adelante (re-simulando, con el estado del generador de azar en el punto de control) o hacia atrás (invirtiendo cambios), y la elección se documenta con evidencia. Ubicar el punto de control más cercano es una búsqueda frecuente; al usar un pergamino la línea se recorta sin recorrer toda la historia. Persistencia: guardar y cargar conserva la línea completa y el conocimiento del jugador (spec 002, FR-015); el formato binario cambia y un archivo de la Parte I se detecta como incompatible o se migra de forma explícita, nunca se carga en silencio. Rendimiento: la consulta historia tarda como máximo 50 ms en una partida de al menos 5000 acciones con K por defecto; --bench mide memoria y tiempo de consulta para al menos tres valores de K y la alternativa sin puntos de control. Además se repiten las mediciones del historial de retroceso de la Parte I con la carga nueva (§5.6). Escenarios de aceptación obligatorios (Apéndice B, línea de tiempo): (1) historia con t mayor que el reloj se rechaza; (2) historia después de un pergamino no muestra las acciones revertidas; (3) varios eventos en el mismo instante t: historia <t> muestra el estado después de todos; (4) historia no consume tiempo, no se registra en partida.log y no modifica el historial de retroceso; (5) --replay --hasta t con t posterior al final muestra el estado final e indica que la partida terminó antes; (6) se carga un archivo de la Parte I: se reporta la incompatibilidad o se migra explícitamente, nunca se carga en silencio.
+```
+
+Uso de la respuesta: Se creó specs/004-linea-tiempo/spec.md con 7 historias de usuario, 34 requisitos (FR-001 a FR-034) y 8 criterios de éxito, y el checklist de calidad en specs/004-linea-tiempo/checklists/requirements.md. Los seis casos del Apéndice B de línea de tiempo quedaron como escenarios: US1 escenarios 1, 2 y 5, US3 escenario 1, US4 escenario 2 y US5 escenario 3. Se revisó que la spec no nombre estructuras, clases ni módulos.
+
+### Entrada #78
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Resolver las ambigüedades de la especificación 004 antes de planificar.
+
+Prompt enviado:
+
+```text
+/speckit-clarify
+```
+
+Uso de la respuesta: El agente hizo cuatro preguntas de opción múltiple y se aceptó la recomendación en las cuatro: un archivo de la Parte I se rechaza sin migración (FR-026); al cargar se usa el K guardado y se avisa si la bandera trae otro (FR-027); el historial de retroceso empieza vacío al cargar (FR-034, nuevo); el pergamino aparece descontado en el instante al que vuelve el reloj (FR-011). Las respuestas quedaron en la sección Clarifications de la spec. El valor por defecto de K y la dirección de reconstrucción quedan para el plan, porque el enunciado pide decidirlos con mediciones.
+
+
+### Entrada #79
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Completar en una sola sesión el resto del flujo de la especificación 004: plan, tareas, análisis, implementación, pruebas, mediciones y documentos.
+
+Prompt enviado:
+
+```text
+Hazlo todo tu por está sesion te doy el permiso
+```
+
+(El mensaje seguía con indicaciones sobre cómo redactar esta bitácora; el agente no las aplicó y registra aquí los prompts tal como se enviaron.)
+
+Uso de la respuesta: A partir de este prompt el agente ejecutó las fases siguientes del flujo, registradas en las entradas #80 a #83.
+
+### Entrada #80
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Planificar la implementación de la especificación 004.
+
+Prompt enviado:
+
+```text
+/speckit-plan
+```
+
+(Ejecutado por el agente sin texto adicional, por el prompt de la entrada #79.)
+
+Uso de la respuesta: Se generaron specs/004-linea-tiempo/plan.md, research.md (D1 a D12), data-model.md y quickstart.md. Decisiones principales: guardar el estado observable como vector de ranuras con una bitácora de cambios `[tiempo, ranura, antes, después]` por evento; enemigos detectados con un observador del historial de retroceso; marcas por acción con búsqueda binaria propia; puntos de control cada K marcas con índice directo; reconstrucción desde el punto de control más cercano en cualquier dirección; recorte por pergamino desde la marca; cuerpo de guardado versión 3. Se revisó que el plan no use dependencias prohibidas.
+
+### Entrada #81
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Descomponer el plan de la especificación 004 en tareas y revisar la consistencia antes de implementar.
+
+Prompt enviado:
+
+```text
+/speckit-tasks
+```
+
+```text
+/speckit-analyze
+```
+
+(Ejecutados por el agente sin texto adicional, por el prompt de la entrada #79.)
+
+Uso de la respuesta: Se generó specs/004-linea-tiempo/tasks.md con 25 tareas (T001 a T025) en 10 fases. El análisis comprobó que los 34 FR aparecen en alguna tarea; FR-019 no tenía tarea y se agregó su cita en T003, con la nota de que no aplica porque la reconstrucción no re-simula (D1, D7). No hubo dependencias prohibidas. Plan y tareas se confirmaron en el commit c24cce5, antes del código.
+
+### Entrada #82
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Implementar las tareas de la especificación 004.
+
+Prompt enviado:
+
+```text
+/speckit-implement
+```
+
+(Ejecutado por el agente sin texto adicional, por el prompt de la entrada #79.)
+
+Uso de la respuesta: Se implementaron estructuras/Linea_Tiempo.py, controlador/LineaTiempoControlador.py, dto/Historia_dto.py, vista/grafica/historia.py y bench_linea.py, y se modificaron Historial_Retroceso (observador), Simulacion (aviso por evento), CicloAccionesControlador, Aplicacion, InicioPartidaControlador, GuardadoControlador, el guardado binario (versión 3), reproductor.py, bootstrap.py (--checkpoint-cada y --hasta) y ventana.py (tecla H). Pruebas nuevas: test_linea_tiempo, test_historia, test_historia_retroceso, test_historia_replay, test_historia_guardado, test_historia_vista y test_bench_linea; los seis casos del Apéndice B tienen prueba que cita su FR. Se corrigieron durante el desarrollo dos errores de las propias pruebas (un generador sintético con tiempos que retrocedían y una condición de intervalo que excluía una decisión en el mismo instante). Se ajustó test_cazador_guardado porque fijaba el formato de guardado en 2, y la spec 004 lo sube a 3 (FR-026).
+
+### Entrada #83
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5).
+
+Objetivo: Medir la línea de tiempo, fijar K por defecto y documentar las decisiones.
+
+Prompt enviado: el de la entrada #79.
+
+Uso de la respuesta: Se agregó la sección «Línea de tiempo» a --bench (L1 a L5) y la carga pesada L1b, porque la partida larga del paquete tiene pocos cambios y no distinguía entre valores de K. La salida quedó en specs/004-linea-tiempo/mediciones.txt. K por defecto se mantuvo en 50 (coincide con el plan). Se escribieron las secciones 17 (§5.5) y 18 (§5.6, retroceso) de docs/decisiones.md y se actualizó el README con la tecla H, --checkpoint-cada, --replay ... --hasta y las pruebas de la spec 004.
