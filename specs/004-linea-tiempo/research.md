@@ -112,7 +112,7 @@ función que `historia`. Si t supera el reloj final se imprime el estado final y
 ## D11. Interfaz (FR-028)
 
 **Decisión.** La tecla H abre un panel de entrada: dígitos, `#`, retroceso y Enter. El resultado se
-muestra en un panel de texto. También hay una entrada «Historia de la partida (H)» en el menú.
+muestra en un panel de texto. La tecla figura en la ayuda; no se agrega al menú de Esc porque su panel muestra solo nueve opciones y la nueva ocultaba «Terminar la partida».
 
 ## D12. `--bench`
 

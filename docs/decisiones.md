@@ -409,3 +409,62 @@ Los contadores nunca bajan, ni siquiera cuando el historial revierte, para que d
 El mayor esqueleto del paquete tiene 50 salas, por eso se mide también con 2 000. Con decenas de cazadores el ciclo queda muy por debajo de 20 ms.
 
 **Conclusión.** El heap propio sigue siendo la elección: gana a la lista con la carga de la Parte II, ninguna regla de decisión pide cambiarlo y el ciclo con 50 y 100 cazadores cumple el límite. Los tiempos dependen del equipo (se midieron con Python 3.10 en una VM de trabajo); lo reproducible es el orden de magnitud, las razones y los conteos deterministas.
+
+## 17. Línea de tiempo y puntos de control (Parte II, §3.6 y §5.5)
+
+**Spec y plan.** [spec.md](../specs/004-linea-tiempo/spec.md), [plan.md](../specs/004-linea-tiempo/plan.md) y [research.md](../specs/004-linea-tiempo/research.md) (D1 a D12). Mediciones en [mediciones.txt](../specs/004-linea-tiempo/mediciones.txt) (`--bench --semilla 42`, L1 a L5). La decisión final **coincide con el plan.md original**: todas las mediciones confirmaron D1 a D12 y el K provisional de 50.
+
+**Problema.** Consultar el estado de cualquier instante pasado (`historia <t>`, `historia #k`, `--replay --hasta`) sin copiar el estado en cada acción: como máximo un punto de control cada K acciones, ninguna consulta aplica o deshace más de K acciones, la memoria crece con los cambios y no con «acciones por tamaño del estado», ubicar el punto de control debe ser barato y el pergamino debe recortar la línea sin recorrerla entera.
+
+**Qué se guarda (D1, D2).** El estado **observable**, que es lo que muestra la consulta: sala, vida y estadísticas del jugador, resultado, inventario, efectos, sala y vida de cada enemigo que alguna vez cambió y el conocimiento del jugador. Es un vector de ranuras con índices fijos (9 del jugador, `5n` del conocimiento y 2 por enemigo). La partida queda como bitácora `[tiempo, ranura, antes, después]` en cuatro listas paralelas, con un registro **por evento** del reloj (D3). Guardar el valor anterior permite reconstruir en las dos direcciones y recortar restaurando el vector vivo.
+
+**Cómo se detecta qué cambió (D4).** Jugador, inventario y efectos se comparan al cerrar cada evento (el inventario está acotado por su capacidad). Los enemigos llegan por un observador opcional de `Historial_Retroceso.registrar`: el historial ya ve todo cambio durante una acción, y extenderlo evita recorrer los enemigos de toda la cripta en cada evento. El conocimiento se lee del registro cronológico de la spec 002. Un enemigo que nunca cambió no ocupa ranura: está en su sala inicial con su vida inicial desde el instante 0.
+
+**Alternativas.**
+
+| Alternativa | Resultado | Motivo |
+|-------------|-----------|--------|
+| Copia completa por acción (K = 1) | L1b: 48,8 MiB frente a 11,0 MiB con K = 50 | Prohibida salvo cada K; con K = 1 la memoria es «acciones por tamaño del estado» |
+| Sin puntos de control (solo el inicial) | L1b: peor reconstrucción 13,0 ms y 2 496 acciones recorridas | Viola FR-015 y crece linealmente con la partida |
+| Re-simular desde el punto de control | No medida | Exige guardar agenda y azar en cada punto de control y volver a ejecutar eventos; el estado observable basta para la consulta |
+| Registro solo por acción | No cumple | `historia <t>` entre dos acciones no distinguiría eventos anteriores y posteriores a t |
+| Comparar todos los enemigos en cada evento | No elegida | $O(E)$ por evento con decenas de cazadores; el observador lo reduce a los que cambiaron |
+| Diccionario de claves a valores | Prohibido | Principio I; los índices enteros dan $O(1)$ |
+
+**Ubicación y puntos de control (D5, D6).** Cada acción del jugador deja una marca `[instante, posición]`. Los instantes crecen estrictamente, así que una búsqueda binaria propia ubica la última marca con instante ≤ t en $O(\log N)$; luego se avanza dentro de esa sola acción. El punto de control de la acción a es el índice `a // K`, en $O(1)$, sin depender de cuántos haya (FR-016).
+
+**Dirección de reconstrucción (D7, L2).** Desde el punto de control anterior hacia adelante o desde el siguiente (o el vector vivo) hacia atrás, el que tenga menos cambios. Con K = 50 en la partida larga: adelante recorre en media 27,3 cambios, atrás 32,4 y el más cercano 15,4. En la carga pesada el más cercano nunca pasó de 25 acciones, la mitad de K. Los tres dan el mismo estado (`test_linea_tiempo`, `test_historia`).
+
+**Recorte por pergamino (D8, L4).** La bitácora se trunca desde la marca de la acción revertida invirtiendo en el vector vivo los cambios quitados; luego se captura el descuento del pergamino en el instante al que volvió el reloj. Recortar una acción de 10 cambios cuesta lo mismo con 1 000 y con 10 000 acciones (0,001 ms en ambos).
+
+**K por defecto (D6, L1, L1b).** 50. En la partida larga del paquete (cripta-04, 5 000 acciones, 5 889 cambios) todos los K cumplen con holgura porque el resumen domina el costo (0,09 ms). La carga pesada sintética (5 000 acciones, 300 000 cambios, 1 000 ranuras) muestra el compromiso:
+
+| K | Puntos de control | Memoria | Reconstrucción peor | Acciones recorridas |
+|---|------------------:|--------:|--------------------:|--------------------:|
+| 1 | 5 000 | 48,82 MiB | 0,022 ms | 1 |
+| 10 | 500 | 14,06 MiB | 0,051 ms | 5 |
+| 50 | 100 | 10,97 MiB | 0,249 ms | 25 |
+| 200 | 25 | 10,39 MiB | 0,642 ms | 100 |
+| sin puntos de control | 1 | 10,20 MiB | 13,028 ms | 2 496 |
+
+Con K = 50 la memoria queda a 0,8 MiB del mínimo posible y la consulta peor está unas 200 veces por debajo de 50 ms. Bajar K multiplica la memoria; subirlo apenas la reduce y el tiempo crece en proporción a K.
+
+**Costo agregado al ciclo (L3).** La misma partida de 5 000 acciones con y sin línea: 0,114 ms frente a 0,092 ms por acción en media (0,022 ms de sobrecosto), peor 1,1 ms, muy por debajo de 20 ms.
+
+**Persistencia (D9).** El cuerpo pasa a la versión 3 y se agrega un cuerpo con la instantánea del conocimiento (cierra FR-015 de la spec 002), K, la tabla de enemigos y la línea completa, con valores etiquetados. Un cuerpo versión 2 se rechaza como «guardado de la Parte I» (FR-026); al cargar manda el K guardado y el historial del pergamino empieza vacío (FR-027, FR-034).
+
+**Complejidad.** Registrar $O(1)$ amortizado; marca $O(1)$, o $O(R)$ con punto de control; ubicar $O(\log N + c)$; reconstruir $O(R + \text{cambios de a lo sumo } K \text{ acciones})$; recortar $O(\text{lo recortado})$; memoria $O(\text{cambios} + R \cdot N / K)$, con $R$ ranuras y $N$ acciones.
+
+**Límites conocidos.** La consulta copia el vector de ranuras ($O(R)$), que crece con el tamaño de la cripta por el conocimiento. Los tiempos dependen del equipo; lo reproducible son los conteos (puntos de control, cambios y acciones recorridas), que son deterministas por semilla.
+
+## 18. Historial de retroceso con la carga nueva (Parte II, §5.6)
+
+**Spec.** [spec.md](../specs/004-linea-tiempo/spec.md) (FR-032) y [research.md](../specs/004-linea-tiempo/research.md) (D4, D12). La decisión **coincide con el plan**: el historial se conserva.
+
+**Pregunta.** ¿Siguen siendo adecuados los intervalos acotados de deltas de la sección 6 ahora que hay cazadores, costos variables y una línea de tiempo que observa el historial?
+
+**Mediciones (L5).** Se repitió la medición de la Parte I (10 000 intervalos registrando diez atributos, la mitad revertidos): 78,5 ms sin observador y 85,4 ms con el observador de la línea (razón 1,09). En la partida larga con la carga nueva cada intervalo tiene en media 13,9 cambios y como máximo 64; revertir sigue siendo proporcional a los cambios del intervalo y el tope de cinco intervalos no cambia.
+
+**Antes y después.** Antes: el historial solo servía al pergamino. Después: el mismo historial avisa a un observador opcional (la línea de tiempo) en cada `registrar`, con un sobrecosto del 9 % en la medición sintética y sin cambiar su interfaz ni su complejidad. La línea no se guarda en el historial: el pergamino la recorta de forma explícita (sección 17).
+
+**Conclusión.** La decisión de la sección 6 sigue siendo adecuada con la carga nueva. Los tiempos dependen del equipo; lo reproducible son las razones y los conteos de cambios por intervalo.
