@@ -152,6 +152,7 @@ Al abrir `uv run cripta`, espera la pantalla de carga del catálogo online.
 | Orden visual del inventario: peso / valor / nombre / real | **Alt + P / V / N / R**                                      |
 | Ascendente / descendente del inventario | Clic en **ASC/DESC** o **Alt + D** |
 | Información de la sala y del rastro                       | **I**                                                        |
+| Historia de la partida (`historia <t>` o `historia #k`)    | **H**, escribir el instante o `#` y el número, **Enter**     |
 | Ayuda / menú / terminar con confirmación                  | **F1** o **/** / **Esc** / **Q**                             |
 | Pantalla completa / silenciar efectos / silenciar música  | **F11** / **F2** / **F3**                                    |
 
@@ -219,9 +220,21 @@ El **cazador** es un enemigo que conoce todo el mapa y persigue al jugador por l
 
 Las decisiones, la complejidad y las mediciones (H1 a H8) están en las secciones [14](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51), [15](docs/decisiones.md#15-enemigo-cazador-y-búsqueda-compartida-parte-ii-52) y [16](docs/decisiones.md#16-agenda-de-eventos-con-cazadores-parte-ii-56) de decisiones.md.
 
+### Línea de tiempo: historia de la partida
+
+Puedes ver el estado de la partida en cualquier instante pasado sin modificarla: pulsa **H** (también figura en la ayuda, **F1**), escribe un instante virtual `t` o `#k` (Tab o `#` cambia de modo) y pulsa **Enter**. `#k` es el estado justo antes de tu acción número k; `#1` es el inicio. El resumen muestra reloj, sala, vida y estadísticas, inventario, efectos, enemigos de la sala y el mapa conocido. La consulta no consume tiempo, no queda en `partida.log` y no cambia el pergamino. Las acciones revertidas con un pergamino desaparecen de la historia, y un instante posterior al reloj actual se rechaza.
+
+Sin interfaz, `--hasta` imprime el mismo resumen al reproducir un registro; si el instante es posterior al final, imprime el estado final e indica en qué instante terminó:
+
+```sh
+uv run cripta --offline --replay partidas/<archivo>.log --hasta 500
+```
+
+`--checkpoint-cada K` fija cada cuántas acciones se guarda una copia completa del estado (por defecto 50, entero ≥ 1). Una partida guardada conserva la línea de tiempo y su K; un guardado de la Parte I se rechaza por formato incompatible. Decisiones y mediciones en las secciones [17](docs/decisiones.md#17-línea-de-tiempo-y-puntos-de-control-parte-ii-36-y-55) y [18](docs/decisiones.md#18-historial-de-retroceso-con-la-carga-nueva-parte-ii-56) de decisiones.md.
+
 ### Medir rendimiento
 
-Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y las secciones «Resolubilidad» (M1 a M7), «Niebla de guerra e ir a» (K1 a K9) y «Terreno y cazador» (H1 a H8: búsqueda compartida frente a individual, corte por rango, reutilizar frente a recalcular, coincidencia con la búsqueda completa, ciclo con decenas de cazadores frente al límite de 20 ms, agenda, predicado y determinismo). No consulta la red ni abre la interfaz.
+Ejecuta mediciones de agenda, caché, inventario, retroceso, ordenamientos y persistencia, además de ciclos completos de la referencia, cargas sintéticas y las secciones «Resolubilidad» (M1 a M7), «Niebla de guerra e ir a» (K1 a K9) «Línea de tiempo» (L1 a L5: memoria y consulta por K y sin puntos de control, dirección de reconstrucción, costo por acción, recorte por pergamino y retroceso con la carga nueva) y «Terreno y cazador» (H1 a H8: búsqueda compartida frente a individual, corte por rango, reutilizar frente a recalcular, coincidencia con la búsqueda completa, ciclo con decenas de cazadores frente al límite de 20 ms, agenda, predicado y determinismo). No consulta la red ni abre la interfaz.
 
 ```sh
 uv run cripta --bench
@@ -271,6 +284,8 @@ Puedes añadir estas opciones al comando de arranque para ajustar la capacidad d
 | `--cripta`, `--nombre`, `--semilla` | Preselección del menú; nombre `Jugador`, semilla aleatoria si está vacía (con `--bench`, `42`) |
 | `--verificar CRIPTA`                | Verifica la resolubilidad sin abrir la interfaz; salida 0, 1 o 2          |
 | `--forzar`                          | Inicia una cripta no resoluble de todos modos                            |
+| `--checkpoint-cada 50`              | Acciones entre puntos de control de la línea de tiempo (entero ≥ 1)      |
+| `--hasta T`                         | Con `--replay`: imprime el estado en el instante T sin abrir la interfaz |
 | `--cache-size 25`                   | Capacidad de fichas de catálogo en memoria; debe ser positiva            |
 | `--cache-dir .cripta_cache`         | Carpeta de caché persistente                                             |
 | `--offline-dir datos_offline`        | Paquete local de respuestas de la API                                    |
@@ -324,6 +339,12 @@ uv run python -m unittest pruebas.test_partida pruebas.test_inventario pruebas.t
 ```
 
 Las pruebas gráficas requieren un entorno con pantalla y soporte OpenGL, aunque sus ventanas estén ocultas.
+
+Pruebas de aceptación de la línea de tiempo (spec 004; cada prueba cita su FR y las del Apéndice B lo indican):
+
+```sh
+uv run python -m unittest pruebas.test_linea_tiempo pruebas.test_historia pruebas.test_historia_retroceso pruebas.test_historia_replay pruebas.test_historia_guardado pruebas.test_bench_linea
+```
 
 ### Límites conocidos
 

@@ -1,0 +1,9 @@
+Regresión de la spec 004 (T024)
+Comando: uv run python -m unittest discover -s pruebas -t .
+Resultado tras la implementación: Ran 376 tests, FAILED (failures=6, errors=3).
+Las 7 fallas de linea_base.txt siguen igual (ya fallaban antes de la spec 004).
+Dos fallas nuevas, causadas por la spec 004 y corregidas:
+- test_conocimiento_serializable.test_fr015_carga_sin_conocimiento...: probaba el comportamiento provisional de la spec 002 (guardado sin conocimiento). Con FR-025 el guardado trae el conocimiento; la prueba ahora comprueba que se restaura (test_fr015_carga_restaura_el_conocimiento_guardado).
+- test_grafica.test_animaciones_no_avanzan_simulacion_y_acciones_reales: la entrada nueva del menú ocultaba «Terminar la partida» (el panel muestra 9 opciones). Se quitó la entrada; la consulta queda en la tecla H y en la ayuda.
+Tras corregirlas: test_conocimiento_serializable, test_grafica y test_historia_vista pasan (16 pruebas, OK).
+Nota: algunas pruebas existentes reescriben archivos de datos_offline/ al ejecutarse; se restauraron con git checkout y no se confirman.
