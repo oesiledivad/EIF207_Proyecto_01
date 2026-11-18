@@ -1814,3 +1814,33 @@ Corrijamos la opacidad: la niebla debe permitir distinguir parcialmente el entor
 ```
 
 Uso de la respuesta: Primero se enmendó la spec 002 con la aclaración del profesor en clase (US9, FR-042 a FR-045, SC-009) y se confirmó antes del código (d51a621). Se implementó una capa de oscuridad solo visual en `escena.py`, centrada en el jugador, con radio de 70 sin antorcha y de 230 con antorcha; no toca el modelo, así que el reloj, el registro, el guardado y el replay no cambian. Al verla en el juego quedó demasiado negra, así que se corrigió primero la spec (fefafff: penumbra, no negro total) y luego el código (niebla gris azulada al 78 % de opacidad). Se agregaron las pruebas `test_oscuridad.py` y las tareas T105 a T107, y se verificó en la ventana real sin antorcha y con ella.
+
+### Entrada #88
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Codex (OpenAI).
+
+Objetivo: Verificar los requisitos de entrega frente a los dos enunciados y corregir los pendientes de diagnóstico HTTP, datos actuales y evidencia de rendimiento.
+
+Prompts enviados:
+
+> excelente, ahora lo que nos toca, es solamente verificar si ya estamos para poder entregar, antes de hacer el pr desde este master4 al master
+>
+> "E:\De_David\EIF207\Primer Proyecto - Estructuras de Datos II 2026.pdf"
+>
+> "E:\De_David\EIF207\Segundo Proyecto - Estructuras de Datos II 2026.pdf"
+>
+> También la calificacion del primer proyecto, no sé si podemos empezar a revisar si ya mejoramos/corregimos esto
+
+El mensaje incluía una imagen de la rúbrica con total 96 y la observación «Mejorar más la parte de logging».
+
+> excelente, ayúdame a arreglar eso entonces
+
+Sobre conservar la redacción de las entradas anteriores:
+
+> mantener los que ya hicimos y listo, es decir los que arreglamos
+
+Uso de la respuesta: Se revisaron los dos enunciados, el código, el historial de especificaciones, las pruebas y el servicio actual. Se especificaron primero los requisitos de diagnóstico de red y de captura completa (spec 001, FR-030/031), y la medición sobre la referencia publicada (spec 003, FR-029). Se implementó un diagnóstico HTTP rotativo separado del replay, se corrigió la aplicación del presupuesto en --verificar y se descargó un paquete actual completo en datos_entrega sin sobrescribir datos_offline. Se añadió al benchmark la medición del esqueleto publicado con 50 cazadores de prueba, se actualizaron el README y las decisiones y se conservó la identificación de las paráfrasis previas. La constitución 1.1.0 admite esas paráfrasis identificadas por decisión del equipo. La evidencia de validación final se conserva en specs/003-terreno-cazador/mediciones_cierre.txt y validacion_cierre.txt.

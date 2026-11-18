@@ -271,5 +271,5 @@
 
 ## Cierre de entrega (17/11/2026)
 
-- [ ] T090 Registrar y probar intentos HTTP, 429, transporte, presupuesto y rotación; documentar red.log (FR-030).
-- [ ] T091 Completar la herramienta de descarga, capturar datos actuales en datos_entrega y probar verificación offline sin red conservando el replay histórico (FR-018, FR-020, FR-031).
+- [x] T090 Registrar y probar intentos HTTP, 429, transporte, presupuesto y rotación; documentar red.log (FR-030).
+- [x] T091 Completar la herramienta de descarga, capturar datos actuales en datos_entrega y probar verificación offline sin red conservando el replay histórico (FR-018, FR-020, FR-031).

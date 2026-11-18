@@ -126,7 +126,7 @@ Con el entorno activo puedes ejecutar `cripta` directamente; para salir del ento
 
 Al abrir `uv run cripta`, espera la pantalla de carga del catálogo online.
 
-1. Selecciona una cripta en el menú; para empezar, usa **Osario menor** (`cripta-01`).
+1. Selecciona una cripta en el menú; para empezar, usa **Catacumbas menores** (`cripta-02`).
 2. Escribe tu nombre. La semilla puede quedar vacía; un mismo número permite repetir el azar de una partida con los mismos datos.
 3. Pulsa **Iniciar partida**. Haz clic en los objetos del suelo para recogerlos y en las puertas para abrirlas o cruzarlas. Algunas requieren una llave.
 4. Selecciona un enemigo y pulsa **A**, o haz doble clic sobre él para atacar. Revisa la vida, los efectos y la bitácora después de actuar.
@@ -171,11 +171,13 @@ uv run cripta
 
 ### Jugar offline
 
-Utiliza primero lo descargado en `.cripta_cache/` y después el paquete `datos_offline/`, sin consultar la red.
+Utiliza primero lo descargado en `.cripta_cache/` y después el paquete seleccionado, sin consultar la red. `datos_entrega/` contiene una captura completa del servicio del 17/11/2026, con versiones, costos, cazadores y ubicaciones de llaves. Incluye `cripta-06` (referencia de 300 salas) y `cripta-05` (no resoluble).
 
 ```sh
-uv run cripta --offline
+uv run cripta --offline --offline-dir datos_entrega
 ```
+
+El paquete predeterminado `datos_offline/` conserva los datos históricos para Stormlight y el replay de ejemplo; sus criptas no incluyen ubicaciones de llaves. Para probar resolubilidad sin red usa `--offline-dir datos_entrega`. Para aislar la captura de una caché personal puedes añadir `--cache-dir <carpeta-vacía>`.
 
 Una cripta descargada se usa con su versión en caché; una sala que falte allí no se completa mezclando otra versión. Las fichas de catálogo también deben ser compatibles.
 
@@ -202,6 +204,12 @@ Exige las versiones originales de la cripta y el catálogo. Para un registro onl
 El ejemplo usa los datos de `datos_offline/` y muestra cada acción y el estado final en consola. Para los registros propios, se necesitan los datos y versiones con que se jugaron.
 
 Para reproducir una partida propia, sustituye la ruta por su archivo `.log` dentro de `partidas/`. Esos registros se generan al jugar y no se incluyen en Git.
+
+### Diagnóstico de red
+
+En modo online, `partidas/red.log` registra la fecha, el recurso y sus parámetros, cada intento HTTP, el estado o error de transporte, la duración y las solicitudes utilizadas frente al presupuesto. También distingue las esperas por 429 y los rechazos por presupuesto. Se conserva hasta 1 MiB por archivo y tres archivos anteriores (`red.log.1` a `.3`). `--log-dir` cambia su carpeta.
+
+Este diagnóstico es independiente de los archivos de replay: no registra acciones, cuerpos de respuestas ni cabeceras HTTP. Offline y `--bench` no crean este archivo ni consultan la red.
 
 ### Mapa conocido y viaje «ir a»
 
@@ -247,6 +255,17 @@ Con `--semilla N` las criptas sintéticas de las secciones «Resolubilidad» y �
 uv run cripta --bench --semilla 42
 ```
 
+Al final aparece «Referencia publicada»: selecciona el mayor esqueleto de `datos_entrega/`, identifica su versión y mide verificación (200 ms), un paso de «ir a» con conocimiento completo (5 ms) y ciclos con 50 cazadores activos de prueba (20 ms). Conserva el mapa, las puertas y los costos publicados; esos 50 actores son una carga de medición, no una afirmación sobre cuántos enemigos trae la API. La lectura del paquete ocurre fuera del cronómetro. Las secciones anteriores mantienen sus cargas sintéticas e históricas para comparación.
+
+Para obtener otra captura sin sobrescribir la anterior:
+
+```sh
+uv run python herramientas/descargar_paquete_offline.py --destino datos_entrega_nueva
+```
+
+La herramienta exige un destino nuevo, respeta el presupuesto y los lotes de diez, descarga todas las páginas, contenido, fichas, botín y llaves, y comprueba las versiones antes de publicar la captura.
+
+
 Los resultados aparecen en la terminal y dependen del equipo y de la carga evaluada. Las cifras de la resolubilidad están comentadas en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54). Las de la niebla de guerra y «ir a» están en la [sección 13](docs/decisiones.md#13-niebla-de-guerra-e-ir-a-parte-ii-33-34-y-53) y las de terreno y cazador en las secciones [14 a 16](docs/decisiones.md#14-costo-del-movimiento-por-terreno-parte-ii-51); la salida de referencia está en [mediciones.txt](specs/003-terreno-cazador/mediciones.txt).
 
 ### Verificar la resolubilidad de una cripta
@@ -254,8 +273,8 @@ Los resultados aparecen en la terminal y dependen del equipo y de la carga evalu
 Decide si la cripta se puede ganar y en qué orden se obtienen las llaves, o por qué no. No abre la interfaz. Con `--offline` no consulta la red.
 
 ```sh
-uv run cripta --verificar cripta-01
-uv run cripta --offline --verificar cripta-01
+uv run cripta --verificar cripta-06
+uv run cripta --offline --offline-dir datos_entrega --verificar cripta-06
 ```
 
 Códigos de salida: `0` si es resoluble, `1` si no lo es y `2` si no se pudo emitir un veredicto (datos o llaves no disponibles) o hubo un error de uso. `--semilla` no tiene efecto con `--verificar`.
@@ -263,7 +282,7 @@ Códigos de salida: `0` si es resoluble, `1` si no lo es y `2` si no se pudo emi
 Al iniciar una partida la cripta también se verifica. Si no es resoluble, la partida no inicia y se muestra el reporte. `--forzar` permite iniciarla de todos modos y se ignora con `--verificar`, `--bench` y `--replay`:
 
 ```sh
-uv run cripta --forzar --cripta cripta-01
+uv run cripta --forzar --cripta cripta-05
 ```
 
 El algoritmo, la complejidad y las mediciones están en la [sección 12 de decisiones.md](docs/decisiones.md#12-resolubilidad-de-la-cripta-parte-ii-35-y-54).
@@ -290,14 +309,14 @@ Puedes añadir estas opciones al comando de arranque para ajustar la capacidad d
 | `--cache-size 25`                   | Capacidad de fichas de catálogo en memoria; debe ser positiva            |
 | `--cache-dir .cripta_cache`         | Carpeta de caché persistente                                             |
 | `--offline-dir datos_offline`        | Paquete local de respuestas de la API                                    |
-| `--log-dir partidas`                | Carpeta de registros de partida                                          |
+| `--log-dir partidas`                | Registros de partida y diagnóstico HTTP en `red.log`                                          |
 | `--puntajes RUTA`                   | Archivo de puntajes; por defecto, `puntajes.json` dentro de `--log-dir`  |
 
 Ejemplos de uso; puedes combinar varias opciones en una misma ejecución:
 
 ```sh
 # Preseleccionar una cripta online, el nombre y la semilla
-uv run cripta --cripta cripta-01 --nombre "Explorador" --semilla 42
+uv run cripta --cripta cripta-02 --nombre "Explorador" --semilla 42
 
 # Permitir hasta 50 fichas de catálogo en memoria
 uv run cripta --cache-size 50
@@ -323,7 +342,8 @@ Ejecuta solo el ejemplo que necesites. Las líneas que empiezan con `#` son come
 |----------------------------------------|-------------------------------------------------------------------------------------------|
 | `.venv/`                               | Entorno de Python y dependencias instaladas por uv                                        |
 | `.cripta_cache/`                       | Versiones, catálogo y datos de criptas descargados                                        |
-| `partidas/*.log` | Registros generados al jugar; el nombre incluye la cripta y un consecutivo |
+| `partidas/*_partida_*.log` | Replay de acciones; el nombre incluye la cripta y un consecutivo |
+| `partidas/red.log` y `.1` a `.3` | Diagnóstico HTTP rotativo, separado de las acciones |
 | `partidas/puntajes.json`               | Resultados, jugador, versión de cripta, acciones, enemigos derrotados y tiempo virtual    |
 | `partidas/guardadas/*.bin`             | Guardados por jugador y partida, en formato binario propio                                |
 
@@ -384,6 +404,12 @@ Suite completa:
 uv run python -m unittest discover -s pruebas -t .
 ```
 
+Las comprobaciones de diagnóstico HTTP, captura completa y medición sobre datos publicados se pueden ejecutar por separado:
+
+```sh
+uv run python -m unittest pruebas.test_diagnostico_red pruebas.test_datos_entrega
+```
+
 ### Límites conocidos
 
 - **Rendimiento:** la referencia cargada cumple el objetivo de ciclos inferiores a 20 ms en el equipo de desarrollo, excluyendo red y renderizado. Las cargas de estrés, incluida la de 1000 enemigos, no garantizan ese límite. Influyen el equipo, los eventos simultáneos, la implementación y las pausas del recolector de memoria; ejecuta `--bench` para medir en tu entorno.
@@ -403,7 +429,7 @@ El proyecto separa **Modelo–Vista–Controlador**. La vista usa Arcade; el mod
 | `src/cripta/servicio/` y `adaptadores/`      | Catálogo, precarga, red, caché persistente y fuente offline          |
 | `src/cripta/vista/`                          | Interfaz gráfica y recursos de imagen, fuente y audio                |
 | `src/cripta/replay/`                         | Registro y reproducción de acciones                                  |
-| `datos_offline/`, `pruebas/`, `herramientas/` | Datos offline, pruebas y utilidades de generación de recursos        |
+| `datos_offline/`, `datos_entrega/`, `pruebas/`, `herramientas/` | Datos históricos y actuales, pruebas y utilidades        |
 
 - [Decisiones de diseño y análisis de estructuras](docs/decisiones.md).
 - [Estructuras de datos: operaciones y complejidades](docs/estructuras.md).

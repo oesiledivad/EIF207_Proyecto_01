@@ -290,4 +290,4 @@
 
 ## Referencia publicada (17/11/2026)
 
-- [ ] T104 Medir y probar el esqueleto publicado mayor sin E/S cronometrada; guardar evidencia y actualizar decisiones y README (FR-025, FR-026, FR-029; spec 001 FR-023; spec 002 FR-038).
+- [x] T104 Medir y probar el esqueleto publicado mayor sin E/S cronometrada; guardar evidencia y actualizar decisiones y README (FR-025, FR-026, FR-029; spec 001 FR-023; spec 002 FR-038).

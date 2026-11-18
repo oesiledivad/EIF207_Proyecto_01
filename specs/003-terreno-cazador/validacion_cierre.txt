@@ -1,0 +1,33 @@
+Validación de cierre — master4, 17/11/2026
+Entorno: Windows 11, Python 3.13.17.
+
+uv run python -m unittest discover -s pruebas -t .
+Ran 389 tests in 169.115s
+OK
+
+uv run cripta --bench --semilla 42
+Salida completa: mediciones_cierre.txt. Código de salida 0.
+Referencia publicada: cripta-06, versión f9ed9afa683d, 300 salas.
+Verificación pura: máximo 2,168 ms < 200 ms.
+Paso de ir a: máximo 0,263 ms < 5 ms.
+Ciclo con 50 cazadores activos de prueba: máximo 1,972 ms < 20 ms.
+La carga sintética extrema de 1000 enemigos sigue superando 20 ms (máximo 29,696 ms); no es la carga de referencia y su límite está documentado.
+
+uv run cripta --offline --offline-dir datos_entrega --cache-dir <temporal vacío> --verificar cripta-06
+RESOLUBLE. Cuatro llaves. Solicitudes de red: 0/63. Código de salida 0.
+
+uv run cripta --offline --offline-dir datos_entrega --cache-dir <temporal vacío> --verificar cripta-05
+NO RESOLUBLE. Frontera: 3 puertas. Ciclo: itm_llave_hierro -> itm_llave_negra -> itm_llave_hierro.
+Solicitudes de red: 0/25. Código de salida 1.
+
+uv run cripta --verificar cripta-06 --cache-dir <temporal vacío> --log-dir <temporal>
+RESOLUBLE. Solicitudes de red: 8/63. Código de salida 0.
+red.log contiene un intento por envío, duración, estado 200, presupuesto conocido y progresión hasta 8/63.
+Con caché caliente: 1/63; las páginas y las llaves se recuperan del disco compatible.
+Los casos 429, error de transporte, rechazo antes del envío y rotación se prueban con HTTP simulado.
+
+uv run cripta --offline --replay ejemplos/replay/cripta_01_demo.log
+Replay completado: sala=1 vida=30 tiempo=100. Solicitudes de red: 0/9.
+El paquete histórico y el replay de ejemplo no se modificaron.
+
+La suite incluye las pruebas gráficas automatizadas. Estos cambios no alteran la interfaz; no se repitió una sesión manual completa en ventana visible durante este cierre.

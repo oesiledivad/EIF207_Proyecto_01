@@ -468,3 +468,36 @@ Con K = 50 la memoria queda a 0,8 MiB del mínimo posible y la consulta peor est
 **Antes y después.** Antes: el historial solo servía al pergamino. Después: el mismo historial avisa a un observador opcional (la línea de tiempo) en cada `registrar`, con un sobrecosto del 9 % en la medición sintética y sin cambiar su interfaz ni su complejidad. La línea no se guarda en el historial: el pergamino la recorta de forma explícita (sección 17).
 
 **Conclusión.** La decisión de la sección 6 sigue siendo adecuada con la carga nueva. Los tiempos dependen del equipo; lo reproducible son las razones y los conteos de cambios por intervalo.
+
+## 19. Diagnóstico HTTP y paquete actual para la entrega
+
+**Problema y requisitos.** La observación del primer proyecto pidió mejorar el logging. El resumen final de red y el replay no permitían reconstruir qué solicitudes fallaron o esperaron por 429. El paquete histórico tampoco incluía llaves ni la referencia publicada actual. Esta ampliación está especificada antes del código en [spec 001](../specs/001-resolubilidad/spec.md) (FR-030 y FR-031), con el [plan](../specs/001-resolubilidad/plan.md) y T090/T091. La decisión final coincide con ese plan.
+
+**Alternativas y decisión.** Agregar mensajes al replay mezclaría acciones deterministas con tiempos reales y diagnósticos. Imprimir únicamente en consola perdería la evidencia al cerrar la ventana. Se usa un logger de diagnóstico independiente, con un archivo rotativo de 1 MiB y tres respaldos; cada intento HTTP deja fecha, recurso, parámetros, resultado o clase de error, duración y solicitudes/presupuesto. La espera por 429 y el rechazo sin envío tienen entradas propias. No se guardan respuestas completas ni cabeceras. El costo es una escritura por intento y no pertenece al ciclo de simulación.
+
+**Presupuesto en --verificar.** Al probar el diagnóstico se detectó que ese modo informaba el presupuesto sin configurarlo en el adaptador. Ahora se fija al leer los detalles, antes de descargar páginas y llaves (FR-019). La prueba con presupuesto 1 recibe los detalles y rechaza el siguiente envío sin hacer una segunda solicitud HTTP. Los reintentos 429 siguen contándose individualmente.
+
+**Captura y compatibilidad.** Sobrescribir datos_offline invalidaría el replay de ejemplo por cambio de versiones. Se conserva ese paquete y se añade datos_entrega: cinco criptas publicadas, todos sus contenidos y fichas referenciadas, versiones y ubicaciones de llaves. La captura del 17/11/2026 realizó 83 solicitudes en total, respetando el presupuesto de cada sesión. La herramienta escribe primero en una carpeta temporal, comprueba las versiones y publica solo al terminar; rechaza destinos existentes.
+
+**Evidencia y límites.** `pruebas.test_diagnostico_red` cubre 429 seguido de éxito, fallo de transporte, rechazo por presupuesto, rotación, ausencia de líneas duplicadas, paginación, lotes, botín y cambio de versión sin publicación parcial. `pruebas.test_datos_entrega` comprueba que el paquete completo se usa sin red y conserva los veredictos, incluida la cripta no resoluble. Una captura no actualiza registros antiguos: cada replay sigue exigiendo sus versiones originales. Los logs rotativos preservan solo el diagnóstico reciente y deben copiarse si se necesita conservar una sesión larga.
+
+## 20. Medición del esqueleto publicado de referencia
+
+**Problema y trazabilidad.** El paquete histórico llegaba a 50 salas, pero el servicio publica una referencia de 300. Mantener solo pruebas sintéticas no daba evidencia directa sobre sus puertas y costos reales. [Spec 003](../specs/003-terreno-cazador/spec.md), FR-029, [plan](../specs/003-terreno-cazador/plan.md) y T104 fijan esta medición; también atiende FR-023 de la spec 001 y FR-038 de la spec 002. La decisión coincide con el plan.
+
+**Decisión.** Se conserva el benchmark anterior y se agrega una sección que elige el mayor esqueleto de datos_entrega, con empate por id de cripta. Se carga y ensambla fuera del cronómetro, preservando ids de sala, costos y puertas. Se miden el verificador puro, 20 pasos de ir a sobre conocimiento completo y 200 ciclos con 50 cazadores activos de prueba. El rango de prueba cubre todo el mapa alcanzable; estos actores son una carga añadida, no el contenido enemigo publicado. No cambia el juego ni sus estructuras.
+
+**Alternativas y límites.** Descargar al medir mezclaría latencia de HTTP con procesamiento y haría depender --bench de la API. Medir solo un mapa sintético del mismo tamaño no probaría la distribución real de costos y puertas. La captura separada permite repetir sin red; si falta, el programa indica NO MEDIDA. Los tiempos dependen del equipo y no garantizan 20 ms para cargas de estrés de mil enemigos.
+
+**Evidencia.** La sección «Referencia publicada» de `uv run cripta --bench --semilla 42` identifica cripta, versión y tamaño. La prueba `test_bench_publicada_determinista_sin_io_en_medicion` verifica que no hay lecturas de disco dentro del cronómetro, bloquea la red y compara decisiones entre dos corridas de la misma semilla. También se prueba un mapa con ids no consecutivos. La salida completa de la ejecución final se conserva en [mediciones_cierre.txt](../specs/003-terreno-cazador/mediciones_cierre.txt).
+
+
+En el equipo de entrega (Windows 11, Python 3.13, semilla 42), el mapa publicado de 300 salas, versión f9ed9afa683d, dio estos máximos:
+
+| Operación | Máximo | Límite | Resultado |
+|-----------|-------:|-------:|-----------|
+| Verificación pura, 20 repeticiones | 2,168 ms | 200 ms | CUMPLE |
+| Paso de ir a, 20 pares | 0,263 ms | 5 ms | CUMPLE |
+| Ciclo con 50 cazadores de prueba, 200 ciclos | 1,972 ms | 20 ms | CUMPLE |
+
+La medición es local, sin red ni disco dentro del cronómetro. Los datos y las decisiones son reproducibles por versión y semilla; los tiempos pueden variar entre ejecuciones.
