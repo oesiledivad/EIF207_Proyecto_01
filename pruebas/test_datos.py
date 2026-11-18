@@ -1,24 +1,37 @@
-# preubas/test_catalogo_dto.py
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src", "cripta"))
+"""Fichas del catálogo: cada entidad del paquete offline se convierte en su DTO (sin red).
 
-from src.cripta.adaptadores.Network_Adapter import NetworkAdapter
-from src.cripta.dto.FactoryDto_Ficha import ficha_desde_dict
+Reemplaza a dos scripts manuales (test_datos y test_ensamblador) que consultaban la API en vivo
+con `ficha_desde_dict`, función que después pasó a llamarse `parsear_ficha`.
+"""
+import json
+import sys
+import unittest
+from pathlib import Path
+
+RAIZ = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(RAIZ / "src"))
+
+from cripta.dto.FactoryDto_Ficha import parsear_ficha
 
 
-def main():
-    adaptador = NetworkAdapter()
-    ids = [
-        "itm_antorcha", "itm_daga_oxidada", "ent_rata_gigante", "trp_dardos",
-        "itm_llave_bronce", "itm_coraza_cuero", "ent_guardian_oseo",
-        "itm_llave_negra", "itm_pocion_menor", "itm_pergamino_retroceso",
-    ]
-    respuesta = adaptador.catalog(ids)
+class PruebasFichasCatalogo(unittest.TestCase):
+    def test_todas_las_fichas_del_paquete(self):
+        """Cada clase del catálogo produce su ficha con el mismo id y nombre."""
+        ruta = RAIZ / "datos_offline" / "catalogo.json"
+        if not ruta.is_file():
+            self.skipTest("No está el paquete datos_offline.")
+        entidades = json.loads(ruta.read_text(encoding="utf-8"))["entidades"]
+        self.assertTrue(entidades)
+        for entidad in entidades:
+            ficha = parsear_ficha(dict(entidad))
+            self.assertEqual(ficha.id, entidad["id"])
+            self.assertEqual(ficha.nombre, entidad["nombre"])
 
-    for entidad_dict in respuesta["entidades"]:
-        ficha = ficha_desde_dict(entidad_dict)
-        print(type(ficha).__name__, "->", ficha.id, ficha.nombre)
+    def test_clase_desconocida(self):
+        """Una clase que no existe se rechaza con un mensaje."""
+        with self.assertRaises(ValueError):
+            parsear_ficha({"id": "x", "clase": "dragon"})
 
 
 if __name__ == "__main__":
-    main()
+    unittest.main()
