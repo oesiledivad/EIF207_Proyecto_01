@@ -18,7 +18,7 @@
 
 ### Session 2026-11-17
 
-- Q: ¿La niebla de guerra también oscurece la vista de la sala actual? → A: Sí. El profesor lo explicó en clase: la sala se ve a oscuras salvo un radio de visibilidad alrededor del jugador, y la antorcha encendida amplía ese radio; así la antorcha tiene utilidad dentro de la sala, no solo al explorar vecinas. Es solo visual: no cambia reglas, tiempo ni conocimiento (FR-042 a FR-045).
+- Q: ¿La niebla de guerra también oscurece la vista de la sala actual? → A: Sí. El profesor lo explicó en clase: la sala se ve cubierta por una niebla oscura salvo un radio de visibilidad alrededor del jugador (en penumbra, no en negro), y la antorcha encendida amplía ese radio; así la antorcha tiene utilidad dentro de la sala, no solo al explorar vecinas. Es solo visual: no cambia reglas, tiempo ni conocimiento (FR-042 a FR-045).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -165,7 +165,7 @@ Quien evalúa el proyecto quiere evidencia medida de que consultar el conocimien
 
 ### User Story 9 - Oscuridad de la sala y radio de la antorcha (Priority: P2)
 
-La sala actual se ve a oscuras. Alrededor del jugador hay un radio pequeño de visibilidad; lo que queda fuera (enemigos, objetos, trampas, puertas lejanas) no se distingue. Con la antorcha encendida el radio crece y deja ver casi toda la sala; cuando la antorcha se apaga vuelve al radio mínimo.
+La sala actual se ve a oscuras. Alrededor del jugador hay un radio pequeño de visibilidad; lo que queda fuera (enemigos, objetos, trampas, puertas lejanas) queda en penumbra, como tras una niebla: se adivina la forma pero no el detalle. Con la antorcha encendida el radio crece y deja ver casi toda la sala; cuando la antorcha se apaga vuelve al radio mínimo.
 
 **Why this priority**: Es la parte visual de la niebla de guerra que el profesor explicó en clase y la que hace útil la antorcha dentro de la sala, pero no cambia ninguna regla del juego.
 
@@ -173,7 +173,7 @@ La sala actual se ve a oscuras. Alrededor del jugador hay un radio pequeño de v
 
 **Acceptance Scenarios**:
 
-1. **Given** la antorcha apagada, **When** el jugador está en una sala, **Then** solo se ve un radio pequeño a su alrededor y el resto de la sala está a oscuras.
+1. **Given** la antorcha apagada, **When** el jugador está en una sala, **Then** solo se ve con claridad un radio pequeño a su alrededor y el resto de la sala queda en penumbra, sin llegar a negro.
 2. **Given** la antorcha encendida, **When** el jugador está en una sala, **Then** el radio visible es mayor y se distinguen los enemigos y objetos que antes quedaban a oscuras.
 3. **Given** la antorcha encendida que se apaga al terminar su duración, **When** se dibuja la sala, **Then** vuelve el radio mínimo.
 4. **Given** la oscuridad, **When** el jugador juega, **Then** el reloj, las acciones, el conocimiento, el registro, el guardado y la reproducción son idénticos a los de una partida sin oscuridad; el inventario, la bitácora, la barra inferior, el minimapa y el mapa conocido no se oscurecen.
@@ -256,7 +256,7 @@ La sala actual se ve a oscuras. Alrededor del jugador hay un radio pequeño de v
 - **FR-038**: El cálculo de un paso de ir a DEBE tardar menos de 5 ms con el mapa conocido completo de la cripta de referencia.
 - **FR-039**: El modo --bench DEBE medir las consultas al mapa conocido y el cálculo de ir a, con resultados deterministas por semilla.
 - **FR-040**: El modo --bench NO DEBE abrir la interfaz.
-- **FR-042**: La vista de la sala actual DEBE mostrarse a oscuras salvo un radio de visibilidad alrededor del jugador; lo que queda fuera del radio no debe distinguirse.
+- **FR-042**: La vista de la sala actual DEBE mostrarse cubierta por una niebla oscura salvo un radio de visibilidad alrededor del jugador. Fuera del radio la sala queda en penumbra: se adivinan las formas (muros, puertas, siluetas) pero no los detalles (barras de vida, objetos pequeños, costos de las puertas). No es negro total.
 - **FR-043**: Con la antorcha encendida el radio de visibilidad DEBE ser al menos el triple del radio sin antorcha; al apagarse la antorcha DEBE volver al radio mínimo.
 - **FR-044**: La oscuridad DEBE ser solo visual: NO DEBE cambiar el tiempo, las acciones disponibles, el conocimiento del jugador, las decisiones de los enemigos, el registro, el guardado ni la reproducción, y `--replay`, `--bench` y `--verificar` siguen sin vista.
 - **FR-045**: El inventario, la bitácora, la barra inferior, el minimapa y el panel del mapa conocido NO DEBEN oscurecerse.
@@ -285,7 +285,7 @@ La sala actual se ve a oscuras. Alrededor del jugador hay un radio pequeño de v
 - **SC-005**: Dos partidas con la misma cripta, la misma semilla y las mismas acciones producen el mismo mapa conocido y los mismos viajes en el 100% de los casos probados.
 - **SC-006**: Tras revertir con el pergamino, el mapa conocido es idéntico al anterior a la acción revertida en el 100% de los casos probados.
 - **SC-007**: En el 100% de los viajes detenidos, la interfaz muestra el motivo de la detención.
-- **SC-009**: Sin antorcha, el área visible de la sala es menor que la quinta parte de la sala; con la antorcha encendida, es al menos la mitad.
+- **SC-009**: Sin antorcha, el área que se ve con claridad (niebla por debajo de la mitad de su opacidad máxima) es menor que la quinta parte de la sala; con la antorcha encendida, es al menos la mitad. Fuera del radio la niebla deja pasar parte de la imagen (opacidad menor que el 85 %).
 - **SC-008**: Con --bench, el resultado de las consultas al mapa conocido y del cálculo de ir a aparece en consola y 0 ventanas de la interfaz se abren.
 
 ## Assumptions
