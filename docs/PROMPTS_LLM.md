@@ -1571,3 +1571,46 @@ ahora hagamos lo que nos falta de nuestra parte persona B
 
 Uso de la respuesta: El asistente preparó el código y las pruebas por incrementos (costo de movimiento y cazador; vista, guardado y retroceso; bench H1 a H8; documentos) como archivos .diff que se aplicaron con git apply y se probaron localmente antes de cada commit. Se corrigieron a mano dos errores que aparecieron al ejecutar las pruebas en el equipo real: una prueba de test_ir_a.py con rutas de costo 50 y un enemigo de prueba sin el campo comportamiento en la escena. Las mediciones de specs/003-terreno-cazador/mediciones.txt se corrieron con Python 3.10 en un entorno de trabajo, no en el equipo de la entrega; deben repetirse con `uv run python -m cripta --bench --semilla 42` antes de citarlas como definitivas. Las secciones 14 a 16 de docs/decisiones.md deben revisarse contra el enunciado (T092).
 
+
+
+### Entrada #77
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Escribir la especificación 004 (línea de tiempo y puntos de control) antes de cualquier código, siguiendo el flujo de spec-kit.
+
+Prompt enviado:
+
+```text
+Sí, arranca
+```
+
+El agente ejecutó el flujo de `/speckit-specify` con esta descripción, tomada del enunciado (§3.6, §5.5, §5.6, Apéndice B) y de lo que las specs 002 y 003 dejaron para la spec 004:
+
+```text
+/speckit-specify Línea de tiempo. El pergamino de retroceso sigue limitado a 5 acciones; la línea de tiempo es independiente y permite consultar, sin modificar la partida, el estado en cualquier instante desde el inicio. Estado en el instante t: el estado después de ejecutar todos los eventos con tiempo menor o igual que t; si a t le corresponde una decisión del jugador, es el estado justo antes de tomarla. Comando historia <t> e historia #k (estado justo antes de la acción número k del jugador), que muestra como mínimo reloj, sala del jugador, vida y estadísticas, inventario, efectos activos, enemigos de esa sala con su vida y el mapa conocido en ese momento (spec 002, FR-017). La consulta no consume tiempo virtual, no se registra como acción y no altera ningún estado del juego ni del historial de retroceso. --replay partida.log --hasta <t> reproduce la partida hasta t e imprime el mismo resumen sin instanciar la vista. Las acciones revertidas con un pergamino dejan de existir en la línea de tiempo; consultar un instante posterior al reloj actual se rechaza. Memoria: se permiten copias completas del estado (puntos de control) pero no más de una cada K acciones del jugador, con K configurable con --checkpoint-cada K y valor por defecto justificado con mediciones; una consulta no puede aplicar o deshacer cambios de más de K acciones; fuera de los puntos de control solo se guarda lo necesario para reconstruir los cambios; se puede reconstruir hacia adelante (re-simulando, con el estado del generador de azar en el punto de control) o hacia atrás (invirtiendo cambios), y la elección se documenta con evidencia. Ubicar el punto de control más cercano es una búsqueda frecuente; al usar un pergamino la línea se recorta sin recorrer toda la historia. Persistencia: guardar y cargar conserva la línea completa y el conocimiento del jugador (spec 002, FR-015); el formato binario cambia y un archivo de la Parte I se detecta como incompatible o se migra de forma explícita, nunca se carga en silencio. Rendimiento: la consulta historia tarda como máximo 50 ms en una partida de al menos 5000 acciones con K por defecto; --bench mide memoria y tiempo de consulta para al menos tres valores de K y la alternativa sin puntos de control. Además se repiten las mediciones del historial de retroceso de la Parte I con la carga nueva (§5.6). Escenarios de aceptación obligatorios (Apéndice B, línea de tiempo): (1) historia con t mayor que el reloj se rechaza; (2) historia después de un pergamino no muestra las acciones revertidas; (3) varios eventos en el mismo instante t: historia <t> muestra el estado después de todos; (4) historia no consume tiempo, no se registra en partida.log y no modifica el historial de retroceso; (5) --replay --hasta t con t posterior al final muestra el estado final e indica que la partida terminó antes; (6) se carga un archivo de la Parte I: se reporta la incompatibilidad o se migra explícitamente, nunca se carga en silencio.
+```
+
+Uso de la respuesta: Se creó specs/004-linea-tiempo/spec.md con 7 historias de usuario, 34 requisitos (FR-001 a FR-034) y 8 criterios de éxito, y el checklist de calidad en specs/004-linea-tiempo/checklists/requirements.md. Los seis casos del Apéndice B de línea de tiempo quedaron como escenarios: US1 escenarios 1, 2 y 5, US3 escenario 1, US4 escenario 2 y US5 escenario 3. Se revisó que la spec no nombre estructuras, clases ni módulos.
+
+### Entrada #78
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5) con spec-kit v1.3.3.
+
+Objetivo: Resolver las ambigüedades de la especificación 004 antes de planificar.
+
+Prompt enviado:
+
+```text
+/speckit-clarify
+```
+
+Uso de la respuesta: El agente hizo cuatro preguntas de opción múltiple y se aceptó la recomendación en las cuatro: un archivo de la Parte I se rechaza sin migración (FR-026); al cargar se usa el K guardado y se avisa si la bandera trae otro (FR-027); el historial de retroceso empieza vacío al cargar (FR-034, nuevo); el pergamino aparece descontado en el instante al que vuelve el reloj (FR-011). Las respuestas quedaron en la sección Clarifications de la spec. El valor por defecto de K y la dirección de reconstrucción quedan para el plan, porque el enunciado pide decidirlos con mediciones.
