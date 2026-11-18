@@ -152,6 +152,7 @@ Al abrir `uv run cripta`, espera la pantalla de carga del catálogo online.
 | Orden visual del inventario: peso / valor / nombre / real | **Alt + P / V / N / R**                                      |
 | Ascendente / descendente del inventario | Clic en **ASC/DESC** o **Alt + D** |
 | Información de la sala y del rastro                       | **I**                                                        |
+| Encender la antorcha (amplía el radio visible en la niebla) | Seleccionarla y **U**                                      |
 | Historia de la partida (`historia <t>` o `historia #k`)    | **H**, escribir el instante o `#` y el número, **Enter**     |
 | Ayuda / menú / terminar con confirmación                  | **F1** o **/** / **Esc** / **Q**                             |
 | Pantalla completa / silenciar efectos / silenciar música  | **F11** / **F2** / **F3**                                    |
@@ -204,7 +205,7 @@ Para reproducir una partida propia, sustituye la ruta por su archivo `.log` dent
 
 ### Mapa conocido y viaje «ir a»
 
-El jugador solo ve lo que conoce: una sala está desconocida, avistada (se sabe que existe) o explorada (entró o la iluminó la antorcha). Cada salida de una sala explorada muestra su costo y la última observación de su puerta (abierta, cerrada o sin observar).
+La sala se ve cubierta por una niebla salvo un radio pequeño alrededor del jugador; con la antorcha encendida el radio cubre casi toda la sala (spec 002, FR-042 a FR-045). Además, el jugador solo ve lo que conoce: una sala está desconocida, avistada (se sabe que existe) o explorada (entró o la iluminó la antorcha). Cada salida de una sala explorada muestra su costo y la última observación de su puerta (abierta, cerrada o sin observar).
 
 - **Mapa:** pulsa **C** (o elige «Mapa conocido (C)» en el menú de **Esc**) para ver las salas exploradas con sus salidas, costos y puertas, y los ids de las avistadas.
 - **Ir a:** en el mapa, haz clic sobre una sala explorada. El viaje avanza un paso por vez por la ruta de menor costo, cada paso es un movimiento ordinario y la ruta se recalcula antes de cada paso. Se detiene al llegar, al ver enemigos vivos en una sala, al recibir daño, si ya no hay ruta conocida, si un paso se rechaza o si termina la partida, y siempre muestra el motivo en la bitácora. Cualquier otra acción (incluido el pergamino con **P**) lo cancela. El viaje no abre puertas ni usa salas que no exploraste.

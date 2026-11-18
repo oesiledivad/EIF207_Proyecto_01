@@ -170,3 +170,5 @@ coinciden (solo cambian los tiempos). K4: máximo 0,239 ms (menor que 5 ms). Sal
 - Escenario 15: verificado.
 - Sección 3 (replay de un viaje): verificada.
 - Cierre de T103 (17/11/2026): la validación visual de los 17 escenarios y de las secciones 3 y 4 ya estaba anotada arriba (commit c403ab5). Además se verificó de nuevo en el equipo de entrega el efecto de la antorcha (escenarios 3 y 4): encenderla dentro de la sala 1 no explora vecinas, y al entrar a la sala 2 con ella encendida las salas 3 y 5 pasan a exploradas (con nombre y salidas, puertas sin observar) y la 4 a avistada.
+
+- Escenario 18 (US9, 17/11/2026, equipo de entrega): sin antorcha la sala 3 de la cripta de prueba queda en niebla salvo un círculo alrededor del jugador; el cazador y el errante que atacan se ven solo como siluetas, sin barras de vida claras. Con la antorcha encendida el radio cubre casi toda la sala y se ven con claridad los enemigos, la llave y los objetos. Los paneles laterales, la barra inferior y el minimapa no se oscurecen. Verificado.

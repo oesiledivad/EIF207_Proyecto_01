@@ -1789,3 +1789,30 @@ Testeemos los escenarios de validación manual pendientes.
 Uso de la respuesta: Se fusionó el PR #29. FR-018 de la spec 003 (la muerte de otros actores no cambia la decisión del cazador) se resolvió por inferencia con el razonamiento en los Supuestos de la spec, y el README explica que, sin enmienda «(§2.7)», rigen los límites de §6.1 (PR #30). Se jugó en la ventana real con una cripta de prueba local con costos y un cazador: los cinco escenarios de la sección 2 del quickstart de la spec 003 quedaron verificados. Sobre la niebla, el agente explicó que el enunciado (§3.3) la define como conocimiento del jugador y no como oscurecer la pantalla, y que la antorcha ya tiene efecto: se verificó en el juego que, al entrar con ella encendida, las salas vecinas pasan a exploradas. Oscurecer la vista sería una regla nueva que exigiría modificar primero la spec, así que no se implementó. T101 y T103 quedaron cerradas con los resultados anotados en sus quickstart.
 
 
+### Entrada #86
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5), con control del escritorio para revisar el resultado en la ventana del juego.
+
+Objetivo: Agregar la oscuridad visual de la niebla de guerra con un radio de visibilidad que la antorcha amplía.
+
+Prompts enviados (en orden):
+
+```text
+Corrijamos la niebla de guerra: agreguemos un radio mínimo de visibilidad y hagamos que la antorcha lo amplíe, con una apariencia similar a la niebla de Silent Hill.
+```
+
+```text
+Apliquemos la aclaración de clase sobre la oscuridad visual y el efecto de la antorcha; actualicemos primero la especificación.
+```
+
+```text
+Corrijamos la opacidad: la niebla debe permitir distinguir parcialmente el entorno sin dejar toda la pantalla en negro.
+```
+
+Uso de la respuesta: Primero se enmendó la spec 002 con la aclaración del profesor en clase (US9, FR-042 a FR-045, SC-009) y se confirmó antes del código (d51a621). Se implementó una capa de oscuridad solo visual en `escena.py`, centrada en el jugador, con radio de 70 sin antorcha y de 230 con antorcha; no toca el modelo, así que el reloj, el registro, el guardado y el replay no cambian. Al verla en el juego quedó demasiado negra, así que se corrigió primero la spec (fefafff: penumbra, no negro total) y luego el código (niebla gris azulada al 78 % de opacidad). Se agregaron las pruebas `test_oscuridad.py` y las tareas T105 a T107, y se verificó en la ventana real sin antorcha y con ella.
+
+
