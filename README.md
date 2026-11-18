@@ -348,6 +348,8 @@ Cada capacidad tiene su carpeta con `spec.md`, `plan.md`, `tasks.md`, investigac
 
 Entregables de §7.2: el Documento de Decisiones está en [docs/decisiones.md](docs/decisiones.md) (secciones 12 a 18 para la Parte II) y la bitácora de prompts, incluidos los comandos de spec-kit, en [docs/PROMPTS_LLM.md](docs/PROMPTS_LLM.md). Los dos siguen en `docs/`, donde estaban desde la Parte I.
 
+Dos dudas del enunciado no recibieron respuesta antes de la entrega y se resolvieron por inferencia. (1) El enunciado anuncia los ajustes de límites como enmienda «(§2.7)», pero esa sección no existe y no se publicó ninguna, así que se usan los límites de §6.1 tal como están: 20 ms, 200 ms, 50 ms y 5 ms. (2) La muerte de otros actores no cambia la decisión del cazador (FR-018 de la spec 003, con su razonamiento en los Supuestos).
+
 Comandos nuevos de la Parte II: `--verificar CRIPTA`, `--forzar`, `--checkpoint-cada K` y `--replay PARTIDA.LOG --hasta T` (ver «Comandos»).
 
 ## Pruebas y límites conocidos

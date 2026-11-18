@@ -111,7 +111,7 @@ puntos donde el código debe elegir algo que la spec no dice están en la tabla 
 | # | Punto | Propuesta por defecto | Dónde se decide |
 |---|-------|-----------------------|-----------------|
 | C1 | FR-009 dice «la carga de la cripta se rechaza», pero las fichas llegan por lotes durante la partida | El rechazo ocurre al incorporar la ficha; si es en plena partida, falla el movimiento que necesitaba ese contenido. Corregir la redacción de FR-009 en la spec (commit aparte) | Equipo, en `/speckit-analyze` |
-| C2 | FR-018: la muerte de otros actores no cambia la decisión | Se implementa así; pendiente de confirmar con el profesor (ya en la spec) | Profesor |
+| C2 | FR-018: la muerte de otros actores no cambia la decisión | Resuelto por inferencia el 2026-11-17, porque el profesor no respondió (razonamiento en Supuestos de la spec) | Equipo |
 | C3 | Errante o rastreador con dos salidas hacia la misma sala: costo de cuál | La salida candidata que hoy ya resulta elegida (orden de las salidas en la sala), sin regla nueva | Equipo |
 | C4 | Mensaje en la bitácora cuando un cazador entra a la sala del jugador | No se agrega: la spec no lo pide | Equipo |
 | C5 | Spec sin confirmar en Git | Confirmarla antes de `/speckit-implement` | Equipo |
