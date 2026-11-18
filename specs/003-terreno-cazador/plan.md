@@ -190,3 +190,7 @@ docs/
 |----------|--------------------|----------------------------------|
 | Clave de validez con dos contadores | Reutilizar distancias entre turnos sin perder FR-017 | Recalcular por turno: C búsquedas por ciclo; se mide en H3 y se conserva la clave salvo que la alternativa gane por más de 2 veces |
 | Parámetro `limite` | Costo según la región del rango (FR-025) | Búsqueda completa: O(S log S) por recálculo; se mide en H2 |
+
+## Referencia publicada (17/11/2026)
+
+FR-029: leer datos_entrega fuera del cronómetro, elegir el mayor esqueleto desde el catálogo, ensamblarlo con ExploracionControlador y medir el verificador puro, BuscadorRutas con ConocimientoJugador y Simulacion con 50 cazadores activos de prueba. Se conservan ids, puertas y costos publicados; los actores de prueba se identifican como carga artificial sobre un mapa real. No sustituye los escenarios sintéticos H1 a H8.

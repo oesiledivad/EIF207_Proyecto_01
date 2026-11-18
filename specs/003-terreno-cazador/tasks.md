@@ -287,3 +287,7 @@
 | US5.1 a US5.3 | T068, T069, T070, T071 | FR-022, FR-023, FR-024 |
 | US6.1 y US6.2 | T077, T078, T079, T086, T089 | FR-025, FR-026, FR-027 |
 | Apéndice B 1 a 7 (SC-001) | T032, T033, T034, T035, T036, T015, T016 | FR-011, FR-012, FR-013, FR-014, FR-017, FR-004, FR-006 |
+
+## Referencia publicada (17/11/2026)
+
+- [ ] T104 Medir y probar el esqueleto publicado mayor sin E/S cronometrada; guardar evidencia y actualizar decisiones y README (FR-025, FR-026, FR-029; spec 001 FR-023; spec 002 FR-038).

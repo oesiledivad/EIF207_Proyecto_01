@@ -76,7 +76,9 @@ Cada capacidad DEBE tener su `spec.md` confirmada en Git antes que el código qu
 - Cada integrante trabaja en su propia rama y se integra a `master` mediante pull request con
   merge commit, nunca squash.
 - Cada prompt a un LLM, incluidos los comandos de spec-kit con texto propio, DEBE registrarse en
-  la bitácora `PROMPTS_LLM.md` con fecha, integrante, herramienta, prompt textual y uso.
+  la bitácora `PROMPTS_LLM.md` con fecha, integrante, herramienta, texto del prompt y uso. Las paráfrasis editoriales autorizadas por el equipo DEBEN
+  identificarse como tales y conservar la intención técnica y el uso real de la respuesta;
+  NO DEBEN presentarse como transcripciones literales ni cambiar quién realizó el trabajo.
 
 ## Gobernanza
 
@@ -85,4 +87,4 @@ versión semántica (MAJOR por eliminar o redefinir principios de forma incompat
 agregar principios o ampliar guía de forma material, PATCH por aclaraciones). El comando
 `/speckit-analyze` verifica su cumplimiento.
 
-**Versión**: 1.0.0 | **Ratificada**: 2026-11-15 | **Última enmienda**: 2026-11-15
+**Versión**: 1.1.0 | **Ratificada**: 2026-11-15 | **Última enmienda**: 2026-11-17

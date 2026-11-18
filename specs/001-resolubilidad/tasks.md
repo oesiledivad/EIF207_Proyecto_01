@@ -268,3 +268,8 @@
 | US6.1 a US6.3 | T068 a T070 | FR-024, FR-026 |
 | Límite de 200 ms (sintética) y `--bench` sin vista | T071a, T071b | FR-023, FR-028 |
 | Apéndice B 1 a 4 | T030, T020, T019, T043 | FR-012, FR-004, FR-008, FR-015 |
+
+## Cierre de entrega (17/11/2026)
+
+- [ ] T090 Registrar y probar intentos HTTP, 429, transporte, presupuesto y rotación; documentar red.log (FR-030).
+- [ ] T091 Completar la herramienta de descarga, capturar datos actuales en datos_entrega y probar verificación offline sin red conservando el replay histórico (FR-018, FR-020, FR-031).

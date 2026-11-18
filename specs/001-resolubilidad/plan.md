@@ -197,3 +197,9 @@ permutados por la semilla, en variante resoluble y en variante con ciclo final.
 ## Seguimiento de complejidad
 
 Sin violaciones de la constitución; no se requiere justificación.
+
+## Cierre de entrega (17/11/2026)
+
+FR-030: logger de Python en el adaptador HTTP; archivo rotativo en --log-dir/red.log configurado al arrancar, independiente del registro de acciones. Se registran intentos, tiempos monotónicos, estado y presupuesto; no se registran cuerpos ni cabeceras. Pruebas con respuestas HTTP simuladas y reloj controlado.
+
+FR-031: herramienta manual con --destino; descarga en una carpeta temporal vecina y publica el paquete únicamente tras validar versiones. Reutiliza NetworkAdapter y Guardar_Llamadas_API, recorre todas las páginas y lotes de hasta diez y resuelve referencias de enemigos, objetos, trampas y botín. El paquete datos_entrega se versiona separado de datos_offline.

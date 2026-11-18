@@ -232,3 +232,9 @@ Quien evalúa el proyecto quiere evidencia medida de que, con decenas de cazador
 - Que el cazador abra puertas, recuerde rutas o prediga movimientos del jugador.
 - El formato binario del guardado y la línea de tiempo (spec 004), más allá de conservar los datos del cazador.
 - El diseño visual de la interfaz.
+
+## Evidencia sobre la referencia publicada (17/11/2026)
+
+- **FR-029**: Además de cargas sintéticas, --bench DEBE medir sin red ni disco dentro de los intervalos cronometrados el esqueleto de mayor tamaño del paquete actual: verificación, paso de ir a con mapa conocido completo y ciclo con al menos 50 cazadores activos de prueba. DEBE identificar versión y cantidad de salas, distinguir actores de prueba del contenido publicado y mantener el esqueleto y sus costos. Si falta el paquete, DEBE informar que esa evidencia no se midió.
+
+Aceptación: la misma semilla produce las mismas decisiones; las regiones medidas no acceden a red, disco ni vista; se imprimen los límites de 200, 5 y 20 ms. Una cripta con ids de sala no consecutivos también se puede medir.

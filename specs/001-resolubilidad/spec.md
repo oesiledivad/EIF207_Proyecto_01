@@ -205,3 +205,10 @@ Quien evalúa el proyecto quiere evidencia medida de que la verificación escala
 - Fuera de alcance: simulación de combate, tiempo, trampas, movimiento de enemigos y la ruta concreta del jugador.
 - La verificación se ejecuta al iniciar una partida nueva y con --verificar; no se ejecuta al continuar una partida guardada ni en --replay, porque esas partidas ya iniciaron.
 - Los ids de llave se comparan como cadenas, carácter por carácter (orden lexicográfico; por ejemplo, itm_llave_10 va antes que itm_llave_2); los ids de sala se comparan como enteros.
+
+## Cierre de entrega: diagnóstico y datos reproducibles (17/11/2026)
+
+- **FR-030**: Cada intento HTTP DEBE dejar un registro de diagnóstico con fecha, recurso, número de intento, resultado HTTP o error de transporte, duración y solicitudes usadas/presupuesto. Los rechazos por presupuesto y la espera por 429 DEBEN distinguirse. El registro NO DEBE modificar el reloj virtual ni añadir solicitudes; DEBE mantenerse separado del replay y admitir rotación para limitar el disco.
+- **FR-031**: La entrega DEBE incluir un paquete separado de datos actuales con versiones, esqueleto completo, contenido, fichas y ubicación de llaves. Actualizarlo NO DEBE sobrescribir el paquete histórico que usa el replay de ejemplo. La descarga DEBE respetar lotes y presupuesto y rechazar una captura si las versiones cambian durante ella.
+
+Aceptación: un 429 seguido de 200 deja dos intentos y una espera; un fallo de transporte queda registrado; un rechazo previo al envío no incrementa solicitudes. Desde una caché vacía, la verificación offline del paquete actual emite veredicto sin red; el replay histórico sigue funcionando.
