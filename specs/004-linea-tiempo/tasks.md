@@ -27,7 +27,7 @@ tiempo (SC-001) y por los requisitos principales; cada prueba cita su FR en el d
 
 ## Fase 1: Preparación
 
-- [x] T001 Confirmar en Git `spec.md` y el checklist antes de cualquier código (hecho en `20557fc`), y en otro commit `plan.md`, `research.md`, `data-model.md`, `quickstart.md` y este `tasks.md`. Cita FR-001 a FR-034.
+- [x] T001 Confirmar en Git `spec.md` y el checklist antes de cualquier código (hecho en `75e183e`), y en otro commit `plan.md`, `research.md`, `data-model.md`, `quickstart.md` y este `tasks.md`. Cita FR-001 a FR-034.
 - [x] T002 Con el código sin modificar, registrar en `specs/004-linea-tiempo/linea_base.txt` el commit, el comando de pruebas y las pruebas que ya fallan. Protege FR-006.
 
 ## Fase 2: Fundamentos (bloquea todo lo demás)

@@ -12,7 +12,7 @@ Integrantes:
 
 Los LLM se utilizaron como apoyo para comprender conceptos, explorar alternativas, revisar código, generar casos de prueba, mejorar documentación y proponer implementaciones. Todo el código y texto entregado es responsabilidad del grupo.
 
-Las entradas #79 y #84 a #87 contienen paráfrasis de los prompts para expresar con claridad su propósito técnico; no son transcripciones literales. Se conservan las herramientas utilizadas y el uso de sus respuestas.
+Las entradas #79 y #84 a #86 contienen paráfrasis de los prompts para expresar con claridad su propósito técnico; no son transcripciones literales. Se conservan las herramientas utilizadas y el uso de sus respuestas.
 
 ## Registro cronológico de prompts
 
@@ -1678,7 +1678,7 @@ Prompt enviado:
 
 (Ejecutados por el agente sin texto adicional, por el prompt de la entrada #79.)
 
-Uso de la respuesta: Se generó specs/004-linea-tiempo/tasks.md con 25 tareas (T001 a T025) en 10 fases. El análisis comprobó que los 34 FR aparecen en alguna tarea; FR-019 no tenía tarea y se agregó su cita en T003, con la nota de que no aplica porque la reconstrucción no re-simula (D1, D7). No hubo dependencias prohibidas. Plan y tareas se confirmaron en el commit c24cce5, antes del código.
+Uso de la respuesta: Se generó specs/004-linea-tiempo/tasks.md con 25 tareas (T001 a T025) en 10 fases. El análisis comprobó que los 34 FR aparecen en alguna tarea; FR-019 no tenía tarea y se agregó su cita en T003, con la nota de que no aplica porque la reconstrucción no re-simula (D1, D7). No hubo dependencias prohibidas. Plan y tareas se confirmaron en el commit 09118d7, antes del código.
 
 ### Entrada #82
 
@@ -1814,5 +1814,3 @@ Corrijamos la opacidad: la niebla debe permitir distinguir parcialmente el entor
 ```
 
 Uso de la respuesta: Primero se enmendó la spec 002 con la aclaración del profesor en clase (US9, FR-042 a FR-045, SC-009) y se confirmó antes del código (d51a621). Se implementó una capa de oscuridad solo visual en `escena.py`, centrada en el jugador, con radio de 70 sin antorcha y de 230 con antorcha; no toca el modelo, así que el reloj, el registro, el guardado y el replay no cambian. Al verla en el juego quedó demasiado negra, así que se corrigió primero la spec (fefafff: penumbra, no negro total) y luego el código (niebla gris azulada al 78 % de opacidad). Se agregaron las pruebas `test_oscuridad.py` y las tareas T105 a T107, y se verificó en la ventana real sin antorcha y con ella.
-
-

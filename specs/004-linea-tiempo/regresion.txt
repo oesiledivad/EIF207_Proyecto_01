@@ -9,6 +9,6 @@ Tras corregirlas: test_conocimiento_serializable, test_grafica y test_historia_v
 Nota: algunas pruebas existentes reescriben archivos de datos_offline/ al ejecutarse; se restauraron con git checkout y no se confirman.
 
 
-Regresión final de la entrega (17/11/2026, rama eliseo sobre master2 5e0bbe5, Windows 11, Python 3.13):
+Regresión final de la entrega (17/11/2026, master3 en 66902fb, equivalente al antiguo master2 5e0bbe5, Windows 11, Python 3.13):
 - Selección del README (comando a): Ran 61 tests, OK.
 - Suite completa (comando b): Ran 377 tests, OK. Cero fallas: las 7 de la línea base se resolvieron (test_datos y test_ensamblador eran scripts que usaban una función renombrada; test_guardar_llamadas sobrescribía datos_offline al importarse y hacía fallar test_offline_cache, test_stormlight y test_trampas_estado; se movió a herramientas/descargar_paquete_offline.py).

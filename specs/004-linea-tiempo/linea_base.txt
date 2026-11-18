@@ -1,5 +1,5 @@
 Línea base de la spec 004 (T002)
-Commit: 1017f05 (código sin modificar; solo specs y PROMPTS_LLM.md después de 44bbb12)
+Commit: af93981 (código sin modificar; solo specs y PROMPTS_LLM.md después de 44bbb12)
 Comando: uv run python -m unittest discover -s pruebas -t .
 Resultado: Ran 340 tests, FAILED (failures=4, errors=3)
 Pruebas que ya fallaban:

@@ -112,6 +112,6 @@ Replay completado: sala=1 vida=30 tiempo=100
 Red: 0/9 solicitudes · caché: 4 aciertos, 6 fallos, 0 lecturas de disco
 
 
-RegresiÃ³n final de la entrega (17/11/2026, rama eliseo sobre master2 5e0bbe5, Windows 11, Python 3.13):
-- SelecciÃ³n del README (comando a): Ran 61 tests, OK.
-- Suite completa (comando b): Ran 377 tests, OK. Cero fallas: las 7 de la lÃ­nea base se resolvieron (test_datos y test_ensamblador eran scripts que usaban una funciÃ³n renombrada; test_guardar_llamadas sobrescribÃ­a datos_offline al importarse y hacÃ­a fallar test_offline_cache, test_stormlight y test_trampas_estado; se moviÃ³ a herramientas/descargar_paquete_offline.py).
+Regresión final de la entrega (17/11/2026, master3 en 66902fb, equivalente al antiguo master2 5e0bbe5, Windows 11, Python 3.13):
+- Selección del README (comando a): Ran 61 tests, OK.
+- Suite completa (comando b): Ran 377 tests, OK. Cero fallas: las 7 de la línea base se resolvieron (test_datos y test_ensamblador eran scripts que usaban una función renombrada; test_guardar_llamadas sobrescribía datos_offline al importarse y hacía fallar test_offline_cache, test_stormlight y test_trampas_estado; se movió a herramientas/descargar_paquete_offline.py).

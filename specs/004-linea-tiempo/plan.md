@@ -73,7 +73,7 @@ conocimiento-serializable.md`.
 | IV. Sin datos de cripta | Las ranuras se derivan del esqueleto y de los enemigos de la partida. |
 | V. Presupuesto de red | La consulta no hace solicitudes: usa solo el esqueleto y las salas ya ensambladas. |
 | VI. Rendimiento con evidencia | Mediciones L1 a L5 en `--bench` (research.md). |
-| VII. Spec antes que código | spec.md confirmada en `20557fc`; este plan y tasks.md se confirman antes del código. |
+| VII. Spec antes que código | spec.md confirmada en `75e183e`; este plan y tasks.md se confirman antes del código. |
 
 ## Decisiones tomadas
 
