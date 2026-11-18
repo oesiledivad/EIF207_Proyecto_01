@@ -1713,3 +1713,46 @@ Objetivo: Medir la línea de tiempo, fijar K por defecto y documentar las decisi
 Prompt enviado: el de la entrada #79.
 
 Uso de la respuesta: Se agregó la sección «Línea de tiempo» a --bench (L1 a L5) y la carga pesada L1b, porque la partida larga del paquete tiene pocos cambios y no distinguía entre valores de K. La salida quedó en specs/004-linea-tiempo/mediciones.txt. K por defecto se mantuvo en 50 (coincide con el plan). Se escribieron las secciones 17 (§5.5) y 18 (§5.6, retroceso) de docs/decisiones.md y se actualizó el README con la tecla H, --checkpoint-cada, --replay ... --hasta y las pruebas de la spec 004.
+
+
+### Entrada #84
+
+Fecha: 17/11/2026
+
+Integrante: Eliseo Zuñiga Obando.
+
+Herramienta: Claude Code (Opus 5.5), con control del escritorio para probar la interfaz.
+
+Objetivo: Integrar la spec 004 en master2, revisar si el proyecto está listo para entregar y corregir lo que faltaba.
+
+Prompts enviados (en orden):
+
+```text
+Sí, fusiónalo
+```
+
+```text
+Excelente, ahora la duda es, ya se han terminado las partes de persona A, persona B, y esta es de persona C, ¿Ya estamos listos para entregar el proyecto?
+```
+
+```text
+Sí, corrígelos
+```
+
+```text
+Es que se supone que todo el trabajo ya fue divido en persona a, b, y c, por lo que solo con esto ya deberíamos de ir terminando, recuerda que tenemos restricciones de ciertas estructuras de datos
+```
+
+```text
+No, lo que me refiero es que veamos si en verdad estamos para terminar, si no, como está autorizado el uso de la ia y el profesor nos dijo que era obligatorio, terminemos
+```
+
+```text
+No, pero me toca a mí terminar las cosas, así nos coordinamos en persona, es decir ayúdame a terminar lo que falta
+```
+
+```text
+Exceletne, recuerda que tienes permiso para usar computer use, tengo pycharm abierto, puedes probar el juego tu
+```
+
+Uso de la respuesta: Se fusionó el PR #28 (spec 004) en master2 con merge commit. La revisión contra el enunciado encontró que el README no indicaba la versión de spec-kit, el agente ni cómo correr las pruebas de aceptación de cada spec; se agregó. La auditoría del código no encontró heapq, bisect, collections, sorted, sort ni set, y dict solo aparece para leer o armar JSON y encabezados HTTP. La suite tenía 7 fallas previas: test_guardar_llamadas descargaba de la API y sobrescribía datos_offline al importarse (se movió a herramientas/descargar_paquete_offline.py), lo que hacía fallar test_offline_cache, test_stormlight y test_trampas_estado; test_datos y test_ensamblador eran scripts con red que usaban una función renombrada (se reemplazaron por una prueba sin red). La suite quedó en 377 pruebas sin fallas. Se repitió el bench de la spec 003 en el equipo de entrega con las mismas conclusiones, se corrigió una frase desactualizada de decisiones.md y se probó la consulta de historia en la ventana real del juego; eso mostró que los dígitos escritos no llegaban a la entrada (y que # es AltGr+3 en teclado español), y se cambió a eventos de texto.
