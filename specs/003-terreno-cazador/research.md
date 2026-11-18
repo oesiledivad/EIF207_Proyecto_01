@@ -267,7 +267,7 @@ cazadores con la misma semilla. Todo sin red, disco ni vista (FR-027).
 
 Todas imprimen en consola, no abren la vista y usan `random.Random(semilla)` (principios II y VI).
 Los resultados se guardan en `specs/003-terreno-cazador/mediciones.txt` y se resumen en las
-secciones 14 a 16 de `docs/decisiones.md` (§5.1, §5.2 y §5.6).
+secciones 14 a 16 de `DECISIONES.md` (§5.1, §5.2 y §5.6).
 
 ## Resumen de complejidad
 

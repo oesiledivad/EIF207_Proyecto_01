@@ -75,10 +75,10 @@ tiempo (SC-001) y por los requisitos principales; cada prueba cita su FR en el d
 
 ## Fase 10: Cierre
 
-- [x] T022 `docs/decisiones.md`: sección 17 (§5.5, línea de tiempo) y 18 (§5.6, retroceso), con enlaces a spec y plan y si la decisión coincide con el plan. Cita FR-018, FR-030 a FR-032.
+- [x] T022 `DECISIONES.md`: sección 17 (§5.5, línea de tiempo) y 18 (§5.6, retroceso), con enlaces a spec y plan y si la decisión coincide con el plan. Cita FR-018, FR-030 a FR-032.
 - [x] T023 `README.md`: `--checkpoint-cada`, `--replay ... --hasta`, tecla H y pruebas de la spec 004. Cita FR-017, FR-021, FR-028.
 - [x] T024 Suite completa contra `linea_base.txt` y registro en `specs/004-linea-tiempo/regresion.txt`. Protege FR-006.
-- [x] T025 Entradas de `docs/PROMPTS_LLM.md` con los prompts reales de esta sesión. Constitución, flujo de trabajo.
+- [x] T025 Entradas de `PROMPTS_LLM.md` con los prompts reales de esta sesión. Constitución, flujo de trabajo.
 
 ## Dependencias
 
